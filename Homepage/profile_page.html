@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SHAKTI-IND</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: hsl(60, 18%, 97%);
+            --saffron: #FF9933;
+            --green: #138808;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+        }
+
+        /* TOP BAR */
+        .top-bar {
+            background: #fff;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .back-btn {
+            font-size: 1.6rem;
+            text-decoration: none;
+            color: #444;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--saffron) 50%, var(--green) 50%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            z-index: 20;
+            transition: all 0.9s ease-out 0.2s;
+        }
+
+        /* PROFILE TOP SECTION */
+
+        .profile-top {
+            text-align: center;
+            padding: 25px 20px;
+        }
+
+        .profile-pic {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px ;
+            background-position: center;
+            background-size: cover;
+            margin: auto;
+           /* Make the profile picture clickable */
+           cursor: pointer; 
+           transition: transform 0.2s;
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.05);
+        }
+
+        /* Username */
+        .profile-username {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-top: 12px;
+            color: #222;
+        }
+
+        /* Followers / Following */
+        .profile-stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 35px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--saffron);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        /* Bio under everything */
+        .profile-bio {
+            margin-top: 18px;
+            font-size: 1rem;
+            color: #444;
+            text-align: center;
+            padding: 0 25px;
+            margin-bottom: 20px;
+        }
+
+        /* NEW: Style for the detailed description */
+        .profile-description {
+            margin: 15px 0 25px;
+            padding: 0 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #555; /* Slightly muted color for secondary text */
+            text-align: center;
+            white-space: pre-wrap; /* CRITICAL: Ensures line breaks from the textarea are respected */
+        }
+
+        /* --- NEW HIGHLIGHTS SECTION --- */
+        .highlights-wrapper {
+            padding: 10px 0;
+            margin-bottom: 10px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .highlights-container {
+            display: flex;
+            overflow-x: auto; /* Allows horizontal scrolling */
+            padding: 0 20px;
+            /* Hide scrollbar for cleaner look (optional, but common) */
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .highlights-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .highlight-item {
+            text-align: center;
+            margin-right: 25px;
+            flex-shrink: 0; /* Prevents items from shrinking */
+            width: 70px; /* Fixed width for the item */
+            cursor: pointer;
+        }
+
+        .highlight-ring {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .highlight-cover {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f0f0f0; /* Default background */
+            background-size: cover;
+            background-position: center;
+        }
+
+        .highlight-label {
+            font-size: 0.8rem;
+            color: #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ADD THIS NEW CSS BLOCK */
+.viewer-header {
+    position: absolute;
+    top: 15px; /* Slightly below the progress bar */
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.viewer-title {
+    margin-left: 5px; /* Space between progress bar and title (optional) */
+}
+/* END NEW CSS BLOCK */
+
+/* And make sure your viewer-progress-bar CSS has a high z-index: */
+.viewer-progress-bar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+    z-index: 100; /* Ensure it's above everything */
+}
+
+        /* NEW: Story Viewer specific styles */
+
+.highlight-viewer {
+    position: relative;
+    width: 95vw;
+    max-width: 600px;
+    height: 90vh;
+    background: black;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.viewer-content {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.viewer-image {
+    width: 100%;
+    height: 100%;
+    background-size: contain; /* Ensures the whole image is visible */
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.viewer-video {
+    width: auto;
+    height: auto;
+    max-width: auto;
+    max-height: auto;
+    object-position: center;
+    position: absolute;
+}
+
+.viewer-progress-bar {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+}
+
+.viewer-progress-segment {
+    width: 100%;
+    height: 100%;
+    background: white;
+    transform-origin: left;
+    transform: scaleX(0); /* Starts hidden */
+}
+
+/* Keyframe for the duration animation */
+@keyframes progress-animation {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.viewer-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 100;
+    opacity: 0.8;
+}
+
+/* Override .modal-pic behavior for the new story viewer */
+.profile-modal.open .modal-pic {
+    /* Hide the old modal-pic when the new viewer is used */
+    display: none;
+}
+        /* --- END HIGHLIGHTS SECTION --- */
+
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            background: white;
+            margin-top: 15px; /* Adjust spacing since highlights are now above */
+        }
+
+        .tab {
+            padding: 12px 0;
+            width: 100%;
+            text-align: center;
+            font-weight: 500;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .tab.active {
+            color: black;
+            border-bottom: 3px solid black;
+            font-weight: 700;
+        }
+
+        /* SLIDER SYSTEM - FIXED */
+        .slider-wrapper {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: var(--bg);
+            min-height: 500px;
+            padding-top: 20px;
+        }
+
+        .slider {
+            display: flex;
+            width: 400%; /* 4 tabs */
+            height: 100% !important; 
+            transition: transform 0.35s ease-in-out;
+        }
+
+        .slide {
+            width: 100%;
+            flex-shrink: 0;
+            height: 100% !important; 
+            display: flex; 
+            position: relative; 
+            align-items: center;
+        }
+
+
+        /* EMPTY PAGE MESSAGE - FIXED FOR ABSOLUTE CENTERING */
+        .empty-msg {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #444;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .empty-msg span {
+            font-weight: 700;
+        }
+
+        .empty-emoji {
+            font-size: 2.2rem;
+        }
+        
+        /* PROFILE PICTURE MODAL STYLES */
+        .profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9); /* Dark overlay */
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .profile-modal.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-pic {
+            width: 90vw; /* Wider for highlights */
+            max-width: 600px; 
+            height: auto; /* Allows height to adjust naturally */
+            max-height: 90vh;
+            aspect-ratio: 1 / 1; /* Default to square */
+            border-radius: 50%; /* Default for profile pic */
+            background-position: center;
+            background-size: cover;
+            border: 5px solid white;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+            transform: scale(0.5);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .profile-modal.open .modal-pic {
+            transform: scale(1);
+        }
+        /* NEW: Close button specific to the Profile Picture Modal */
+        .modal-close-btn {
+            position: absolute;
+            top: 20px; /* Distance from top */
+            right: 20px; /* Distance from right */
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 10001; /* Ensure it is above the modal content (z-index 1000) */
+            opacity: 0.8;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7); /* Helps it stand out on white pictures */
+        }
+
+/* NEW: Settings Icon and Profile Username Wrapper */
+.profile-username-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px; /* Space between username and icon */
+    margin-top: 12px;
+}
+
+.settings-icon {
+    font-size: 1.4rem;
+    color: #444;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.settings-icon:hover {
+    color: var(--saffron);
+}
+
+/* NEW: Edit Modal Styles */
+.edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Higher than other modals */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.edit-modal.open {
+    display: flex;
+    opacity: 1;
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+.edit-form-container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transform: translateY(-20px);
+    transition: transform 0.3s;
+}
+
+.edit-modal.open .edit-form-container {
+    transform: translateY(0);
+}
+
+.profile-pic-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 10px auto;
+    border: 3px solid var(--saffron);
+    display: block; /* Ensures it is visible or can be controlled */
+}
+
+.edit-form-container h2 {
+    margin-top: 0;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--saffron);
+    outline: none;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 14px;
+    background: #fafafa;
+    border: 1px solid black;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.25s;
+    margin-bottom: 12px;
+}
+
+.save-btn:hover {
+    transform: translateX(5px);
+}
+
+.edit-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.8rem;
+    color: #666;
+    cursor: pointer;
+}
+
+/* --- NEW FOLLOW BUTTON STYLES --- */
+.follow-btn-wrapper {
+    margin-top: 15px;
+    text-align: center;
+    display: block;
+    width: 100%;
+}
+
+.follow-btn {
+    width: 150px; 
+    /* CRITICAL FIX: Make it a block element to use margins */
+    display: block; 
+    /* CRITICAL FIX: This centers a block element with a set width */
+    margin-left: auto;
+    margin-right: auto;
+    /* Other necessary styles */
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+/* Style for the FOLLOW button (not following yet) */
+.follow-btn.follow {
+    background: var(--saffron);
+    color: white;
+    box-shadow: 0 4px 8px rgba(255, 153, 51, 0.3);
+}
+
+.follow-btn.follow:hover {
+    background: #e68a2e;
+}
+
+/* Style for the UNFOLLOW button (already following) */
+.follow-btn.unfollow {
+    background: #fff;
+    color: #444;
+    border: 1px solid #ddd;
+}
+
+.follow-btn.unfollow:hover {
+    background: #f0f0f0;
+}
+
+/* --- Followers/Following Modal Styles --- */
+.list-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 20; /* Higher than other elements */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5); /* Semi-transparent background */
+}
+
+.list-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 0;
+    border-radius: 12px;
+    width: 90%; 
+    max-width: 400px; /* Max width for mobile-style modal */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.list-modal-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+    position: relative;
+}
+
+.list-modal-header h3 {
+    margin: 0;
+    font-weight: 700;
+    color: var(--saffron);
+}
+
+.close-list-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+}
+
+.close-list-modal:hover,
+.close-list-modal:focus {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.user-list-display {
+    max-height: 400px; /* Scrollable area for the list */
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+/* Style for each user item in the list */
+.user-list-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.user-list-item:hover {
+    background-color: #f5f5f5;
+}
+
+.list-user-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--saffron);
+}
+
+.list-username {
+    font-weight: 500;
+    color: #333;
+}
+
+/* Update the style for the clickable stat boxes */
+.stat-item {
+    /* Existing styles here... */ 
+    cursor: pointer; /* <--- ADD THIS LINE */
+    /* Other styles... */
+}
+
+.stat-item:hover {
+    /* Optional: Add a subtle visual hover effect */
+    background-color: #f5f5f5; 
+    border-radius: 8px;
+}
+</style>
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <div class="logo">SHAKTI-IND</div>
+        <a href="HP2.html" class="back-btn" title="back to homepage">←</a>
+    </div>
+
+    <div class="profile-top">
+
+    <div id="profilePic" class="profile-pic" onclick="openProfileModal()"></div>
+
+    <div class="profile-username-wrapper">
+        <div id="profileName" class="profile-username">Loading...</div>
+        <span id="settingsIcon" class="settings-icon" onclick="openEditModal()">&#9881;</span> 
+    </div>
+
+    <div id="followButtonContainer" class="follow-btn-wrapper" style="display: none;">
+        <button id="followBtn" class="follow-btn" onclick="toggleFollow()">Loading...</button>
+    </div>
+
+    <div class="profile-stats-row">
+    <div class="stat-item">
+        <div id="postCount" class="stat-number">0</div> 
+        <div class="stat-label">Posts</div>
+    </div>
+    <div class="stat-item">
+        <div id="followerCount" class="stat-number">0</div> 
+        <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat-item">
+        <div id="followingCount" class="stat-number">0</div> 
+        <div class="stat-label">Following</div>
+    </div>
+    </div>
+
+    <div id="listModal" class="list-modal">
+    <div class="list-modal-content">
+        <div class="list-modal-header">
+            <span class="close-list-modal" onclick="closeListModal()">×</span>
+            <h3 id="listModalTitle"></h3>
+        </div>
+        <div id="userListDisplay" class="user-list-display">
+            </div>
+    </div>
+</div>
+
+    <div id="profileBio" class="profile-bio">Loading bio...</div>
+
+    <div id="profileDescription" class="profile-description">Loading detailed description...</div>
+
+</div>
+
+<div id="editModal" class="edit-modal" onclick="closeEditModal(event)">
+    <div class="edit-form-container" onclick="event.stopPropagation()">
+        
+        <span class="edit-modal-close" onclick="closeEditModal()">×</span>
+        <h2>Edit Profile</h2>
+        
+        <div class="form-group">
+            <label for="editUsername">Username</label>
+            <input type="text" id="editUsername" placeholder="Enter new username">
+        </div>
+
+        <div class="form-group" style="text-align: center;">
+            <label for="editProfilePicInput">Profile Picture</label>
+            <img id="editProfilePicPreview" src="" class="profile-pic-preview">
+            <input type="file" id="editProfilePicInput" accept="image/*" onchange="handleProfilePicChange(event)">
+        </div>
+        <div class="form-group">
+            <label for="editBio">Bio</label>
+            <textarea id="editBio" placeholder="Tell us about yourself..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="editDescription">Description (Detailed)</label>
+            <textarea id="editDescription" placeholder="Enter a detailed description about your profile..."></textarea>
+        </div>
+
+        <button class="save-btn" onclick="saveProfileChanges()">Save Changes</button>
+
+    </div>
+</div>
+
+<div class="highlights-wrapper">
+    <div class="highlights-container">
+        
+        <div class="highlight-item">
+            <div class="highlight-ring" style="border-style: dashed; border-color: #aaa;">
+                <div class="highlight-cover" style="background: none; border: none; font-size: 2rem; color: #aaa; line-height: 60px;">+</div>
+            </div>
+            <div class="highlight-label">New</div>
+        </div>
+
+        <div class="highlight-item" 
+             onclick="openHighlightModal('../pics/culture/1.jpeg', 'Culture')"> <div class="highlight-ring">
+                <div class="highlight-cover" style="background-image: url('../pics/culture/1.jpeg');"></div> </div>
+            <div class="highlight-label">Culture</div>
+        </div>
+
+        <div class="highlight-item" 
+             onclick="openHighlightModal('../pics/entertainment/3.mp4', 'Entertainment')"> <div class="highlight-ring">
+                <div class="highlight-cover" style="background-image: url('../pics/entertainment/3.mp4');"></div> </div>
+            <div class="highlight-label">Entertainment</div>
+        </div>
+
+        <div class="highlight-item"
+             onclick="openHighlightModal('pic3.jpg', 'Family')"> <div class="highlight-ring">
+                <div class="highlight-cover" style="background-image: url('pic3.jpg');"></div>
+            </div>
+            <div class="highlight-label">Family</div>
+        </div>
+
+        <div class="highlight-item"
+             onclick="openHighlightModal('pic4.jpg', 'Charity Events')"> <div class="highlight-ring">
+                <div class="highlight-cover" style="background-image: url('pic4.jpg');"></div>
+            </div>
+            <div class="highlight-label">Charity Events</div>
+        </div>
+
+        <div class="highlight-item"
+             onclick="openHighlightModal('pic5.jpg', 'Motivation')"> <div class="highlight-ring">
+                <div class="highlight-cover" style="background-image: url('pic5.jpg');"></div>
+            </div>
+            <div class="highlight-label">Motivation</div>
+        </div>
+        
+    </div>
+</div>
+<div class="tabs">
+    <div class="tab active" data-tab="0">Posts</div>
+    <div class="tab" data-tab="1">Blogs</div>
+    <div class="tab" data-tab="2">Videos</div>
+    <div class="tab" data-tab="3">Saved</div>
+</div>
+
+<div class="slider-wrapper">
+    <div class="slider">
+
+        <div class="slide">
+            <div class="empty-msg">
+                <span class="empty-emoji">📭</span>
+                Your Shakti Profile is Empty <br>
+                <span>Create Your Shakti Roots ✨</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="empty-msg">
+                <span class="empty-emoji">📝</span>
+                No Blogs Yet <br>
+                <span>Start Sharing Your Knowledge ✨</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="empty-msg">
+                <span class="empty-emoji">🎥</span>
+                No Videos Uploaded <br>
+                <span>Let Your Creativity Out ✨</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="empty-msg">
+                <span class="empty-emoji">💾</span>
+                Nothing Saved Yet <br>
+                <span>Save Your Inspirations ✨</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="profileModal" class="profile-modal">
+    
+    <div id="modalPic" class="modal-pic" onclick="event.stopPropagation()">
+        <div class="modal-close-btn" onclick="closeProfileModal()">×</div>
+    </div>
+
+    <div id="highlightViewer" class="highlight-viewer" style="display: none;">
+
+        <div class="viewer-header">
+            <div id="viewerTitle" class="viewer-title"></div>
+        </div>
+        
+        <div class="viewer-progress-bar">
+            <div id="progressBarSegment" class="viewer-progress-segment"></div>
+        </div>
+
+        <div class="viewer-close-btn" onclick="closeProfileModal()">×</div>
+
+        <div class="viewer-content">
+            <div id="viewerImage" class="viewer-image"></div>
+            <video id="viewerVideo" class="viewer-video" controls playsinline></video>
+        </div>
+        
+    </div>
+
+</div>
+</div>
+
+
+<script>
+// UNIVERSAL MODAL JAVASCRIPT
+const tabs = document.querySelectorAll(".tab");
+const slider = document.querySelector(".slider");
+const profileModal = document.getElementById("profileModal");
+const modalPic = document.getElementById("modalPic");
+const profilePic = document.getElementById("profilePic");
+const highlightViewer = document.getElementById("highlightViewer");
+const viewerImage = document.getElementById("viewerImage");
+const viewerVideo = document.getElementById("viewerVideo");
+const progressBarSegment = document.getElementById("progressBarSegment");
+const viewerContent = document.getElementById("viewerContent");
+const HIGHLIGHT_DURATION_SEC = 5; // Default for images
+const viewerTitle = document.getElementById("viewerTitle");
+
+// Edit Modal References
+const editModal = document.getElementById("editModal");
+const editUsernameInput = document.getElementById("editUsername");
+const editBioInput = document.getElementById("editBio");
+const editDescriptionInput = document.getElementById("editDescription");
+const editProfilePicInputFile = document.getElementById("editProfilePicInput");
+const editProfilePicPreview = document.getElementById("editProfilePicPreview");
+
+let autoCloseTimer;
+let newProfileImageBase64 = null;
+let currentDescription = '';
+
+tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        
+        // remove old active state
+        document.querySelector(".tab.active").classList.remove("active");
+
+        // add new active state
+        tab.classList.add("active");
+
+        // slide to correct section
+        const index = tab.getAttribute("data-tab");
+        slider.style.transform = `translateX(-${index * 100}%)`;
+    });
+});
+
+// Function to check if the file path is a video
+function isVideoFile(url) {
+    return /\.(mp4|mov|webm|ogg)$/i.test(url);
+}
+
+// Function to handle file input and create Base64 string
+window.handleProfilePicChange = function(event) {
+    const file = event.target.files[0];
+    if (!file) { return; }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        newProfileImageBase64 = e.target.result;
+        editProfilePicPreview.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+};
+
+function openProfileModal() {
+    const imgUrl = profilePic.style.backgroundImage;
+    if (imgUrl) {
+        openModal(imgUrl, true);
+    }
+}
+
+function openHighlightModal(url,title) {
+    openModal(url, false,title);
+}
+
+// Universal function to open the modal
+function openModal(url, isProfilePic = true, title = '') {
+    clearTimeout(autoCloseTimer);
+    modalPic.style.display = 'none';
+    highlightViewer.style.display = 'none';
+    viewerImage.style.display = 'none';
+    viewerVideo.style.display = 'none';
+    viewerVideo.pause();
+    viewerVideo.removeAttribute('src');
+
+    viewerTitle.innerText = '';
+    
+    if (isProfilePic) {
+        modalPic.style.display = 'block';
+        modalPic.style.backgroundImage = url;
+
+    } else {
+        highlightViewer.style.display = 'flex';
+        viewerTitle.innerText = title; 
+        const fileUrl = url.replace(/url\(['"]?|['"]?\)/g, '');
+        const isVideo = isVideoFile(fileUrl);
+        
+        let duration = HIGHLIGHT_DURATION_SEC;
+
+        if (isVideo) {
+            viewerVideo.style.display = 'block';
+            viewerVideo.src = fileUrl;
+            
+            viewerVideo.onloadedmetadata = function() {
+                duration = viewerVideo.duration;
+                startProgress(duration);
+                viewerVideo.play();
+                autoCloseTimer = setTimeout(closeProfileModal, duration * 1000);
+            };
+
+            viewerVideo.onerror = function() {
+                console.error("Error loading video:", fileUrl);
+                startProgress(duration);
+                autoCloseTimer = setTimeout(closeProfileModal, duration * 1000);
+            };
+
+        } else {
+            viewerImage.style.display = 'block';
+            viewerImage.style.backgroundImage = `url('${fileUrl}')`;
+            startProgress(duration);
+            autoCloseTimer = setTimeout(closeProfileModal, duration * 1000);
+        }
+    }
+    
+    profileModal.style.display = 'flex';
+    setTimeout(() => {
+        profileModal.classList.add('open');
+    }, 10);
+}
+
+function startProgress(duration) {
+    progressBarSegment.style.transition = 'none';
+    progressBarSegment.style.transform = 'scaleX(0)';
+    
+    setTimeout(() => {
+        progressBarSegment.style.transition = `transform ${duration}s linear`;
+        progressBarSegment.style.transform = 'scaleX(1)';
+    }, 50);
+}
+
+
+function closeProfileModal() {
+    clearTimeout(autoCloseTimer);
+    viewerVideo.pause();
+    progressBarSegment.style.transition = 'none';
+    progressBarSegment.style.transform = 'scaleX(0)';
+    
+    profileModal.classList.remove('open');
+    setTimeout(() => {
+        profileModal.style.display = 'none';
+        modalPic.style.display = 'none';
+        highlightViewer.style.display = 'none';
+    }, 300);
+}
+
+// Edit Modal Logic
+function openEditModal() {
+    const currentPicUrl = profilePic.style.backgroundImage.replace(/url\(['"]?|['"]?\)/g, '').replace(/"/g, '');
+
+    // 1. Pre-fill the form with current values
+    editUsernameInput.value = document.getElementById("profileName").innerText;
+    editBioInput.value = document.getElementById("profileBio").innerText;
+    editDescriptionInput.value = currentDescription; 
+    
+    // Set the current image as the initial preview and Base64 string
+    editProfilePicPreview.src = currentPicUrl;
+    newProfileImageBase64 = currentPicUrl;
+    
+    // Reset file input so user can choose a new file
+    editProfilePicInputFile.value = ''; 
+
+    // 2. Open the modal
+    editModal.style.display = 'flex';
+    document.body.classList.add('modal-open'); // 💡 CRITICAL: ADD THIS LINE
+    setTimeout(() => {
+        editModal.classList.add('open');
+    }, 10);
+}
+
+function closeEditModal(event) {
+    if (!event || event.target.id === 'editModal' || event.target.className === 'edit-modal-close') {
+        editModal.classList.remove('open');
+        document.body.classList.remove('modal-open'); // 💡 CRITICAL: ADD THIS LINE
+        setTimeout(() => {
+            editModal.style.display = 'none';
+        }, 300);
+    }
+}
+
+// Ensure clicking the viewer background closes the modal
+highlightViewer.addEventListener('click', closeProfileModal);
+
+// Prevent the viewer content from closing the modal when clicked
+viewerContent.addEventListener('click', (event) => {
+    event.stopPropagation();
+});
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, update, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"; 
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDvZYHuZ2NHVrTpS3NhVS0f1wDeW-phZ10",
+    authDomain: "shaktiind-31e08.firebaseapp.com",
+    databaseURL: "https://shaktiind-31e08-default-rtdb.firebaseio.com",
+    projectId: "shaktiind-31e08",
+    storageBucket: "shaktiind-31e08.firebasestorage.app",
+    messagingSenderId: "394230439792",
+    appId: "1:394230439792:web:2178e633cff48093f5b9b5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Global Variables for User Tracking
+const loggedUserMobile = localStorage.getItem("logged_user_mobile");
+let targetUserMobile = sessionStorage.getItem("target_user_mobile");
+let loggedUserId = null; // Key for the currently logged-in user
+let targetUserId = null; // Key for the user whose profile is being viewed
+let isFollowing = false; // Flag to track current following status
+let allUsersData = {}; // Cache to store all users for list lookup
+
+// UI Elements
+const settingsIcon = document.getElementById('settingsIcon');
+const followBtnContainer = document.getElementById('followButtonContainer');
+const followBtn = document.getElementById('followBtn');
+
+// *** Corrected UI element references using the new IDs ***
+const postCountElement = document.getElementById('postCount');
+const followerCountElement = document.getElementById('followerCount');
+const followingCountElement = document.getElementById('followingCount');
+
+// Clear the session variable after retrieving it to reset the state for next time
+if (targetUserMobile) {
+    sessionStorage.removeItem("target_user_mobile");
+}
+
+const isViewingSearchedUser = !!targetUserMobile; 
+let profileMobile = targetUserMobile || loggedUserMobile;
+
+// =========================================================================
+// 1. DATA LOADING AND INITIALIZATION
+// =========================================================================
+
+async function loadProfile() {
+    if (!profileMobile || !loggedUserMobile) {
+        window.location.href = "login_page.html";
+        return;
+    }
+
+    const snap = await get(ref(db, "shaktiind/users"));
+    if (!snap.exists()) return;
+
+    const users = snap.val();
+    let userData = null;
+
+    for (let k in users) {
+        // Identify the user whose profile we need to display (target)
+        if (users[k].mobile === profileMobile) {
+            userData = users[k];
+            targetUserId = k; 
+        }
+        
+        // Identify the logged-in user (for editing/following)
+        if (users[k].mobile === loggedUserMobile) {
+            loggedUserId = k; 
+        }
+    }
+
+    if (userData) {
+        // *** NEW: Cache all users for list lookup ***
+        allUsersData = users;
+        
+        // --- Profile Display ---
+        document.getElementById("profilePic").style.backgroundImage = `url(${userData.profilePic})`;
+        document.getElementById("profileName").innerText = userData.username;
+        document.getElementById("profileBio").innerText = userData.bio;
+        document.getElementById("profileDescription").innerText = userData.description || 'No detailed description available.';
+        window.currentDescription = userData.description || ''; 
+
+        // --- Stats Display (FIXED LOGIC) ---
+        const posts = userData.posts ? Object.keys(userData.posts).length : 0;
+        const followers = userData.followers ? Object.keys(userData.followers).length : 0;
+        const following = userData.following ? Object.keys(userData.following).length : 0; 
+        
+        postCountElement.innerText = posts;
+        followerCountElement.innerText = followers;
+        followingCountElement.innerText = following;
+
+        // --- Follow Button Logic ---
+        if (isViewingSearchedUser) {
+            // Viewing another user's profile
+            settingsIcon.style.display = 'none';
+            followBtnContainer.style.display = 'block';
+            followBtn.style.display = 'block';
+
+            // Check if the logged-in user is following the target user
+            const targetFollowers = userData.followers || {};
+            isFollowing = targetFollowers.hasOwnProperty(loggedUserId);
+            
+            updateFollowButtonUI();
+        } else {
+            // Viewing own profile
+            settingsIcon.style.display = 'inline';
+            followBtnContainer.style.display = 'none';
+        }
+        
+        // *** NEW: Attach click events to the stat numbers ***
+        attachStatClickHandlers();
+    }
+}
+
+// =========================================================================
+// 2. FOLLOW/UNFOLLOW CORE LOGIC
+// =========================================================================
+
+function updateFollowButtonUI() {
+    if (isFollowing) {
+        followBtn.innerText = 'Unfollow';
+        followBtn.classList.remove('follow');
+        followBtn.classList.add('unfollow');
+    } else {
+        followBtn.innerText = 'Follow';
+        followBtn.classList.remove('unfollow');
+        followBtn.classList.add('follow');
+    }
+}
+
+window.toggleFollow = async function() {
+    if (!loggedUserId || !targetUserId || loggedUserId === targetUserId) {
+        alert("Action not allowed.");
+        return;
+    }
+
+    followBtn.disabled = true;
+
+    if (isFollowing) {
+        // --- UNFOLLOW LOGIC ---
+        await set(ref(db, `shaktiind/users/${targetUserId}/followers/${loggedUserId}`), null);
+        await set(ref(db, `shaktiind/users/${loggedUserId}/following/${targetUserId}`), null);
+        isFollowing = false;
+        
+    } else {
+        // --- FOLLOW LOGIC ---
+        const timestamp = new Date().toISOString();
+        await set(ref(db, `shaktiind/users/${targetUserId}/followers/${loggedUserId}`), { timestamp: timestamp });
+        await set(ref(db, `shaktiind/users/${loggedUserId}/following/${targetUserId}`), { timestamp: timestamp });
+        isFollowing = true;
+    }
+
+    updateFollowButtonUI();
+    
+    // Reload the profile to get the accurate, updated follower count
+    await loadProfile(); 
+    
+    followBtn.disabled = false;
+}
+
+// =========================================================================
+// 3. FOLLOWERS/FOLLOWING LIST MODAL LOGIC
+// =========================================================================
+
+window.closeListModal = function() {
+    document.getElementById('listModal').style.display = 'none';
+    document.getElementById('userListDisplay').innerHTML = '';
+}
+
+function buildUserListItem(userKey, user) {
+    // HTML snippet for a single user in the list
+    return `
+        <div class="user-list-item" onclick="viewUser('${user.mobile}')">
+            <div class="list-user-pic" style="background-image: url('${user.profilePic}');"></div>
+            <div class="list-username">${user.username}</div>
+        </div>
+    `;
+}
+
+window.showUserList = async function(listType) {
+    const listModalTitle = document.getElementById('listModalTitle');
+    const userListDisplay = document.getElementById('userListDisplay');
+
+    // 1. Get the current user's profile data (targetUserId will be set from loadProfile)
+    const targetUserRef = ref(db, `shaktiind/users/${targetUserId}`);
+    const snap = await get(targetUserRef);
+    
+    if (!snap.exists()) {
+        alert("Could not load user data.");
+        return;
+    }
+    
+    const userData = snap.val();
+    const userKeysObject = userData[listType]; // e.g., userData.followers
+    
+    // Set title immediately
+    listModalTitle.innerText = listType.charAt(0).toUpperCase() + listType.slice(1);
+    
+    if (!userKeysObject) {
+        userListDisplay.innerHTML = `<div style="padding: 20px; text-align: center; color: #999;">No ${listType}.</div>`;
+        document.getElementById('listModal').style.display = 'block';
+        return;
+    }
+
+    const userKeys = Object.keys(userKeysObject);
+    let listHTML = '';
+
+    // 2. Build the list HTML using the cached allUsersData
+    userKeys.forEach(key => {
+        if (allUsersData[key]) {
+            listHTML += buildUserListItem(key, allUsersData[key]);
+        }
+    });
+
+    // 3. Display the modal
+    userListDisplay.innerHTML = listHTML;
+    document.getElementById('listModal').style.display = 'block';
+}
+
+// Function to navigate to another user's profile
+window.viewUser = function(mobile) {
+    sessionStorage.setItem('target_user_mobile', mobile);
+    window.location.href = './profile_page.html';
+}
+
+// --- INTEGRATION: Attach the onclick events to the stats ---
+
+window.attachStatClickHandlers = function() {
+    // Attach click handlers to the parent stat-item divs
+    document.getElementById('followerCount').parentNode.onclick = () => showUserList('followers');
+    document.getElementById('followingCount').parentNode.onclick = () => showUserList('following');
+}
+
+// =========================================================================
+// 4. PROFILE EDITING LOGIC (Maintained from previous steps)
+// =========================================================================
+
+window.saveProfileChanges = async function() {
+    if (!loggedUserId || isViewingSearchedUser) { 
+        alert("Error: Cannot save changes to someone else's profile.");
+        return;
+    }
+
+    const newUsername = document.getElementById("editUsername").value.trim();
+    const newBio = document.getElementById("editBio").value.trim();
+    const newDescription = document.getElementById("editDescription").value.trim();
+    const profilePicToSave = window.newProfileImageBase64; 
+    
+    if (!newUsername || !newBio || !newDescription || !profilePicToSave) {
+        alert("Username, Bio, Description, and Profile Picture cannot be empty.");
+        return;
+    }
+
+    const updates = {
+        username: newUsername,
+        profilePic: profilePicToSave, 
+        bio: newBio,
+        description: newDescription
+    };
+
+    try {
+        await update(ref(db, 'shaktiind/users/' + loggedUserId), updates);
+        
+        alert("Profile updated successfully!");
+        
+        document.getElementById("editModal").classList.remove('open');
+        document.getElementById("editModal").style.display = 'none';
+        
+        loadProfile(); 
+
+    } catch (error) {
+        console.error("Firebase update failed:", error);
+        alert("Failed to save profile changes. Please try again.");
+    }
+};
+
+// Initial load
+loadProfile();
+</script>
+</body>
+</html>

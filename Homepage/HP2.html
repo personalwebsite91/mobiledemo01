@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>SHAKTI-IND — Mobile</title>
+  <style>
+    :root{
+      --bg: hsl(0, 0%, 100%);
+      --saffron:#FF9933;
+      --green:#138808;
+      --card:#fff;
+      --muted:#777;
+      --panel-fog: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+    }
+    html,body{height:100%;margin:0;font-family:'Poppins',sans-serif;background:var(--bg);-webkit-text-size-adjust:none;}
+    .app { min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:12px; box-sizing:border-box; }
+
+    /* ---------- NEW: hide scrollbars globally ---------- */
+    /* Firefox */
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+    /* WebKit */
+    *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+    /* TOP LEFT header (fixed) with logo + username + search */
+    .top-left-header{
+      position:fixed;
+      left:12px;
+      top:0px;
+      z-index:1400;
+      display:flex;
+      align-items:center;
+      background: rgba(255,255,255,0.95);
+      padding:8px 10px;
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.06);
+      pointer-events:auto;
+    }
+    .brand {
+      font-weight:900;
+      font-size:20px;
+      letter-spacing:1px;
+      background:linear-gradient(90deg,var(--saffron) 50%, var(--green) 48%);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      padding:2px 6px;
+      white-space:nowrap;
+    }
+    .small-username{
+      font-size:12px;
+      color:#111;
+      font-weight:700;
+      margin-left:0;
+      padding:2px 6px;
+      background:transparent;
+      box-shadow:none;
+      white-space:nowrap;
+    }
+    .top-search {
+      margin-left:8px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#f6f6f6;
+      padding:6px 8px;
+      border-radius:10px;
+      box-shadow:none;
+    }
+    .top-search input{
+      border:none;
+      outline:none;
+      background:transparent;
+      font-size:13px;
+      width:180px;
+    }
+
+    @media (max-width:480px){
+      .brand{ font-size:14px; }
+      .small-username{ font-size:10px; display:block; }
+      .top-search input{ width:180px; }
+      .top-left-header{ left:0px; top:0px; padding:6px 8px; gap:60px; }
+    }
+
+    /* center feed card */
+    .main-feed-container{ width:100%; max-width:720px; margin:8px 0 84px; box-sizing:border-box; padding-top:66px; }
+    .feed-card{ background:var(--card); border-radius:14px; padding:12px; box-shadow:0 6px 24px rgba(0,0,0,0.06); margin-bottom:18px; overflow:visible; }
+    .feed-row{ display:flex; gap:14px; align-items:flex-start; box-sizing:border-box; }
+    @media (max-width:700px){ .feed-row{ flex-direction:row; width:100%; } }
+
+    .post-box{ width:55%; background:#fafafa; border-radius:12px; padding:10px; box-sizing:border-box; box-shadow:0 3px 10px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:8px; }
+    .comment-box{
+      width:45%;
+      background:var(--card);
+      border-radius:12px;
+      padding:8px;
+      box-sizing:border-box;
+      border:1px solid #f0f0f0;
+      max-height:320px;
+      overflow:auto;           /* scroll inside this div */
+      scrollbar-width:thin;    /* slim scrollbar (hidden globally) */
+    }
+
+    .post-header{ display:flex; gap:8px; align-items:center; }
+    .post-user-pic{ width:36px; height:36px; border-radius:50%; background:linear-gradient(45deg,var(--saffron),var(--green)); flex:0 0 36px; }
+    .post-username{ font-weight:600; font-size:12px; color:#222; margin:0; }
+    .post-time{ font-size:11px; color:var(--muted); margin-top:2px; }
+    .post-img,.post-video{ width:100%; border-radius:10px; display:block; max-height:420px; object-fit:cover; cursor:pointer; }
+
+    .post-actions{ display:flex; gap:8px; align-items:center; justify-content:flex-start; font-size:13px; color:var(--muted); }
+    .action-btn{ background:none; border:none; font-weight:600; cursor:pointer; padding:6px; border-radius:8px }
+    .post-hashtag{ color:var(--green); font-weight:700; font-size:12px; margin-top:6px; }
+
+    /* comment layout */
+    .comment{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      margin-bottom:10px;
+      justify-content:flex-start;
+    }
+    .comment-left{
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      flex:1;
+      min-width:0;
+    }
+    .comment-user-pic{
+      width:18px;
+      height:18px;
+      border-radius:50%;
+      flex:0 0 18px;
+      margin-top:2px;
+    }
+    .comment-body{ min-width:0; flex:1; }
+    .comment-header-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between; /* username left, heart right on same line */
+      gap:4px;
+    }
+    .comment-username{
+      font-weight:600;
+      font-size:12px;
+      color:#222;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      overflow:hidden;
+    }
+    .comment-text{
+      font-size:12px;
+      color:#444;
+      display:block;
+      margin-top:2px;
+      white-space:normal;
+    }
+    .comment-meta{ font-size:10px; color:var(--muted); margin-top:4px; }
+    .heart-small{
+      background:transparent;
+      border:none;
+      font-size:13px;
+      cursor:pointer;
+      padding:0 4px;
+      color:#d33;
+    }
+
+    .delete-comment{ font-size:11px; color:#d22; opacity:0; transition:0.12s }
+    .user-comment:hover .delete-comment{ opacity:1 }
+
+    /* popup overlay full screen */
+    .post-popup{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:2000; background:rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .popup-container{ width:100%; max-width:720px; height:92vh; background:#000; border-radius:14px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+    .popup-media{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .popup-media img, .popup-media video{ max-width:100%; max-height:100%; object-fit:contain; display:block; }
+
+    /* toolbar above comment input (small buttons) */
+    /* <-- MOVED toolbar to left so it sits near/over the comment box --> */
+    .popup-comment-toolbar {
+      position: absolute;
+      left: 12px;
+      bottom: 86px;
+      z-index: 60;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .popup-comment-toolbar button{
+      background: rgba(255,255,255,0.92);
+      border: none;
+      padding:6px 10px;
+      border-radius:10px;
+      font-weight:700;
+      font-size:18px;
+      cursor:pointer;
+      box-shadow:0 4px 10px rgba(0,0,0,0.08);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1;
+    }
+    .popup-comment-toolbar .small-icon { font-size:18px; line-height:1; }
+
+    /* comments overlay (fog, scroll only inside) */
+    .popup-comments-overlay{
+      position:absolute;
+      left:8px;
+      right:8px;
+      top:6px;
+      border-radius:10px;
+      padding:8px;
+      box-sizing:border-box;
+      max-height:56%;
+      overflow:auto;                /* scrollable inside overlay */
+      display:none;
+      scrollbar-width:thin;
+      opacity:0;
+      transform: translateY(-8px) scale(0.995);
+      transition: opacity 260ms ease, transform 260ms ease;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.72));
+      backdrop-filter: blur(6px);
+      z-index: 35;
+      pointer-events: auto;
+    }
+    .popup-comments-overlay.show {
+      display:block;
+      opacity:1;
+      transform: translateY(0) scale(1);
+    }
+
+    .reply-btn{ font-size:12px; color:var(--green); background:none; border:none; cursor:pointer; margin-left:8px; }
+    .reply-input{ display:flex; gap:8px; margin-top:6px; }
+    .reply-input input{ flex:1; padding:6px 8px; border-radius:8px; border:1px solid #e6e6e6; font-size:13px; }
+    .reply-input button{ background:var(--green); color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:600; }
+
+    .popup-hashtag{ color:#fff; font-weight:700; padding:10px 14px; font-size:14px; background:linear-gradient(90deg,#000000 0%, rgba(0,0,0,0.0) 60%); position:absolute; left:12px; bottom:12px; border-radius:6px; }
+
+    .popup-nav{ position:absolute; top:50%; transform:translateY(-50%); font-size:34px; color:#fff; z-index:10; padding:4px; cursor:pointer; user-select:none; }
+    .popup-nav.left{ left:8px } .popup-nav.right{ right:8px }
+    .popup-close{ position:absolute; top:10px; right:14px; font-size:26px; color:#fff; z-index:30; cursor:pointer; }
+
+    /* bottom navbar */
+    .bottom-nav{ position:fixed; left:0; right:0; bottom:0; height:62px; background:var(--card); display:flex; align-items:center; justify-content:center; box-shadow:0 -10px 30px rgba(0,0,0,0.06); z-index:1100; }
+    .nav-inner{ max-width:720px; width:100%; display:flex; justify-content:space-around; align-items:center; padding:6px 12px; box-sizing:border-box; }
+    .nav-item{ font-size:14px; color:#666; text-align:center; flex:1 }
+    .nav-item .icon{ display:block; font-size:18px; margin-bottom:2px }
+    .nav-item.active{ color:var(--green); font-weight:700; }
+
+    @media (max-width:420px){
+      .post-box{ width:58% }
+      .comment-box{ width:40% }
+      .post-username{ font-size:11px }
+      .comment-text{ font-size:11px }
+    }
+
+    .feed-scroll-area{ overflow:auto; scrollbar-width:none }
+    .feed-scroll-area::-webkit-scrollbar{ display:none }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- TOP LEFT: SHAKTI-IND logo + small username + search (fixed) -->
+    <div class="top-left-header" aria-hidden="false">
+      <div style="display:flex;flex-direction:column;">
+        <div class="brand">SHAKTI-IND</div>
+        <div id="topLeftUserSmall" class="small-username" style="margin-top:2px;">Loading...</div>
+      </div>
+      <div class="top-search" role="search" aria-label="Search content, users, IDs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="opacity:0.7"><path d="M21 21l-4.35-4.35" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#999" stroke-width="2"/></svg>
+        <input id="globalSearch" placeholder="Search users, content, ID..." aria-label="Search users or content">
+      </div>
+    </div>
+
+   <!-- PAGE CONTAINER -->
+<div id="pageContainer" style="width:100%;max-width:720px;margin-top:66px;">
+
+    <!-- HOME PAGE (your feed) -->
+    <div id="page-home" class="page">
+        <div class="main-feed-container">
+            <div id="feed" class="feed-scroll-area"></div>
+        </div>
+    </div>
+
+    <!-- SAFETY PAGE -->
+   <!-- ---------- MOBILE-SCALED SAFETY PAGE (drop in place of page-safety) ---------- -->
+<div id="page-safety" class="page" style="display:none;padding:0;">
+  <div class="safety-shell" style="width:100%;box-sizing:border-box;">
+    <style>
+      /* scoped safety styles (prefix .safety-shell to avoid collisions) */
+      .safety-shell :root { --bg:#ffffff; --surface:#ffffff; --muted:#7b7272; --saffron:#FF8A2B; --saffron-soft: rgba(255,138,43,0.08); --green:#138808; --card-radius:14px; --shadow-soft:0 10px 30px rgba(22,22,22,0.06); --shadow-weak:0 6px 18px rgba(22,22,22,0.04); }
+      .safety-shell * { box-sizing: border-box; }
+      .safety-shell { font-family: 'Poppins', sans-serif; color: #0448f5; background: var(--bg); min-height: calc(100vh - 62px); /* leave footer visible */ }
+
+      /* topbar: adapted to mobile (position inside page region) */
+      .safety-shell .topbar {
+        position: sticky;
+        top: 0;
+        left: 0;
+        right: 0;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:10px 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.94));
+        z-index: 40;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+      }
+      .safety-shell .logo { font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,var(--saffron) 50%, var(--green) 50%); -webkit-background-clip:text; color:transparent; -webkit-text-fill-color: transparent; font-size:16px; }
+      .safety-shell #messageTicker { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); }
+
+      /* main area (single column mobile) */
+      .safety-shell .main {
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .safety-shell .panel-left,
+      .safety-shell .panel-right {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid rgba(0,0,0,0.03);
+        box-shadow: var(--shadow-soft);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .safety-shell .panel-left h3 { margin:0; font-size:14px; font-weight:800; }
+      .safety-shell .categories { margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+      .safety-shell .category-item { display:flex; gap:10px; align-items:center; padding:12px; border-radius:10px; background:linear-gradient(180deg,#fff,#fbfbfb); cursor:pointer; border:1px solid rgba(0,0,0,0.03); }
+      .safety-shell .cat-icon { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--saffron-soft); font-size:18px; }
+      .safety-shell .category-text .title { font-weight:700; font-size:14px; }
+      .safety-shell .category-text .sub { font-size:12px; color:var(--muted); margin-top:4px; }
+
+      .safety-shell .live-stats { margin-top:12px; padding:10px; border-radius:12px; background:linear-gradient(180deg,#fff,#fcfcfc); }
+      .safety-shell .stats-row { display:flex; gap:8px; }
+      .safety-shell .stat-card { flex:1; padding:10px; border-radius:10px; background:#fff; text-align:center; border:1px solid rgba(0,0,0,0.03); }
+      .safety-shell .stat-val { font-weight:900; font-size:20px; color:#3903ff; }
+      .safety-shell .activations-list { margin-top:10px; display:flex; flex-direction:column; gap:8px; max-height:180px; overflow:auto; -webkit-overflow-scrolling:touch; }
+      .safety-shell .activation-item { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:8px; border-radius:10px; background:#fff; border:1px solid rgba(0,0,0,0.03); box-shadow:0 6px 18px rgba(0,0,0,0.03); font-size:13px; }
+
+      /* RIGHT panel adapted to mobile stacked under left panel */
+      .safety-shell .panel-right h2 { margin:0; font-size:18px; font-weight:900; color:#111; }
+      .safety-shell .lead { margin-top:6px; color:var(--muted); font-size:13px; }
+
+      .safety-shell .codes-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
+      .safety-shell .safety-code { padding:12px; border-radius:10px; background:linear-gradient(180deg,#fff,#fbfbfb); border:1px solid rgba(0,0,0,0.04); box-shadow:0 8px 24px rgba(12,12,12,0.04); cursor:pointer; }
+      .safety-shell .code-title { display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:900; font-size:13px; }
+      .safety-shell .code-short { color:var(--muted); font-size:13px; margin-top:8px; }
+
+      .safety-shell .code-detail { margin-top:12px; padding:12px; border-radius:10px; background:#fff; border:1px solid rgba(0,0,0,0.03); box-shadow:0 12px 30px rgba(12,12,12,0.04); display:none; max-height:60vh; overflow:auto; -webkit-overflow-scrolling:touch; }
+
+      .safety-shell .video-thumb { flex:1 1 48%; min-width:120px; border-radius:10px; overflow:hidden; border:1px solid rgba(0,0,0,0.04); box-shadow:var(--shadow-weak); background:#000; position:relative; aspect-ratio:16/9; }
+      .safety-shell .video-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+      .safety-shell .vmeta { position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,0.55); color:#fff; padding:6px 8px; border-radius:999px; font-weight:700; font-size:12px; }
+
+      /* spec popup / overlay */
+      .safety-shell .spec-popup { position:fixed; inset:0; display:none; justify-content:center; align-items:center; background:rgba(8,8,8,0.36); z-index:1200; padding:16px; }
+      .safety-shell .spec-card { width:100%; max-width:760px; background:var(--surface); border-radius:12px; padding:16px; box-shadow:0 30px 70px rgba(10,10,10,0.14); }
+
+      /* video overlay */
+      .safety-shell #videoOverlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(8,8,8,0.75); z-index:1400; padding:18px; }
+      .safety-shell #videoOverlay .player-card { width:100%; max-width:1100px; }
+      .safety-shell #videoOverlay iframe { width:100%; height:44vh; border:none; border-radius:10px; }
+
+      /* settings + logout simplified */
+      .safety-shell .settings-popup { position:fixed; inset:0; display:none; justify-content:center; align-items:center; background:rgba(0,0,0,0.55); z-index:1600; }
+      .safety-shell .settings-container { width:92%; max-width:480px; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.12); }
+
+      /* hide scrollbars visually but keep scroll functionality */
+      .safety-shell .panel-left::-webkit-scrollbar,
+      .safety-shell .panel-right::-webkit-scrollbar,
+      .safety-shell .activations-list::-webkit-scrollbar,
+      .safety-shell .code-detail::-webkit-scrollbar { display: none; width:0; height:0; }
+      .safety-shell .panel-left, .safety-shell .panel-right, .safety-shell .activations-list, .safety-shell .code-detail { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* responsive grid adjustments */
+      @media (max-width:420px) {
+        .safety-shell .codes-grid { grid-template-columns: 1fr; }
+        .safety-shell .video-thumb { min-width: 100%; }
+      }
+    </style>
+
+    <!-- markup adapted for mobile and scoped -->
+    <div class="topbar" aria-hidden="false">
+      <div class="logo">SHAKTI-IND</div>
+      <div id="messageTicker" style="display:flex;align-items:center;gap:8px">
+        <div style="font-weight:700;color:#ff0000">Live</div>
+        <div id="safety_tickerText" style="font-size:13px;color:var(--muted)">No messages yet</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="compact-user-info" style="pointer-events:auto; padding:6px 8px; gap:8px;">
+          <img id="safety_compactProfilePic" class="info-profile-photo" src="" alt="profile" style="width:36px;height:36px;border-width:2px;">
+          <div class="info-details" style="line-height:1;">
+            <div id="safety_compactProfileName" style="font-weight:700;font-size:13px">Loading...</div>
+            <div id="safety_compactProfileBio" style="font-size:11px;color:var(--muted)">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="main" role="main">
+      <!-- left (categories + live) -->
+      <aside class="panel-left" aria-label="Safety categories">
+        <h3>Safety Categories</h3>
+
+        <div class="categories" role="list">
+          <div class="category-item" role="button" tabindex="0" data-type="wm" aria-pressed="true">
+            <div class="cat-icon">👩‍🦰👨</div>
+            <div class="category-text">
+              <div class="title">Women & Men Safety</div>
+              <div class="sub">Personal, workplace & travel safety</div>
+            </div>
+          </div>
+
+          <div class="category-item" role="button" tabindex="0" data-type="an" aria-pressed="false">
+            <div class="cat-icon" style="background: rgba(50,200,120,0.07)">🐾🌱</div>
+            <div class="category-text">
+              <div class="title">Animals & Nature</div>
+              <div class="sub">Animal welfare & environmental alerts</div>
+            </div>
+          </div>
+
+          <div class="category-item" role="button" tabindex="0" data-type="he" aria-pressed="false">
+            <div class="cat-icon" style="background: rgba(255,90,100,0.06)">❤️‍🩹🚨</div>
+            <div class="category-text">
+              <div class="title">Humanity & Emergency</div>
+              <div class="sub">Medical, disaster & rescue</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="live-stats" aria-live="polite" style="margin-top:12px">
+          <h4 style="margin:0 0 10px 0;font-size:14px;font-weight:800;color:#222">Live activity</h4>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-val" id="safety_stat-activations">—</div>
+              <div class="stat-label" style="font-size:12px;color:var(--muted)">Activations (today)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="safety_stat-saved">—</div>
+              <div class="stat-label" style="font-size:12px;color:var(--muted)">People saved</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-val" id="safety_stat-evidence">—</div>
+              <div class="stat-label" style="font-size:12px;color:var(--muted)">Evidence helpful</div>
+            </div>
+          </div>
+
+          <div class="activations-header" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div style="font-weight:700;color:#333;font-size:13px">Recent activations</div>
+            <div style="font-size:12px;color:var(--muted)">Live</div>
+          </div>
+
+          <ul id="safety_activationsList" class="activations-list" aria-live="polite"></ul>
+        </div>
+      </aside>
+
+      <!-- right (codes + videos + detail) -->
+      <section class="panel-right" id="safetyPanel">
+        <div class="panel-right-header">
+          <h2 id="safety_panelHeading">Women & Men Safety</h2>
+          <p class="lead" id="safety_panelLead"></p>
+          <div class="pills" id="safety_pillsRow" aria-hidden="true"></div>
+        </div>
+
+        <div id="safety_codesGrid" class="codes-grid" aria-live="polite"></div>
+
+        <div id="safety_videoGallery" aria-hidden="false" aria-live="polite" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;"></div>
+
+        <div id="safety_codeDetail" class="code-detail" role="region" aria-live="polite" aria-hidden="true"></div>
+      </section>
+    </main>
+
+    <!-- spec popup -->
+    <div class="spec-popup" id="safety_specPopup" aria-hidden="true">
+      <div class="spec-card" role="dialog" aria-modal="true">
+        <div id="safety_specContent"></div>
+      </div>
+    </div>
+
+    <!-- video overlay -->
+    <div id="safety_videoOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="player-card" id="safety_playerCard">
+        <button class="close-x" id="safety_videoOverlayClose" aria-label="Close video">✖</button>
+        <iframe id="safety_overlayIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- settings popup -->
+    <div id="safety_settingsPopup" class="settings-popup">
+      <div class="settings-container">
+        <div class="settings-content" style="padding:12px;">
+          <div class="settings-header" role="toolbar" aria-label="Settings header" style="padding:10px 12px; position:relative;">
+            <button id="safety_backButton" class="back-btn" style="left:8px; top:50%; transform:translateY(-50%); position:absolute; opacity:0; pointer-events:none;">‹</button>
+            <div id="safety_settingsTitle" class="settings-title" style="text-align:center; font-weight:800; font-size:16px;">Settings</div>
+            <button class="close-settings-btn" onclick="document.getElementById('safety_settingsPopup').style.display='none'" aria-label="Close settings" style="position:absolute; right:8px; top:50%; transform:translateY(-50%);">✕</button>
+          </div>
+
+          <div id="safety_settingsContainer" class="settings-container-inner" style="display:flex; width:200%;">
+            <div id="safety_mainMenu" class="settings-screen" style="width:50%; padding:8px;">
+              <div id="safety_mainSettingsList" class="settings-list" style="max-height:60vh; overflow:auto;">
+                <div class="settings-item has-submenu" onclick="safety_showSubCategory('safety rules')">Safety Rules <span style="float:right">▶</span></div>
+                <div class="settings-item has-submenu" onclick="safety_showSubCategory('General Settings')">General Settings <span style="float:right">▶</span></div>
+                <div class="settings-item has-submenu" onclick="safety_showSubCategory('Privacy')">Privacy <span style="float:right">▶</span></div>
+                <div class="settings-item">Security</div>
+                <div class="settings-item">Parenting</div>
+                <div class="settings-item">Dashboard</div>
+                <div class="settings-item">User Data Visualization</div>
+                <div class="settings-item">HSS (Human Safety Score)</div>
+                <div class="settings-item">Contact</div>
+                <div class="settings-item">Activity</div>
+                <div class="settings-item">Profile Protection</div>
+                <div class="settings-item logout" onclick="document.getElementById('safety_logoutConfirm').style.display='flex'">SHAKTI-IND Logout</div>
+              </div>
+            </div>
+
+            <div id="safety_detailsScreen" class="settings-screen" style="width:50%; padding:8px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- logout confirm -->
+    <div id="safety_logoutConfirm" class="logout-popup" style="display:none;">
+      <div class="logout-card">
+        <h3 class="logout-title">Logout Confirmation</h3>
+        <p class="logout-message">Are you sure you want to logout from <strong>SHAKTI-IND</strong>?</p>
+        <div class="logout-actions">
+          <button class="btn-secondary" onclick="document.getElementById('safety_logoutConfirm').style.display='none'">Cancel</button>
+          <button class="btn-danger" onclick="window.location.href='../login_page.html'">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- scoped script: all DOM lookups are done inside the safety-root to avoid global collisions -->
+    <script>
+      (function(){
+        const root = document.getElementById('page-safety');
+        if(!root) return;
+
+        // scoped element getters
+        const el = sel => root.querySelector(sel);
+
+        // profile placeholders (attempt to read same localStorage key used elsewhere)
+        const mobile = localStorage.getItem("logged_user_mobile");
+        const profilePic = localStorage.getItem("safety_profilePic") || "";
+        el('#safety_compactProfilePic').src = profilePic;
+        el('#safety_compactProfileName').innerText = localStorage.getItem("safety_username") || 'Guest User';
+        el('#safety_compactProfileBio').innerText = localStorage.getItem("safety_bio") || 'Not logged in';
+
+        // safety codes (copied from your original object but scoped here)
+        const safetyCodes = {
+          wm: [
+            { code: "WMS-101", title: "WorkSpace Safety Code", short: "AI-assisted reporting, guided evidence collection and legal help.", long: "Purpose: Help victims report workplace harassment safely.\n\nFeatures:\n- Guided evidence collection (photos, timestamps, chat logs)\n- Anonymous reporting option\n- Step-by-step legal guidance and local help centers\n- Option to send location & summary to trusted contacts\n\nUsage:\n1. Tap this code to open the detailed panel.\n2. Follow the guided evidence collection steps.\n3. Choose Anonymous or Named reporting.\n4. Submit and contact a legal or support partner if needed.", tags: ["Workplace","Reporting","Legal"] },
+            { code: "WMS-0101", title: "Shakti-Code", short: "Send live location and audio to trusted contacts & authorities.", long: "Purpose: Provide an immediate distress signal with minimal user interaction.\n\nFeatures:\n- One-tap SOS sends live location and short audio recording\n- Auto-call to pre-configured emergency numbers\n- Repeated alerts if not acknowledged\n\nUsage:\n1. Press 'Activate' in the detail panel to send an SOS.\n2. The app will share your live location and a short audio clip.\n3. Trusted contacts receive the alert and can call for help.\n4. Authorities are notified where available.", tags:["SOS","Location","Immediate"] },
+            { code: "WMS-RAG", title: "Anti Ragging & Anti Harrasment", short: "To eradicate harassment and ragging from roots.", long: "To keep the college students to be in limits ...", tags:["AHAR","Safe Education","No to ragging"] },
+            { code: "WMS-150", title: "Travel Safety Protocol", short: "Route monitoring, unsafe-area alerts and companion-tracking.", long: "Purpose: Keep travelers safe on-the-go.\n\nFeatures:\n- Route-sharing with live ETA\n- Unsafe area alerts based on crowd-sourced reports\n- Auto-check-in prompts and fallback actions\n\nUsage:\n1. Enable route sharing with trusted contacts.\n2. If you deviate from route or enter an unsafe area, the app alerts contacts.\n3. Use 'Auto check-in' to confirm safety; failure triggers fallback actions.", tags:["Travel","Monitoring","Alerts"] }
+          ],
+          an: [
+            { code: "ANS-201", title: "Street Animal Protection", short: "Report injured or sick street animals, request animal rescue.", long: "Purpose: Provide a quick way to help street animals.", tags:["Animal","Rescue","NGO"] },
+            { code: "ANS-240", title: "Forest Fire Alert", short: "Community-reported fire alerts combined with official data.", long: "Purpose: Early detection & community alerts for forest fires.", tags:["Environment","Fire","Alert"] },
+            { code: "ANS-260", title: "Waterbody Pollution Report", short: "Report pollution events with photos and location metadata.", long: "Purpose: Rapid reporting for water pollution.", tags:["Pollution","Environment","Report"] }
+          ],
+          he: [
+            { code: "HES-301", title: "Medical Emergency Response", short: "Quick-request for nearest ambulance & first-aid steps.", long: "Purpose: Reduce response time for medical emergencies.", tags:["Medical","Ambulance","First-aid"] },
+            { code: "HES-320", title: "Disaster Management", short: "Report infrastructure damage, request rescue and shelter info.", long: "Purpose: Coordinate community response during disasters.", tags:["Disaster","Shelter","Coordination"] },
+            { code: "HES-350", title: "Lost-Person Reporting", short: "Register lost-person data and broadcast on local networks.", long: "Purpose: Assist in locating missing persons rapidly.", tags:["Missing","Search","Broadcast"] }
+          ]
+        };
+
+        // DOM refs inside this safety fragment
+        const codesGridEl = el('#safety_codesGrid');
+        const detailEl = el('#safety_codeDetail');
+        const headingEl = el('#safety_panelHeading');
+        const leadEl = el('#safety_panelLead');
+        const pillsRow = el('#safety_pillsRow');
+        const videoGalleryEl = el('#safety_videoGallery');
+        const videoOverlay = el('#safety_videoOverlay');
+        const overlayIframe = el('#safety_overlayIframe');
+        const videoOverlayClose = el('#safety_videoOverlayClose');
+
+        // video demo list (kept same IDs)
+        const demoVideos = [
+          { id: '-V4vEyhWDZ0', title: 'Self Defence For Women' },
+          { id: 'qUz93CyNIz0', title: 'Men Stress And Management' },
+          { id: 'd6ce6sGnwxg', title: 'Democratic Nation' },
+          { id: '9Kj4T05UdMA', title: 'Sexual Health & Consequenses' },
+          { id: 'Y0F1cICm9IM', title: 'Mens Mental Health' },
+          { id: 'ysRvYxznrq4', title: 'WOmen Myth About Period' }
+        ];
+
+        const ROTATE_INTERVAL_MS = 30 * 1000;
+        let rotateTimer = null;
+        let isOverlayPlaying = false;
+        window.__shaktiDetailVisible = false;
+
+        // helper: pick n distinct random items
+        function pickNRandom(arr, n) {
+          const copy = arr.slice();
+          const out = [];
+          n = Math.min(n, copy.length);
+          for (let i = 0; i < n; i++) {
+            const idx = Math.floor(Math.random() * copy.length);
+            out.push(copy.splice(idx, 1)[0]);
+          }
+          return out;
+        }
+
+        function renderVideosList(list) {
+          if (!videoGalleryEl) return;
+          videoGalleryEl.innerHTML = '';
+          if (!list || list.length === 0) {
+            const p = document.createElement('div');
+            p.style.color = 'var(--muted)';
+            p.style.fontWeight = '700';
+            p.style.padding = '12px';
+            p.textContent = 'No videos configured.';
+            videoGalleryEl.appendChild(p);
+            videoGalleryEl.style.display = 'flex';
+            videoGalleryEl.setAttribute('aria-hidden','false');
+            return;
+          }
+
+          list.forEach(v => {
+            const thumb = document.createElement('div');
+            thumb.className = 'video-thumb';
+            thumb.tabIndex = 0;
+            thumb.setAttribute('role','button');
+
+            const img = document.createElement('img');
+            img.src = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
+            img.alt = v.title || v.id;
+            img.loading = 'lazy';
+
+            const meta = document.createElement('div');
+            meta.className = 'vmeta';
+            meta.textContent = v.title || 'Play video';
+
+            thumb.appendChild(img);
+            thumb.appendChild(meta);
+
+            thumb.addEventListener('click', () => openOverlayVideo(v.id));
+            thumb.addEventListener('keypress', (e) => { if (e.key === 'Enter' || e.key === ' ') openOverlayVideo(v.id); });
+
+            videoGalleryEl.appendChild(thumb);
+          });
+
+          videoGalleryEl.style.display = 'flex';
+          videoGalleryEl.setAttribute('aria-hidden','false');
+        }
+
+        function renderVideos() {
+          const uniqueVideos = Array.from(new Set(demoVideos.map(d => JSON.stringify(d)))).map(x => JSON.parse(x));
+          const pair = pickNRandom(uniqueVideos, Math.min(2, uniqueVideos.length));
+          renderVideosList(pair);
+        }
+
+        function rotateOnce() {
+          if (isOverlayPlaying) return;
+          if (window.__shaktiDetailVisible) return;
+          const uniqueVideos = Array.from(new Set(demoVideos.map(d => JSON.stringify(d)))).map(x => JSON.parse(x));
+          const pair = pickNRandom(uniqueVideos, Math.min(2, uniqueVideos.length));
+          renderVideosList(pair);
+        }
+
+        function startRotation() {
+          stopRotation();
+          rotateOnce();
+          rotateTimer = setInterval(rotateOnce, ROTATE_INTERVAL_MS);
+        }
+
+        function stopRotation() {
+          if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; }
+        }
+
+        function openOverlayVideo(ytId) {
+          overlayIframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`;
+          videoOverlay.style.display = 'flex';
+          videoOverlay.setAttribute('aria-hidden','false');
+          isOverlayPlaying = true;
+          stopRotation();
+          setTimeout(() => videoOverlayClose?.focus(), 60);
+        }
+        function closeOverlayVideo() {
+          videoOverlay.style.display = 'none';
+          videoOverlay.setAttribute('aria-hidden','true');
+          overlayIframe.src = '';
+          isOverlayPlaying = false;
+          if (!window.__shaktiDetailVisible) startRotation();
+        }
+
+        // overlay close handlers (scoped)
+        try {
+          const newClose = videoOverlayClose.cloneNode(true);
+          videoOverlayClose.parentNode.replaceChild(newClose, videoOverlayClose);
+          newClose.addEventListener('click', closeOverlayVideo);
+        } catch (e) {
+          videoOverlayClose.addEventListener('click', closeOverlayVideo);
+        }
+        videoOverlay.addEventListener('click', function(e){
+          if (e.target === videoOverlay) closeOverlayVideo();
+        });
+        document.addEventListener('keydown', function(e){
+          if (e.key === 'Escape') {
+            if (videoOverlay.style.display === 'flex') closeOverlayVideo();
+          }
+        });
+
+        // observe detailEl to pause/resume rotation
+        if (detailEl) {
+          const detObserver = new MutationObserver(() => {
+            const visible = detailEl.style.display !== 'none' && detailEl.getAttribute('aria-hidden') !== 'true';
+            window.__shaktiDetailVisible = visible;
+            if (visible) stopRotation(); else if (!isOverlayPlaying) startRotation();
+          });
+          detObserver.observe(detailEl, { attributes: true, attributeFilter: ['style','aria-hidden'] });
+        }
+
+        startRotation();
+
+        // UI functions: renderCategory, showDetail, hideDetailShowVideos, openPopup, closeSpec
+        const codeToPage = {}; // keep empty for now; navigation handled elsewhere if needed
+
+        function renderCategory(type) {
+          const title = (type === 'wm') ? "Women & Men Safety" : (type === 'an') ? "Animals & Nature" : "Humanity & Emergency";
+          headingEl.textContent = title;
+          leadEl.textContent = "Available safety codes — tap a code to see full specification and recommended actions.";
+          pillsRow.style.display = 'flex';
+
+          codesGridEl.innerHTML = '';
+          const arr = safetyCodes[type] || [];
+          arr.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'safety-code';
+            card.tabIndex = 0;
+
+            const top = document.createElement('div');
+            top.className = 'code-title';
+            const leftTitle = document.createElement('div');
+            leftTitle.textContent = `${item.code} — ${item.title}`;
+            leftTitle.style.fontWeight = '900';
+            leftTitle.style.fontSize = '0.95rem';
+            const quickBtn = document.createElement('button');
+            quickBtn.className = 'quick-activate';
+            quickBtn.type = 'button';
+            quickBtn.textContent = 'Activate';
+            quickBtn.title = `Quick activate ${item.code}`;
+            quickBtn.style.color = "Red";
+
+            top.appendChild(leftTitle);
+            top.appendChild(quickBtn);
+
+            const short = document.createElement('div');
+            short.className = 'code-short';
+            short.textContent = item.short;
+
+            card.appendChild(top);
+            card.appendChild(short);
+
+            card.addEventListener('click', (evt) => {
+              if (evt.target.closest('.quick-activate')) return;
+              showDetail(item);
+            });
+
+            card.addEventListener('keypress', e => { if (e.key === 'Enter' || e.key === ' ') showDetail(item); });
+
+            quickBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const target = codeToPage[item.code];
+              if (target) { window.location.href = target; return; }
+              const codeParam = encodeURIComponent(item.code);
+              window.location.href = `shakti_code.html?code=${codeParam}`;
+            });
+
+            codesGridEl.appendChild(card);
+          });
+
+          hideDetailShowVideos();
+        }
+
+        function showDetail(item) {
+          videoGalleryEl.style.display = 'none';
+          videoGalleryEl.setAttribute('aria-hidden','true');
+
+          detailEl.style.display = 'block';
+          detailEl.setAttribute('aria-hidden','false');
+          detailEl.innerHTML = '';
+
+          const top = document.createElement('div'); top.className = 'detail-top';
+          const left = document.createElement('div'); left.className = 'detail-left';
+          const codeBox = document.createElement('div'); codeBox.className = 'detail-code'; codeBox.textContent = item.code;
+          const titleBox = document.createElement('div'); titleBox.className = 'detail-title'; titleBox.textContent = item.title;
+          left.appendChild(codeBox); left.appendChild(titleBox);
+
+          const right = document.createElement('div'); right.style.display = 'flex'; right.style.gap = '8px'; right.style.alignItems = 'center';
+
+          const tagsWrap = document.createElement('div');
+          (item.tags || []).forEach(t => {
+            const tEl = document.createElement('span');
+            tEl.style.padding = '6px 10px';
+            tEl.style.borderRadius = '999px';
+            tEl.style.background = '#f7f7f7';
+            tEl.style.fontWeight = '700';
+            tEl.style.marginRight = '8px';
+            tEl.style.fontSize = '0.85rem';
+            tEl.textContent = t;
+            tagsWrap.appendChild(tEl);
+          });
+
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'btn ghost';
+          closeBtn.textContent = 'Close';
+          closeBtn.onclick = () => { hideDetailShowVideos(); };
+
+          right.appendChild(tagsWrap);
+          right.appendChild(closeBtn);
+
+          top.appendChild(left); top.appendChild(right);
+
+          const desc = document.createElement('div'); desc.className = 'detail-desc'; desc.textContent = item.long;
+
+          const actions = document.createElement('div'); actions.className = 'detail-actions';
+          const actBtn = document.createElement('button'); actBtn.className = 'btn primary'; actBtn.textContent = 'Activate';
+          const moreBtn = document.createElement('button'); moreBtn.className = 'btn ghost'; moreBtn.textContent = 'More Info';
+          moreBtn.onclick = () => safety_openPopup(item);
+          const shareBtn = document.createElement('button'); shareBtn.className = 'btn ghost'; shareBtn.textContent = 'Share';
+          shareBtn.onclick = () => {
+            const shareText = `${item.code} — ${item.title}\n\n${item.short}`;
+            if (navigator.share) navigator.share({ title: item.title, text: shareText }).catch(() => { });
+            else navigator.clipboard?.writeText(shareText).then(() => alert('Copied to clipboard')).catch(()=>{/* ignore */});
+          };
+
+          actBtn.onclick = () => {
+            const target = codeToPage[item.code];
+            if (target) { window.location.href = target; return; }
+            const codeParam = encodeURIComponent(item.code);
+            window.location.href = `shakti_code.html?code=${codeParam}`;
+          };
+
+          actions.appendChild(actBtn); actions.appendChild(moreBtn); actions.appendChild(shareBtn);
+
+          detailEl.appendChild(top);
+          detailEl.appendChild(desc);
+          detailEl.appendChild(actions);
+
+          let usage = '';
+          if (item.long && item.long.indexOf('Usage:') !== -1) usage = item.long.split('Usage:')[1].trim();
+          else usage = "Follow the recommended steps above. Use 'Activate' to open the full code map and take action.";
+
+          const usageBox = document.createElement('div');
+          usageBox.style.marginTop = '12px';
+          usageBox.style.padding = '12px';
+          usageBox.style.background = '#fff';
+          usageBox.style.border = '1px solid rgba(0,0,0,0.03)';
+          usageBox.style.borderRadius = '10px';
+          usageBox.style.color = '#333';
+          usageBox.style.whiteSpace = 'pre-line';
+          usageBox.textContent = 'Usage:\n' + usage;
+          detailEl.appendChild(usageBox);
+
+          detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function hideDetailShowVideos() {
+          detailEl.style.display = 'none';
+          detailEl.setAttribute('aria-hidden','true');
+          detailEl.innerHTML = '';
+          renderVideos();
+        }
+
+        function safety_openPopup(item) {
+          const popup = el('#safety_specPopup');
+          const content = el('#safety_specContent');
+          content.innerHTML = '';
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'relative';
+          wrapper.style.padding = '6px 6px 12px 6px';
+
+          const closeBtn = document.createElement('button');
+          closeBtn.id = 'safety_popupCloseBtn';
+          closeBtn.setAttribute('aria-label','Close popup');
+          closeBtn.style.position = 'absolute';
+          closeBtn.style.right = '12px';
+          closeBtn.style.top = '8px';
+          closeBtn.style.border = 'none';
+          closeBtn.style.background = 'transparent';
+          closeBtn.style.fontSize = '20px';
+          closeBtn.style.cursor = 'pointer';
+          closeBtn.textContent = '✖';
+          closeBtn.addEventListener('click', safety_closeSpec);
+
+          const codeEl = document.createElement('div');
+          codeEl.style.fontWeight = '900';
+          codeEl.style.fontSize = '1.02rem';
+          codeEl.style.color = '#0b5394';
+          codeEl.textContent = item.code;
+
+          const titleEl = document.createElement('div');
+          titleEl.style.fontWeight = '800';
+          titleEl.style.fontSize = '1.22rem';
+          titleEl.style.marginTop = '6px';
+          titleEl.style.color = '#0b5394';
+          titleEl.textContent = item.title;
+
+          const longEl = document.createElement('div');
+          longEl.style.marginTop = '10px';
+          longEl.style.color = '#444';
+          longEl.style.whiteSpace = 'pre-line';
+          longEl.textContent = item.long;
+
+          wrapper.appendChild(closeBtn);
+          wrapper.appendChild(codeEl);
+          wrapper.appendChild(titleEl);
+          wrapper.appendChild(longEl);
+          content.appendChild(wrapper);
+
+          popup.style.display = 'flex';
+          popup.setAttribute('aria-hidden','false');
+          requestAnimationFrame(()=> closeBtn.focus?.());
+        }
+
+        function safety_closeSpec() {
+          const popup = el('#safety_specPopup'); if (!popup) return;
+          popup.style.display = 'none'; popup.setAttribute('aria-hidden','true');
+          const content = el('#safety_specContent'); if (content) content.innerHTML = '';
+        }
+
+        // attach category handlers (scoped)
+        root.querySelectorAll('.category-item').forEach(elm => {
+          elm.addEventListener('click', () => {
+            const t = elm.getAttribute('data-type');
+            renderCategory(t);
+            root.querySelectorAll('.category-item').forEach(c => c.setAttribute('aria-pressed', c === elm ? 'true' : 'false'));
+          });
+          elm.addEventListener('keypress', e => { if (e.key === 'Enter' || e.key === ' ') elm.click(); });
+        });
+
+        // initial render
+        renderCategory('wm');
+
+        // ESC key handling scoped (close popups)
+        document.addEventListener('keydown', e => {
+          if (e.key === 'Escape') {
+            safety_closeSpec();
+            if (detailEl) { detailEl.style.display = 'none'; detailEl.innerHTML = ''; detailEl.setAttribute('aria-hidden','true'); }
+            closeOverlayVideo();
+            hideDetailShowVideos();
+          }
+        });
+
+        /* ---------- Demo live ticker + stats (scoped) ---------- */
+        (function startDemoFeed() {
+          const tickerText = el('#safety_tickerText');
+          const statActivations = el('#safety_stat-activations');
+          const statSaved = el('#safety_stat-saved');
+          const statEvidence = el('#safety_stat-evidence');
+          const activationsList = el('#safety_activationsList');
+
+          const demoMessages = [
+            "Shakti helped me — a stranger intervened and I reached home safely.",
+            "SOS triggered — community arrived in under 7 minutes.",
+            "A silent SOS saved me when I couldn’t speak.",
+            "Shakti heard what I could not say.",
+            "One alert today prevented a major incident."
+          ];
+
+          const demoStats = { activations: 28, savedCount: 11, evidenceHelpfulPct: 86 };
+          const demoActivations = [
+            { code: 'WMS-101', actor: 'user+91•••1234', time: Date.now() - 60_000, location: 'Mevalur' },
+            { code: 'WMS-0101', actor: 'user+91•••9876', time: Date.now() - 120_000, location: 'NH48' },
+            { code: 'WMS-150', actor: 'Anon', time: Date.now() - 240_000, location: 'Thandalam' }
+          ];
+
+          function renderStats() {
+            if (statActivations) statActivations.textContent = demoStats.activations;
+            if (statSaved) statSaved.textContent = demoStats.savedCount;
+            if (statEvidence) statEvidence.textContent = demoStats.evidenceHelpfulPct + '%';
+          }
+          function renderActivations(arr) {
+            if (!activationsList) return;
+            activationsList.innerHTML = '';
+            arr.slice(0,8).forEach(a => {
+              const when = a.time ? new Date(a.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+              const li = document.createElement('li');
+              li.className = 'activation-item';
+              li.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style="font-weight:800;color:#15a90d">${a.code}</div><div style="color:var(--muted);font-size:12px">${a.actor} • ${a.location || ''}</div></div><div style="font-size:12px;color:var(--muted)">${when}</div>`;
+              activationsList.appendChild(li);
+            });
+          }
+
+          let tickerIndex = 0, tickerIntervalId = null;
+          function startTicker(pool) {
+            if (!tickerText) return;
+            if (tickerIntervalId) clearInterval(tickerIntervalId);
+            tickerText.textContent = pool[0] || 'No messages yet';
+            tickerIndex = 0;
+            tickerIntervalId = setInterval(() => {
+              tickerIndex = (tickerIndex + 1) % pool.length;
+              tickerText.textContent = pool[tickerIndex];
+            }, 4200);
+          }
+
+          renderStats();
+          renderActivations(demoActivations.reverse());
+          startTicker(demoMessages);
+
+          setInterval(() => {
+            demoStats.activations += Math.random() > 0.7 ? 1 : 0;
+            demoStats.savedCount += Math.random() > 0.9 ? 1 : 0;
+            demoStats.evidenceHelpfulPct = Math.min(99, demoStats.evidenceHelpfulPct + (Math.random() > 0.92 ? 1 : 0));
+            renderStats();
+          }, 8000);
+
+          // expose for debugging if needed
+          root.__SH_LIVE_DEMO = { demoMessages, demoStats, demoActivations, startTicker, renderStats, renderActivations };
+        })();
+
+        /* ---------- Settings menu logic (scoped) ---------- */
+        const settingsContainer = el('#safety_settingsContainer');
+        const settingsTitle = el('#safety_settingsTitle');
+        const detailsScreen = el('#safety_detailsScreen');
+        const settingsHeader = root.querySelector('.settings-header');
+
+        const settingsData = {
+          'safety rules': ['False activaton Control','Safety Choice','Trusted contacts','Join Our Security Program'],
+          'General Settings': ['Profile Showcase','Account Deactivation','Date of Joining'],
+          'Privacy': ['Account Privacy','Blocked','In-appropriate User','Close User']
+        };
+
+        window.safety_showSubCategory = function(category) {
+          let html = '<div class="settings-list">';
+          (settingsData[category]||[]).forEach(item => { html += `<div class="settings-item">${item}</div>`; });
+          html += '</div>';
+          detailsScreen.innerHTML = html;
+          settingsContainer.classList.add('details-active');
+          settingsHeader.classList.add('details-active');
+          settingsTitle.innerText = category;
+          // show the settings popup
+          el('#safety_settingsPopup').style.display = 'flex';
+        };
+
+        window.goBack = function() {
+          // allow back only for safety settings; revert to main menu
+          if(settingsContainer) settingsContainer.classList.remove('details-active');
+          if(settingsHeader) settingsHeader.classList.remove('details-active');
+          settingsTitle.innerText = "Settings";
+          setTimeout(() => (detailsScreen.innerHTML = ""), 300);
+        };
+
+        // open settings from outside (global nav uses openSettings(); keep compatibility)
+        window.openSettings = function() { el('#safety_settingsPopup').style.display = 'flex'; };
+        window.closeSettings = function() { el('#safety_settingsPopup').style.display = 'none'; };
+
+        // close spec popup on outside click
+        (function attachSpecOverlay(){
+          const popup = el('#safety_specPopup');
+          if (!popup) return;
+          popup.addEventListener('click', function(evt){
+            if (evt.target === popup) safety_closeSpec();
+          });
+          const content = el('#safety_specContent');
+          if (content) content.addEventListener('click', function(evt){ evt.stopPropagation(); });
+        })();
+
+        // expose functions to global for nav if needed
+        root.renderCategory = renderCategory;
+        root.showDetail = showDetail;
+        root.hideDetailShowVideos = hideDetailShowVideos;
+
+      })();
+    </script>
+  </div>
+</div>
+<!-- ---------- END: MOBILE-SCALED SAFETY PAGE ---------- -->
+
+
+    <!-- CREATE PAGE (for + button) -->
+    <div id="page-create" class="page" style="display:none;padding:20px;">
+        <h2>Create New Post</h2>
+        <p>Upload images / videos / write something...</p>
+    </div>
+
+    <!-- COMMUNITY PAGE -->
+    <div id="page-community" class="page" style="display:none;padding:20px;">
+        <h2>Communities</h2>
+        <p>All groups appear here...</p>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="page" style="display:none;padding:20px;">
+        <h2>Your Profile</h2>
+        <p>Name, bio, settings...</p>
+    </div>
+
+</div>
+
+
+    <!-- popup -->
+    <div id="postPopup" class="post-popup" role="dialog" aria-hidden="true">
+      <div class="popup-container">
+        <div class="popup-media" id="popupMediaArea">
+          <!-- toolbar placed just above comment input (now left side, over comment area) -->
+          <div class="popup-comment-toolbar" id="popupCommentToolbar" style="display:none;">
+            <button id="popupHeartBtn" title="Like" aria-label="Like">♡</button>
+            <button id="popupShareBtn" title="Share" aria-label="Share">📤</button>
+            <button id="popupPlusBtn" title="More" aria-label="More">＋</button>
+          </div>
+
+          <!-- comments overlay (fog from top). Hidden by default. -->
+          <div id="popupCommentsOverlay" class="popup-comments-overlay" aria-hidden="true"></div>
+
+          <img id="popupImage" style="display:none">
+          <video id="popupVideo" style="display:none" playsinline controls></video>
+
+          <div class="popup-nav left" id="popupPrev">❮</div>
+          <div class="popup-nav right" id="popupNext">❯</div>
+
+          <div class="popup-close" id="popupClose">✕</div>
+          <div class="popup-hashtag" id="popupHashtag">#tag</div>
+        </div>
+
+        <!-- bottom area inside popup: comment input -->
+        <div id="popupCommentInputArea" style="padding:10px;border-top:1px solid rgba(255,255,255,0.06);background:linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.1));">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="flex:0 0 36px; height:36px; border-radius:50%; background:linear-gradient(45deg,var(--saffron),var(--green))"></div>
+            <input id="popupNewCommentInput" type="text" placeholder="Add a comment..." style="flex:1;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;">
+            <button id="popupNewCommentBtn" style="background:var(--green);border:none;color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer">Post</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom nav -->
+    <div class="bottom-nav" aria-hidden="false">
+      <div class="nav-inner">
+        <div class="nav-item active" id="navHome"><span class="icon">🏠</span>Home</div>
+        <div class="nav-item" id="navSafety"><span class="icon">🚨</span>Safety</div>
+        <div class="nav-item" id="navPlus"><span class="icon" style="background:linear-gradient(90deg,var(--saffron),var(--green)); -webkit-background-clip:text; color:transparent;">＋</span></div>
+        <div class="nav-item" id="navCommunity"><span class="icon">👥</span>Community</div>
+        <div class="nav-item" id="navProfile"><span class="icon">👤</span>Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===========================
+       Focused fixes:
+       - ensure comments overlay can be opened/closed repeatedly
+       - prevent immediate close by attaching doc listener asynchronously
+       Only this function changed; rest unchanged.
+       =========================== */
+
+    const blogData = [
+      { title:"Ayurvedic Secrets for Daily Wellness", author:"HealthGuru_Pooja", excerpt:"Simple changes in your diet...", category:"health", time:"2 weeks ago" },
+      { title:"Investing in Tier 2 Cities", author:"EconomyExpert_AP", excerpt:"The economic landscape...", category:"economy", time:"1 day ago" }
+    ];
+
+    const categories = ["culture","economy","educational","entertainment","ethical","health","legal","localnews","news","shaktisafety","society","sports","students","technology","nature"];
+
+    function generateComments(count){
+      const names = [
+        "Meera_10","Rahul_01","Sneha_06","Arjun_66","Nisha_55","Kiran__02","Vijay_2006","Somu_18",
+        "Priya_22","Rohan_77","Anjali_03","Amit_404","Bhavya_09","Suresh_12","Latha_88","Deepak_52"
+      ];
+      const texts = [
+        "Amazing shot — the lighting is perfect! ✨",
+        "This helped me understand so much, thank you!",
+        "Love this. More content like this please ❤️",
+        "Hahaha this made my day 😂",
+        "Powerful message — nicely said.",
+        "Great tip, saved for later 🔖",
+        "Looks delicious! 😋",
+        "So inspiring — keep sharing.",
+        "Wow, didn't know this — learned something new.",
+        "Beautiful capture — where was this taken?"
+      ];
+      const times = ["just now","2m","5m","12m","45m","1h","3h","Yesterday","2d"];
+      let out = '';
+      for(let i=0;i<count;i++){
+        const u = names[Math.floor(Math.random()*names.length)];
+        const t = texts[Math.floor(Math.random()*texts.length)];
+        const meta = times[Math.floor(Math.random()*times.length)];
+        const color = `hsl(${Math.random()*360},70%,70%)`;
+        out += `
+          <div class="comment">
+            <div class="comment-left">
+              <div class="comment-user-pic" style="background:${color}"></div>
+              <div class="comment-body">
+                <div class="comment-header-line">
+                  <span class="comment-username">${u}</span>
+                  <button class="heart-small" title="Like">♡</button>
+                </div>
+                <span class="comment-text">${t}</span>
+                <div class="comment-meta">${meta}</div>
+              </div>
+            </div>
+          </div>`;
+      }
+      return out;
+    }
+
+    async function loadMediaForCategory(category){
+      const prefixes = ["pics","./pics","../pics"];
+      const exts = ["jpg","png","webp","jpeg","mp4","webm"];
+      let result = [];
+      for(const p of prefixes){
+        for(let i=1;i<=8;i++){
+          for(const ext of exts){
+            const path = `${p}/${category}/${i}.${ext}`;
+            try{
+              const res = await fetch(path, { method:'HEAD' });
+              if(res && res.ok){
+                const type = (ext==="mp4"||ext==="webm") ? "video" : "image";
+                result.push({path, type});
+                break;
+              }
+            }catch(e){}
+          }
+        }
+        if(result.length>0) break;
+      }
+      return result;
+    }
+
+    async function generateFeed(filterCategory=null){
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '';
+      let allPosts = [];
+      const catsToLoad = filterCategory ? [filterCategory] : categories;
+      for(const cat of catsToLoad){
+        const mediaItems = await loadMediaForCategory(cat);
+        mediaItems.forEach(item => {
+          allPosts.push({
+            type:'media',
+            category:cat,
+            mediaPath:item.path,
+            mediaType:item.type,
+            time:`${Math.floor(Math.random()*23)+1} hr ago`
+          });
+        });
+      }
+      blogData.forEach(b=>{
+        if(!filterCategory || filterCategory===b.category){
+          allPosts.push({ type:'blog', ...b });
+        }
+      });
+      allPosts.sort(()=>Math.random()-0.5);
+
+      allPosts.forEach((post,i)=>{
+        const isLeft = (i % 2 === 0);
+        const feedRow = document.createElement('div');
+        feedRow.className = 'feed-card feed-row';
+        const postHTML = buildPostHTML(post,i);
+        const commentsHTML = `<div class="comment-box">${generateComments(8 + Math.floor(Math.random()*4))}</div>`;
+        if(isLeft){
+          feedRow.innerHTML = `<div class="post-box">${postHTML}</div>${commentsHTML}`;
+        } else {
+          feedRow.innerHTML = `${commentsHTML}<div class="post-box">${postHTML}</div>`;
+        }
+        feed.appendChild(feedRow);
+      });
+
+      document.querySelectorAll('.post-box .post-img, .post-box .post-video').forEach((el)=>{
+        el.addEventListener('click', function(){
+          const visiblePostBoxes = Array.from(document.querySelectorAll('.post-box'))
+            .filter(b => !!b.querySelector('.post-img') || !!b.querySelector('.post-video'));
+          const index = visiblePostBoxes.indexOf(this.closest('.post-box'));
+          openPost(index);
+        });
+      });
+
+      document.querySelectorAll('.comment-box').forEach(cb => {
+        cb.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('.heart-small');
+          if(btn){
+            ev.stopPropagation();
+            btn.innerText = (btn.innerText === '♡') ? '♥' : '♡';
+            const feedRow = cb.closest('.feed-row');
+            const likeBtn = feedRow.querySelector('.like-btn');
+            if(likeBtn) {
+              likeBtn.classList.toggle('liked');
+            }
+          }
+        });
+      });
+    }
+
+    function buildPostHTML(post){
+      if(post.type==='media'){
+        const media = post.mediaType === 'video'
+          ? `<video class="post-video" src="${post.mediaPath}" autoplay muted loop playsinline preload="metadata"></video>`
+          : `<img class="post-img" src="${post.mediaPath}" loading="lazy">`;
+        return `
+          <div class="post-header">
+            <div class="post-user-pic"></div>
+            <div style="flex:1">
+              <div class="post-username" style="font-size:13px">${(post.category || 'USER').toUpperCase()} USER</div>
+              <div class="post-time">${post.time}</div>
+            </div>
+          </div>
+          ${media}
+          <div class="post-actions">
+            <button class="action-btn like-btn" onclick="toggleLike(this)">♡ Like</button>
+            <button class="action-btn share-btn" onclick="sharePost(this)">📤 Share</button>
+          </div>
+          <div class="post-hashtag">#${post.category}</div>
+        `;
+      } else {
+        return `
+          <div class="post-header">
+            <div class="post-user-pic" style="background:linear-gradient(45deg,#138808,#FF9933)"></div>
+            <div style="flex:1">
+              <div class="post-username" style="font-size:13px">${post.author}</div>
+              <div class="post-time">${post.time}</div>
+            </div>
+          </div>
+          <div style="padding:6px 0;">
+            <div style="font-weight:700;color:var(--saffron);font-size:14px">${post.title}</div>
+            <div style="color:#555;font-size:13px;margin-top:6px">${post.excerpt}</div>
+            <div style="margin-top:8px" class="read-more-link">Read full blog...</div>
+          </div>
+          <div class="post-actions">
+            <button class="action-btn like-btn" onclick="toggleLike(this)">♡ Like</button>
+            <button class="action-btn share-btn" onclick="sharePost(this)">📤 Share</button>
+          </div>
+          <div class="post-hashtag">#${post.category} #Blog</div>
+        `;
+      }
+    }
+
+    function toggleLike(btn){
+      if(btn.innerText.includes('♡')) {
+        btn.innerText = btn.innerText.replace('♡', '♥');
+      } else if(btn.innerText.includes('♥')) {
+        btn.innerText = btn.innerText.replace('♥', '♡');
+      } else {
+        btn.innerText = '♥ Like';
+      }
+      btn.classList.toggle('liked');
+      btn.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:180});
+    }
+    function sharePost(){ alert('Share coming soon'); }
+
+    /* ---------- Popup logic ---------- */
+    let currentPopupIndex = 0;
+    // let docClickListenerForOverlay = null;
+
+    function getVisiblePostBoxes(){
+      return Array.from(document.querySelectorAll('.post-box'))
+        .filter(b => !!b.querySelector('.post-img') || !!b.querySelector('.post-video'));
+    }
+
+    function openPost(index){
+      const boxes = getVisiblePostBoxes();
+      if(!boxes || !boxes[index]) return;
+      currentPopupIndex = index;
+      const postBox = boxes[index];
+      const popup = document.getElementById('postPopup');
+      const popupImage = document.getElementById('popupImage');
+      const popupVideo = document.getElementById('popupVideo');
+      const commentsOverlay = document.getElementById('popupCommentsOverlay');
+      const hashtag = document.getElementById('popupHashtag');
+      const toolbar = document.getElementById('popupCommentToolbar');
+
+      commentsOverlay.innerHTML = '';
+      hideOverlayComments(); // ensure overlay hidden until explicitly opened
+
+      const img = postBox.querySelector('.post-img');
+      const vid = postBox.querySelector('.post-video');
+
+      if(img){
+        popupImage.src = img.src;
+        popupImage.style.display = 'block';
+        popupVideo.pause(); popupVideo.style.display='none'; popupVideo.src='';
+        toolbar.style.display = 'flex';
+      } else if(vid){
+        popupVideo.src = vid.currentSrc || vid.src;
+        popupVideo.style.display = 'block';
+        popupImage.style.display = 'none';
+
+        // autoplay with audio if possible
+        popupVideo.muted = false;
+        popupVideo.play().catch(() => {
+          popupVideo.muted = true;
+          popupVideo.play().catch(()=>{});
+        });
+
+        popupVideo.onended = () => { nextPost(); };
+        toolbar.style.display = 'flex';
+
+        // ensure single/double click handlers are attached (safe to attach multiple times because we remove on close)
+        popupVideo.removeEventListener('click', popupVideoClickHandler);
+        popupVideo.removeEventListener('dblclick', popupVideoDblClickHandler);
+        popupVideo.addEventListener('click', popupVideoClickHandler);
+        popupVideo.addEventListener('dblclick', popupVideoDblClickHandler);
+      } else {
+        popupImage.style.display='none';
+        popupVideo.style.display='none';
+        toolbar.style.display = 'none';
+      }
+
+      const activeRow = postBox.closest('.feed-row');
+      const sourceCommentBox = activeRow ? activeRow.querySelector('.comment-box') : null;
+      if(sourceCommentBox){
+        sourceCommentBox.querySelectorAll('.comment').forEach((c, idx) => {
+          const cloned = c.cloneNode(true);
+          const heartBtn = cloned.querySelector('.heart-small');
+          if(heartBtn){
+            heartBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              heartBtn.innerText = (heartBtn.innerText === '♡') ? '♥' : '♡';
+            });
+          }
+          commentsOverlay.appendChild(cloned);
+        });
+      }
+
+      const tagEl = postBox.querySelector('.post-hashtag');
+      hashtag.innerText = tagEl ? tagEl.innerText : '#post';
+
+      popup.style.display='flex';
+      document.body.style.overflow='hidden';
+      popup.setAttribute('aria-hidden','false');
+
+      attachPopupToolbarHandlers();
+
+      attachPopupSwipeHandlers();
+    }
+
+    // Handlers for popup video single/double tap
+    function popupVideoClickHandler(ev){
+      ev.stopPropagation();
+      const video = ev.currentTarget;
+      if(video.paused) video.play().catch(()=>{}); else video.pause();
+    }
+    function popupVideoDblClickHandler(ev){
+      ev.stopPropagation();
+      const boxes = getVisiblePostBoxes();
+      const postBox = boxes[currentPopupIndex];
+      if(postBox){
+        const likeBtn = postBox.querySelector('.like-btn');
+        if(likeBtn) toggleLike(likeBtn);
+        const popupHeart = document.getElementById('popupHeartBtn');
+        if(popupHeart){
+          popupHeart.innerText = (popupHeart.innerText === '♡') ? '♥' : '♡';
+        }
+      }
+    }
+
+    /* ---------- FIX: attach doc click listener asynchronously to avoid immediate-close bug ---------- */
+    let docClickListenerForOverlay = null;
+    let _overlayIgnoreUntil = 0; // timestamp (ms) to ignore doc clicks until
+
+    function showOverlayComments(){
+      const el = document.getElementById('popupCommentsOverlay');
+      if(!el.classList.contains('show')){
+        el.classList.add('show');
+        el.setAttribute('aria-hidden', 'false');
+
+        // set a short ignore window so browsers (Edge) won't immediately trigger our listener
+        _overlayIgnoreUntil = Date.now() + 150; // ignore document clicks for next 150ms
+
+        // remove any existing listener just in case
+        if (docClickListenerForOverlay) {
+          try { document.removeEventListener('click', docClickListenerForOverlay, false); } catch(e){}
+          docClickListenerForOverlay = null;
+        }
+
+        // create listener (bubbling phase). It will ignore clicks that happen during the small window above.
+        docClickListenerForOverlay = function(ev){
+          // ignore clicks that occur within the grace period
+          if (Date.now() < _overlayIgnoreUntil) {
+            return;
+          }
+
+          const overlay = document.getElementById('popupCommentsOverlay');
+          if(!overlay) return;
+          // if click target is inside overlay or inside the comment input area or toolbar, do nothing
+          if (overlay.contains(ev.target)) return;
+          const inputArea = document.getElementById('popupCommentInputArea');
+          if (inputArea && inputArea.contains(ev.target)) return;
+          const toolbar = document.getElementById('popupCommentToolbar');
+          if (toolbar && toolbar.contains(ev.target)) return;
+          // else hide overlay
+          hideOverlayComments();
+        };
+
+        // attach in bubbling phase (false)
+        document.addEventListener('click', docClickListenerForOverlay, false);
+      }
+    }
+
+    function hideOverlayComments(){
+      const el = document.getElementById('popupCommentsOverlay');
+      if(el.classList.contains('show')){
+        el.classList.remove('show');
+        el.setAttribute('aria-hidden', 'true');
+        if(docClickListenerForOverlay){
+          try { document.removeEventListener('click', docClickListenerForOverlay, false); } catch(e){}
+          docClickListenerForOverlay = null;
+        }
+        // reset guard
+        _overlayIgnoreUntil = 0;
+      }
+    }
+
+    function toggleOverlayComments(){
+      const el = document.getElementById('popupCommentsOverlay');
+      if(el.classList.contains('show')) hideOverlayComments(); else showOverlayComments();
+    }
+    /* ---------- END FIX ---------- */
+
+    function escapeHtml(text){
+      return text.replace(/[&<>"']/g, m =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    }
+
+    function mirrorReplyToFeed(sourceCommentBox, commentIndex, replyText){
+      const replyEl = document.createElement('div');
+      replyEl.style.marginBottom = '8px';
+      replyEl.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-start"><div class="comment-user-pic" style="width:14px;height:14px;border-radius:50%;background:linear-gradient(45deg,#138808,#FF9933)"></div><div><div style="font-weight:600;font-size:12px;color:#222">You</div><div style="font-size:12px;color:#444">${escapeHtml(replyText)}</div></div></div>`;
+      const targetComment = sourceCommentBox.querySelectorAll('.comment')[commentIndex];
+      if(targetComment){
+        let feedReplies = targetComment.querySelector('.replies-container');
+        if(!feedReplies){
+          feedReplies = document.createElement('div');
+          feedReplies.className = 'replies-container';
+          feedReplies.style.marginTop = '6px';
+          feedReplies.style.marginLeft = '26px';
+          targetComment.appendChild(feedReplies);
+        }
+        feedReplies.appendChild(replyEl);
+      }
+    }
+
+    function closePopup(){
+      const popup = document.getElementById('postPopup');
+      popup.style.display='none';
+      document.body.style.overflow='';
+      const popupVideo = document.getElementById('popupVideo');
+      if(popupVideo){
+        popupVideo.pause(); popupVideo.src='';
+        popupVideo.removeEventListener('click', popupVideoClickHandler);
+        popupVideo.removeEventListener('dblclick', popupVideoDblClickHandler);
+      }
+      hideOverlayComments();
+      document.getElementById('popupCommentToolbar').style.display = 'none';
+      detachPopupSwipeHandlers();
+    }
+
+    function nextPost(){
+      const boxes = getVisiblePostBoxes();
+      if(boxes.length===0) return;
+      currentPopupIndex = (currentPopupIndex+1) % boxes.length;
+      openPost(currentPopupIndex);
+    }
+    function prevPost(){
+      const boxes = getVisiblePostBoxes();
+      if(boxes.length===0) return;
+      currentPopupIndex = (currentPopupIndex-1 + boxes.length) % boxes.length;
+      openPost(currentPopupIndex);
+    }
+
+    document.getElementById('popupNext').addEventListener('click', nextPost);
+    document.getElementById('popupPrev').addEventListener('click', prevPost);
+    document.getElementById('popupClose').addEventListener('click', closePopup);
+
+    document.getElementById('popupNewCommentBtn').addEventListener('click', () => {
+      const input = document.getElementById('popupNewCommentInput');
+      const text = input.value.trim();
+      if(!text) return;
+      const commentsOverlay = document.getElementById('popupCommentsOverlay');
+      const newComment = document.createElement('div');
+      newComment.className = 'comment';
+      const color = `hsl(${Math.random()*360},70%,70%)`;
+      newComment.innerHTML = `
+        <div class="comment-left">
+          <div class="comment-user-pic" style="background:${color}"></div>
+          <div class="comment-body">
+            <div class="comment-header-line">
+              <span class="comment-username">You</span>
+              <button class="heart-small">♡</button>
+            </div>
+            <span class="comment-text">${escapeHtml(text)}</span>
+            <div class="comment-meta">just now</div>
+          </div>
+        </div>`;
+      commentsOverlay.insertBefore(newComment, commentsOverlay.firstChild);
+
+      const boxes = getVisiblePostBoxes();
+      const sourceCommentBox = boxes[currentPopupIndex].closest('.feed-row').querySelector('.comment-box');
+      if(sourceCommentBox){
+        const feedComment = document.createElement('div');
+        feedComment.className = 'comment';
+        feedComment.innerHTML = `
+          <div class="comment-left">
+            <div class="comment-user-pic" style="background:${color}"></div>
+            <div class="comment-body">
+              <div class="comment-header-line">
+                <span class="comment-username">You</span>
+                <button class="heart-small">♡</button>
+              </div>
+              <span class="comment-text">${escapeHtml(text)}</span>
+              <div class="comment-meta">just now</div>
+            </div>
+          </div>`;
+        sourceCommentBox.insertAdjacentElement('afterbegin', feedComment);
+      }
+
+      input.value = '';
+    });
+
+    (function attachPopupTapZones(){
+      const mediaArea = document.getElementById('popupMediaArea');
+
+      mediaArea.addEventListener('dblclick', function(ev){
+        ev.stopPropagation();
+        const boxes = getVisiblePostBoxes();
+        const postBox = boxes[currentPopupIndex];
+        if(postBox){
+          const likeBtn = postBox.querySelector('.like-btn');
+          if(likeBtn) toggleLike(likeBtn);
+          const popupHeart = document.getElementById('popupHeartBtn');
+          if(popupHeart){
+            popupHeart.innerText = (popupHeart.innerText === '♡') ? '♥' : '♡';
+          }
+        }
+      });
+
+      mediaArea.addEventListener('click', function(ev){
+        const rect = mediaArea.getBoundingClientRect();
+        const y = ev.clientY - rect.top;
+        const h = rect.height;
+        const bottomThreshold = h * 0.82;
+        if(y >= bottomThreshold){
+          closePopup();
+        } else {
+          // do nothing here; overlay closing handled by doc listener
+        }
+      });
+    })();
+
+    // clicking outside popup container closes popup
+    document.getElementById('postPopup').addEventListener('click', function(e){
+      if(e.target === this) closePopup();
+    });
+
+    // top-left username and global search wiring
+    const currentUsername = localStorage.getItem('user_session') || 'somureddy_91';
+    document.getElementById('topLeftUserSmall').innerText = currentUsername;
+
+    document.getElementById('globalSearch').addEventListener('input', function(){
+      const q = this.value.trim().toLowerCase();
+      const feed = document.getElementById('feed');
+      if(!q){
+        Array.from(feed.children).forEach(node => node.style.display = '');
+        return;
+      }
+      Array.from(feed.children).forEach(node => {
+        const text = node.innerText.toLowerCase();
+        node.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+
+    function attachPopupToolbarHandlers(){
+      const heartBtn = document.getElementById('popupHeartBtn');
+      const shareBtn = document.getElementById('popupShareBtn');
+      const plusBtn = document.getElementById('popupPlusBtn');
+
+      heartBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        heartBtn.innerText = (heartBtn.innerText === '♡') ? '♥' : '♡';
+        const boxes = getVisiblePostBoxes();
+        const postBox = boxes[currentPopupIndex];
+        if(postBox){
+          const like = postBox.querySelector('.like-btn');
+          if(like) toggleLike(like);
+        }
+      };
+      shareBtn.onclick = function(ev) { ev.stopPropagation(); sharePost(); };
+      plusBtn.onclick = function(ev) { ev.stopPropagation(); alert('More actions coming soon'); };
+
+      document.getElementById('popupCommentToolbar').style.display = 'flex';
+    }
+
+    let touchStartX = 0, touchStartY = 0;
+    function attachPopupSwipeHandlers(){
+      const mediaArea = document.getElementById('popupMediaArea');
+      detachPopupSwipeHandlers();
+      mediaArea.addEventListener('touchstart', onTouchStart, {passive:true});
+      mediaArea.addEventListener('touchmove', onTouchMove, {passive:true});
+      mediaArea.addEventListener('touchend', onTouchEnd, {passive:true});
+    }
+    function detachPopupSwipeHandlers(){
+      const mediaArea = document.getElementById('popupMediaArea');
+      mediaArea.removeEventListener('touchstart', onTouchStart);
+      mediaArea.removeEventListener('touchmove', onTouchMove);
+      mediaArea.removeEventListener('touchend', onTouchEnd);
+    }
+    function onTouchStart(e){
+      if(!e.touches || e.touches.length===0) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+    function onTouchMove(e){}
+    function onTouchEnd(e){
+      if(!e.changedTouches || e.changedTouches.length===0) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if(Math.abs(dy) > Math.abs(dx)) return;
+      const threshold = 50;
+      if(dx < -threshold){
+        nextPost();
+      } else if(dx > threshold){
+        prevPost();
+      }
+    }
+
+    document.addEventListener('keydown', function(e){
+      const popupOpen = document.getElementById('postPopup').style.display==='flex';
+      if(!popupOpen) return;
+      if(e.key === 'ArrowRight') nextPost();
+      if(e.key === 'ArrowLeft') prevPost();
+      if(e.key === 'Escape') closePopup();
+    });
+
+    // ---------- PERSISTENT overlay open/close handlers (attached once) ----------
+    const commentArea = document.getElementById('popupCommentInputArea');
+    const commentInput = document.getElementById('popupNewCommentInput');
+    commentArea.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      toggleOverlayComments();
+    });
+    commentInput.addEventListener('focus', function(ev){
+      ev.stopPropagation();
+      showOverlayComments();
+    });
+    // ---------- end persistent handlers ----------
+
+    window.addEventListener('load', ()=>{ generateFeed(); });
+    /* -------------------------------
+    SIMPLE PAGE ROUTER
+--------------------------------*/
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(pageId).style.display = 'block';
+
+    // reset feed scroll
+    if (pageId === 'page-home') {
+        document.body.style.overflow = '';
+    }
+}
+
+// NAV BAR EVENTS
+document.getElementById('navHome').onclick = () => {
+    showPage('page-home');
+    setActiveNav('navHome');
+};
+
+document.getElementById('navSafety').onclick = () => {
+    showPage('page-safety');
+    setActiveNav('navSafety');
+};
+
+document.getElementById('navPlus').onclick = () => {
+    showPage('page-create');
+    setActiveNav('navPlus');
+};
+
+document.getElementById('navCommunity').onclick = () => {
+    showPage('page-community');
+    setActiveNav('navCommunity');
+};
+
+document.getElementById('navProfile').onclick = () => {
+    showPage('page-profile');
+    setActiveNav('navProfile');
+};
+
+// KEEP ONLY HOME ACTIVE INITIALLY
+showPage('page-home');
+
+  </script>
+  <script>
+/* --- small fixes: define setActiveNav + robust page routing --- */
+
+function setActiveNav(id) {
+  // remove active from all nav items and add to the requested one
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+/**
+ * showPage: hides all pages and shows the requested page id
+ * Also manages body overflow so overlays/popups work correctly.
+ */
+function showPage(pageId) {
+  try {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    const page = document.getElementById(pageId);
+    if (!page) {
+      console.warn('showPage: no element with id', pageId);
+      return;
+    }
+    page.style.display = 'block';
+
+    // ensure feed/page scroll is reset for certain pages
+    if (pageId === 'page-home') {
+      document.body.style.overflow = '';
+    } else {
+      // keep body scroll normal so nested scroll areas work on mobile
+      document.body.style.overflow = '';
+      // scroll to top of newly shown page in case it was scrolled previously
+      page.scrollTop = 0;
+    }
+  } catch (err) {
+    console.error('showPage error:', err);
+  }
+}
+
+// attach nav events (safe) - replaces inline onclick usage
+document.getElementById('navHome')?.addEventListener('click', () => { showPage('page-home'); setActiveNav('navHome'); });
+document.getElementById('navSafety')?.addEventListener('click', () => { showPage('page-safety'); setActiveNav('navSafety'); });
+document.getElementById('navPlus')?.addEventListener('click', () => { showPage('page-create'); setActiveNav('navPlus'); });
+document.getElementById('navCommunity')?.addEventListener('click', () => { showPage('page-community'); setActiveNav('navCommunity'); });
+document.getElementById('navProfile')?.addEventListener('click', () => { showPage('page-profile'); setActiveNav('navProfile'); });
+
+// initial state
+showPage('page-home');
+setActiveNav('navHome');
+</script>
+
+</body>
+</html>

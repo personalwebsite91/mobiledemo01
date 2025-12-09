@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SHAKTI-IND</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+  font-family: 'Poppins', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: #fff8f0;
+}
+
+/* Soft Indian Flag Pastel Gradient Background */
+    .bg-gradient {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg,
+    #fff3e6 0%,    /* very light saffron */
+    #f8fff8 45%,   /* soft cream */
+    #e6f7f0 100%   /* very light green */
+  );
+  z-index: -1;
+}
+
+/* Logo with real tri-color gradient */
+    .logo {
+  position: fixed;
+  top: 24px; left: 24px;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #FF9933 50%, #138808 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  z-index: 10;
+  transition: all 0.9s ease-out 0.2s;
+}
+    @media (max-width: 480px) {
+  .logo { font-size: 24px; top: 18px; left: 16px; }
+}
+
+/* Page System */
+.page-container { position: relative; height: 100vh; }
+.page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px;
+}
+.page.active { opacity: 1; visibility: visible; z-index: 10; }
+
+/* Card */
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  padding: 42px 32px;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 390px;
+  text-align: center;
+  border: 1px solid rgba(255,153,51,0.15);
+}
+h2 {
+  font-size: 26px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+.card p { color: #7f8c8d; margin-bottom: 32px; font-size: 15px; }
+
+/* Inputs */
+input {
+  width: 100%;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 2px solid #eee;
+  border-radius: 16px;
+  font-size: 16px;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+input:focus {
+  outline: none;
+  border-color: #FF9933;
+  background: white;
+  box-shadow: 0 0 0 5px rgba(255,153,51,0.15);
+}
+
+/* Gradient Button (All buttons use this) */
+.btn-gradient {
+
+  --green: #126d09;
+  width: 100%;
+  padding: 16px;
+  margin: 14px 0;
+  border: none;
+  border-radius: 16px;
+  font-size: 17px;
+  font-weight: 600;
+  color: white;
+  background: var(--green);;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(255,122,51,0.4);
+}
+.btn-gradient:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(255,153,51,0.4);
+}
+.btn-gradient:active {
+  transform: translateY(-1px);
+}
+
+/* Password Eye */
+.pass-box {
+  position: relative;
+  margin: 12px 0;
+}
+.eye {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #95a5a6;
+  font-size: 18px;
+}
+.eye:hover { color: #FF9933; }
+
+/* Links */
+.back, .forgot {
+  display: block;
+  margin-top: 20px;
+  color: #FF6600;
+  text-decoration: none;
+  font-size: 14px;
+}
+.back:hover, .forgot:hover { text-decoration: underline; }
+
+/* Errors */
+.error {
+  color: #e74c3c;
+  font-size: 13px;
+  min-height: 20px;
+  margin: 4px 0 8px;
+}
+.alert{
+  width: 100%;
+  padding: 10px 20px;
+  text-align: center;
+  font-weight: 600;
+  display: none;
+}
+  </style>
+
+</head>
+<body>
+
+  <!-- Soft Indian Flag Pastel Background -->
+  <div class="bg-gradient"></div>
+
+  <!-- Tri-color Logo -->
+  <div class="logo">
+    <span class="saffron">SHAKTI</span><span class="green">-IND</span>
+  </div>
+
+  <div class="page-container">
+
+    <!-- PAGE 1: Choice -->
+    <div class="page active" id="choice">
+      <div class="card">
+        <p2>Join the community today</p2>
+        <button class="btn-gradient" onclick="showPage('login')">Login</button>
+        <button class="btn-gradient" onclick="showPage('mobileSignup')">Signup</button>
+      </div>
+    </div>
+
+    <!-- PAGE 2: Mobile Number -->
+    <div class="page" id="mobileSignup">
+      <div class="card">
+        <h2>Create Your Account</h2>
+        <input type="tel" id="mobile" placeholder="Enter Mobile Number" maxlength="10" inputmode="numeric"/>
+        <p class="error" id="mobileError"></p>
+        <button class="btn-gradient" id="Continue" onclick="validateMobile()">Continue</button>
+        <a href="#" onclick="showPage('choice')" class="back">← Back</a>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Full Signup -->
+    <div class="page" id="fullSignup">
+      <div class="card">
+        <h2>Almost Done!</h2>
+        
+        <input type="email" id="gmail" placeholder="Enter Gmail ID"/>
+        <p class="error" id="gmailError"></p>
+
+        <input type="text" id="username" placeholder="Create Username"/>
+        
+        <div class="pass-box">
+          <input type="password" id="password" placeholder="Create Password"/>
+          <i class="fa-solid fa-eye-slash eye" onclick="togglePass(this)"></i>
+        </div>
+
+        <button class="btn-gradient" id="createAccountBtn">Create Account</button>
+        <a href="#" onclick="showPage('choice')" class="back">← Back</a>
+        <div class="alert">Account Created Successfully</div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Login -->
+    <div class="page" id="login">
+      <div class="card">
+        <h2>Login to Shakti-Ind</h2>
+        
+        <input type="text" id="loginid" placeholder="Mobile Number or Username"/>
+        
+        <div class="pass-box">
+          <input type="password" id="loginPass" placeholder="Password"/>
+          <i class="fa-solid fa-eye-slash eye" onclick="togglePass(this)"></i>
+        </div>
+
+        <button class="btn-gradient" id="loginbtn">Login</button>
+        <a href="#" class="forgot">Forgot Password?</a>
+        <a href="#" onclick="showPage('choice')" class="back">← Back</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function validateMobile() {
+  const mobile = document.getElementById('mobile').value.trim();
+  const error = document.getElementById('mobileError');
+
+  if (/^\d{10}$/.test(mobile)) {
+    error.textContent = '';
+
+    // ⭐ Store mobile number for next page
+    localStorage.setItem("signup_mobile", mobile);
+
+    // Go to next page
+    showPage('fullSignup');
+  } else {
+    error.textContent = 'Please enter a valid 10-digit number';
+  }
+}
+
+
+// Gmail live validation
+document.getElementById('gmail')?.addEventListener('input', function() {
+  const val = this.value.trim();
+  const err = document.getElementById('gmailError');
+  if (val.endsWith('@gmail.com') && val.length >= 12) {
+    err.style.color = '#27ae60';
+    err.textContent = '✓ Valid Gmail';
+  } else if (val && !val.includes('@')) {
+    err.style.color = '#e74c3c';
+    err.textContent = 'Please include @gmail.com';
+  } else {
+    err.textContent = '';
+  }
+});
+
+// Toggle password visibility
+function togglePass(icon) {
+  const input = icon.previousElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  }
+}
+  </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, push, get, child} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    window.initializeApp = initializeApp;
+    window.getDatabase = getDatabase;
+    window.ref = ref;
+    window.set = set;
+    window.push = push;
+    window.get = get;
+    window.child = child;
+    window.getAuth = getAuth;
+</script>
+
+<script type="module" src="mail.js"></script>
+
+</body>
+</html>

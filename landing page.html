@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>SHAKTI-IND</title>
+  <style>
+    :root {
+      --saffron: #FF7A33;
+      --green:   #0F9D58;
+      --bg:      #FFF9F5;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    #opening {
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+      padding: 0 20px;
+      animation: fadeUp 1.1s ease-out;
+    }
+
+    /* FINAL FIX — NO LETTER CUTTING EVER */
+    .logo {
+      font-size: clamp(3.2rem, 12vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: 0.38rem;
+      background: linear-gradient(90deg, var(--saffron) 50%, var(--green) 50%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      user-select: none;
+      margin-bottom: 1rem;
+      white-space: nowrap;
+      display: block;
+      line-height: 1;
+      
+      /* THE MAGIC FIXES */
+      padding: 0 12px;                    /* Extra breathing room */
+      
+      display: inline-block;
+      position: relative;
+      left: 50%;
+      transform: translateX(-50%);        /* Perfect center */
+    }
+
+    .slogan {
+      font-size: 1.18rem;
+      font-weight: 400;
+      letter-spacing: 3.5px;
+      color: #555;
+      text-transform: lowercase;
+      font-variant: small-caps;
+      margin-bottom: 3.5rem;
+      opacity: 0.92;
+    }
+
+    .btn-start {
+      padding: 16px 64px;
+      font-size: 1.28rem;
+      font-weight: 700;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(15,157,88,0.38);
+      transition: all 0.4s ease;
+    }
+
+    .btn-start:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 45px rgba(15,157,88,0.55);
+    }
+
+    /* Main Screen - Same as before */
+    #main {
+      position: fixed; inset: 0; background: var(--bg);
+      transform: translateY(100%); opacity: 0;
+      transition: all 0.8s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+    }
+    #main.active { transform: translateY(0); opacity: 1; }
+
+    .header-logo {
+      position: fixed; top: 24px; left: 24px; font-size: 1rem; font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--saffron) 50%, var(--green) 50%);
+      background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      opacity: 0; transform: translateX(-80px) scale(0.7);
+      transition: all 0.9s ease-out 0.2s; z-index: 10;
+    }
+    .header-logo.visible { opacity: 1; transform: translateX(0) scale(1); }
+
+    .languages {
+      flex: 1;
+      padding: 110px 20px 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 16px;
+    }
+
+    .lang-card {
+      background: white;
+      padding: 20px 12px;
+      border-radius: 18px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.35s ease;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+      position: relative;
+    }
+    .lang-card::after {
+      position: absolute; top: 10px; right: 12px;
+      font-size: 1.4rem; color: var(--green); opacity: 0; transform: scale(0);
+      transition: all 0.3s ease;
+    }
+    .lang-card.selected {
+      background: #f0fdf4; border-color: var(--green);
+      transform: translateY(-6px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(15,157,88,0.3);
+    }
+    .lang-card.selected::after { opacity: 1; transform: scale(1); }
+
+    .btn-continue {
+      margin: 30px auto;
+      padding: 16px 70px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(255,122,51,0.4);
+      transition: all 0.4s ease;
+    }
+    .btn-continue:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 45px rgba(15,157,88,0.55);
+    }
+
+    @keyframes fadeUp { from {opacity:0; transform:translateY(40px);} to {opacity:1; transform:translateY(0);} }
+
+    @media (max-width: 480px) {
+      .logo { font-size: 3.5rem; letter-spacing: 0.32rem; }
+      .slogan { font-size: 1.3rem; }
+      .lang-card { font-size: 1rem; padding: 16px 8px; }
+      .languages { grid-template-columns: repeat(2, 1fr); gap: 14px; padding-top: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="opening">
+    <h1 class="logo">SHAKTI-IND</h1>
+    <p class="slogan">one platform, one nation.</p>
+    <button class="btn-start" onclick="startApp()">Get Started</button>
+  </div>
+
+  <div id="main">
+    <div class="header-logo" id="headerLogo">SHAKTI-IND</div>
+    <div class="languages">
+      <div class="lang-card" onclick="select(this)">English</div>
+      <div class="lang-card" onclick="select(this)">हिन्दी</div>
+      <div class="lang-card" onclick="select(this)">বাংলা</div>
+      <div class="lang-card" onclick="select(this)">తెలుగు</div>
+      <div class="lang-card" onclick="select(this)">मराठी</div>
+      <div class="lang-card" onclick="select(this)">தமிழ்</div>
+      <div class="lang-card" onclick="select(this)">ગુજરાતી</div>
+      <div class="lang-card" onclick="select(this)">ಕನ್ನಡ</div>
+      <div class="lang-card" onclick="select(this)">മലയാളം</div>
+      <div class="lang-card" onclick="select(this)">ਪੰਜਾਬੀ</div>
+      <div class="lang-card" onclick="select(this)">ଓଡ଼ିଆ</div>
+      <div class="lang-card" onclick="select(this)">অসমীয়া</div>
+      <div class="lang-card" onclick="select(this)">اردو</div>
+      <div class="lang-card" onclick="select(this)">संस्कृत</div>
+    </div>
+    <button class="btn-continue" onclick="window.location.href='login_page.html'">
+      Click Here to Continue
+    </button>
+  </div>
+
+  <script>
+    function startApp() {
+      document.getElementById('opening').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('opening').style.display = 'none';
+        document.getElementById('main').classList.add('active');
+        setTimeout(() => document.getElementById('headerLogo').classList.add('visible'), 300);
+      }, 500);
+    }
+    function select(el) {
+      document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+  </script>
+</body>
+</html>

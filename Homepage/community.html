@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SHAKTI-IND — Community</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f3f8ff;
+    --card: #ffffff;
+    --muted: #6c7a93;
+    --accent: #2b78ff;
+    --accent-2: #2563eb;
+    --shadow: 0 14px 40px rgba(25,40,80,0.06);
+    --soft-shadow: 0 8px 22px rgba(20,40,80,0.04);
+    --radius: 12px;
+    --gap: 20px;
+    --text: #0b2640;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:'Poppins',sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;}
+  /* Layout wrapper: keep body non-scrolling; scroll inside .app */
+  body{overflow:hidden;}
+  .app {
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Header */
+  header.topbar{
+    height:86px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 28px;
+    box-sizing:border-box;
+    background: linear-gradient(180deg,#eef6ff 0%, rgba(255,255,255,0.9) 100%);
+    border-bottom-left-radius:12px;
+    border-bottom-right-radius:12px;
+    box-shadow: var(--soft-shadow);
+    z-index:30;
+    flex:0 0 auto;
+  }
+  .brand {display:flex; align-items:center; gap:12px;}
+  .brand .logo {
+    font-weight:800; color:var(--accent-2); letter-spacing:1px; font-size:1.1rem;
+  }
+  .brand .subtitle { color:var(--muted); font-weight:700; margin-left:6px; font-size:0.95rem; }
+
+  .top-actions {display:flex; gap:12px; align-items:center;}
+  .btn {
+    background:linear-gradient(180deg,var(--accent) 0%, var(--accent-2) 100%);
+    color:#fff; padding:10px 14px; border-radius:12px; border:none; font-weight:800; cursor:pointer; box-shadow: 0 8px 28px rgba(37,99,235,0.12);
+  }
+
+  /* Main content area (below header) — contains left sidebar and right content */
+  .main-wrap {
+    display:flex;
+    gap:var(--gap);
+    padding:22px;
+    box-sizing:border-box;
+    height: calc(100vh - 86px);
+    overflow:hidden; /* hide outer scroll; inner panels will scroll */
+  }
+
+  /* Sidebar 30% */
+  .sidebar {
+    width:320px; /* ~30% on wide screens */
+    max-width:34%;
+    background:transparent;
+    flex:0 0 320px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    transition: transform .28s ease, opacity .2s ease, width .28s ease;
+    z-index:20;
+  }
+  .sidebar.hidden { transform: translateX(-26px); opacity:0; pointer-events:none; width:0; }
+  .sidebar-card {
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px;
+    box-shadow:var(--shadow);
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow:hidden;
+  }
+
+  /* search */
+  .search {
+    display:flex; gap:8px; align-items:center;
+  }
+  .search input{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid #edf2ff; background:#fbfdff; box-shadow: inset 0 1px 0 rgba(10,20,40,0.01);
+  }
+
+  .list-title { font-weight:800; color:var(--accent-2); font-size:0.85rem; margin-top:4px; margin-bottom:6px; }
+  /* community list (independent scroll) */
+  .community-list {
+    flex:1 1 auto;
+    overflow:auto;
+    padding-right:8px;
+  }
+  .comm-item {
+    display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; cursor:pointer;
+    transition: background .12s ease;
+  }
+  .comm-item:hover{ background:linear-gradient(90deg,#f7fbff,#ffffff); }
+  .avatar {
+    width:40px; height:40px; border-radius:10px; background:#eaf3ff; display:flex;align-items:center;justify-content:center;color:var(--accent-2);font-weight:800;
+  }
+  .comm-meta { display:flex; flex-direction:column; min-width:0; }
+  .comm-meta .name { font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .comm-meta .sub { color:var(--muted); font-size:0.82rem; margin-top:4px; }
+
+  .create-row { padding-top:6px; border-top:1px dashed #eef4ff; display:flex; justify-content:center; margin-top:8px; }
+  .create-btn { background:transparent; border:1px dashed #cfe0ff; padding:10px 12px; border-radius:10px; color:var(--accent-2); cursor:pointer; font-weight:700; }
+
+  /* Floating toggle for sidebar when closed (left top) */
+  .sidebar-toggle {
+    position: absolute;
+    left: 28px;
+    top: 120px;
+    z-index: 40;
+    background: #fff;
+    border-radius: 12px;
+    padding:10px 12px;
+    box-shadow: var(--soft-shadow);
+    display:none;
+    cursor:pointer;
+    font-weight:700;
+    border:1px solid rgba(20,40,80,0.04);
+  }
+  .sidebar-toggle.show { display:block; }
+
+  /* Right content area 70% */
+  .content-area {
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow:hidden;
+  }
+
+  .content-card {
+    background:var(--card);
+    border-radius:14px;
+    padding:18px;
+    box-shadow:var(--shadow);
+    height:100%;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .content-header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .content-header h2 { margin:0; color:var(--accent-2); }
+  .content-sub { color:var(--muted); margin-top:6px; }
+
+  /* Grid of 2x2 fixed cards */
+  .grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 1fr;
+    gap:16px;
+    align-items:stretch;
+    height: calc(100% - 74px);
+    /* children will be card streams */
+  }
+
+  .stream-card {
+    background: linear-gradient(180deg,#ffffff,#fbfdff);
+    border-radius:12px; padding:12px; box-shadow: 0 8px 18px rgba(20,40,80,0.04);
+    display:flex; flex-direction:column; gap:10px; overflow:hidden; border:1px solid rgba(20,40,80,0.03);
+  }
+  .stream-top { display:flex; align-items:center; justify-content:space-between; }
+  .stream-top .title { display:flex; gap:12px; align-items:center; }
+  .badge-safe { background:#ecfff1; color:#167a2a; padding:6px 10px; border-radius:999px; font-weight:800; font-size:0.84rem; border:1px solid rgba(20,120,60,0.06); }
+
+  /* message stream inside each card (internal scroll allowed) */
+  .stream-messages {
+    flex:1 1 auto;
+    overflow:auto;
+    padding-right:6px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .msg {
+    display:flex; gap:12px; align-items:flex-start;
+  }
+  .msg .m-avatar { width:36px; height:36px; border-radius:10px; background:#eaf3ff; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--accent-2); }
+  .msg .m-body { background:#f3f8ff; padding:10px 12px; border-radius:999px; display:inline-block; max-width:85%; font-weight:600; color:#16324a; }
+  .msg .m-time { font-size:0.75rem; color:var(--muted); margin-top:6px; margin-left:48px; }
+
+  /* When a community is opened in full view */
+  .community-view {
+    display:none;
+    flex-direction:column;
+    height:100%;
+    overflow:hidden;
+  }
+  .community-view.show { display:flex; }
+
+  .cv-header { display:flex; align-items:center; gap:12px; }
+  .cv-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .cv-messages { flex:1 1 auto; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:14px; }
+
+  .cv-input { border-top:1px solid #eef4ff; padding:10px; display:flex; gap:8px; align-items:center; }
+  .cv-input input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid #eef4ff; }
+
+  /* incubator modal */
+  .modal-backdrop { position:fixed; inset:0; background: rgba(8,12,30,0.35); display:none; justify-content:center; align-items:center; z-index:60; }
+  .modal { width:520px; max-width:94%; background:#fff; border-radius:12px; padding:18px; box-shadow:0 30px 80px rgba(2,12,40,0.28); }
+  .modal h3 { margin:0 0 8px 0; }
+  .modal .row { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .modal input, .modal select, .modal textarea { padding:10px; border-radius:8px; border:1px solid #eef4ff; width:100%; box-sizing:border-box; }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+
+  /* settings bubble bottom-right */
+  .settings-fab { position:fixed; right:18px; bottom:18px; z-index:70; background:var(--card); padding:10px 12px; border-radius:999px; box-shadow:var(--soft-shadow); border:1px solid rgba(20,40,80,0.04); cursor:pointer; display:flex; gap:10px; align-items:center; }
+  .settings-panel { position:fixed; right:22px; bottom:72px; width:360px; max-width:86%; background:var(--card); border-radius:12px; box-shadow:var(--shadow); padding:12px; display:none; z-index:80; }
+
+  /* hide scrollbar visually but keep scroll */
+  .community-list::-webkit-scrollbar, .stream-messages::-webkit-scrollbar, .cv-messages::-webkit-scrollbar { width: 8px; }
+  .community-list::-webkit-scrollbar-track, .stream-messages::-webkit-scrollbar-track, .cv-messages::-webkit-scrollbar-track { background: transparent; }
+  .community-list::-webkit-scrollbar-thumb, .stream-messages::-webkit-scrollbar-thumb, .cv-messages::-webkit-scrollbar-thumb { background: rgba(20,40,80,0.06); border-radius:8px; }
+  /* Firefox */
+  .community-list, .stream-messages, .cv-messages { scrollbar-width: thin; scrollbar-color: rgba(20,40,80,0.06) transparent; }
+
+  /* small screens adjustments */
+  @media (max-width:900px){
+    .main-wrap{ padding:14px; }
+    .sidebar { position:fixed; left:14px; top:110px; bottom:14px; z-index:40; }
+    .sidebar.hidden { transform: translateX(-340px); }
+    .sidebar-toggle { left: 14px; top: 108px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <div class="logo">SHAKTI-IND</div>
+      <div class="subtitle">Discovery Feed</div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="startIncBtn">Start Incubator</button>
+    </div>
+  </header>
+
+  <div class="main-wrap" role="main">
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar" aria-label="Communities sidebar">
+      <div class="sidebar-card" aria-hidden="false">
+        <div class="search">
+          <input id="searchInput" placeholder="Search communities..." aria-label="Search communities">
+        </div>
+        <div class="list-title">YOUR COMMUNITIES</div>
+        <div id="commList" class="community-list" role="list" aria-live="polite">
+          <!-- items injected by JS -->
+        </div>
+
+        <div class="list-title">ONE-ON-ONE</div>
+        <div id="oneOnOne" style="display:flex;flex-direction:column; gap:8px;">
+          <div class="comm-item" data-id="1to1-mentor"><div class="avatar">👥</div><div class="comm-meta"><div class="name">1:1 — Mentor</div><div class="sub">Private meeting</div></div></div>
+          <div class="comm-item" data-id="1to1-legal"><div class="avatar">👥</div><div class="comm-meta"><div class="name">1:1 — Legal</div><div class="sub">Private</div></div></div>
+        </div>
+
+        <div class="create-row">
+          <button id="createCommunityBtn" class="create-btn">+ Create Community</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating toggle -->
+    <button id="sidebarToggle" class="sidebar-toggle" title="Open communities">☰ Communities</button>
+
+    <!-- Content area -->
+    <div class="content-area">
+      <div class="content-card">
+        <div class="content-header">
+          <div>
+            <h2>Discovery Feed</h2>
+            <div class="content-sub">Real-time discussions across the Shakti network</div>
+          </div>
+          <div id="closeSidebarBtnWrapper"></div>
+        </div>
+
+        <!-- grid view (idle) -->
+        <div id="gridView" class="grid" aria-live="polite">
+          <!-- four stream cards -->
+          <div class="stream-card" data-comm="React Developers">
+            <div class="stream-top">
+              <div class="title"><div class="avatar">R</div><div style="font-weight:800;margin-left:8px">React Developers</div></div>
+              <div class="badge-safe">95% Safe</div>
+            </div>
+            <div class="stream-messages" data-stream="React Developers"></div>
+            <div style="font-size:0.9rem;color:var(--muted); padding-top:6px">Join the conversation...</div>
+          </div>
+
+          <div class="stream-card" data-comm="UI/UX Design">
+            <div class="stream-top">
+              <div class="title"><div class="avatar">U</div><div style="font-weight:800;margin-left:8px">UI/UX Design</div></div>
+              <div class="badge-safe">94% Safe</div>
+            </div>
+            <div class="stream-messages" data-stream="UI/UX Design"></div>
+            <div style="font-size:0.9rem;color:var(--muted); padding-top:6px">Join the conversation...</div>
+          </div>
+
+          <div class="stream-card" data-comm="Rust Lang">
+            <div class="stream-top">
+              <div class="title"><div class="avatar">R</div><div style="font-weight:800;margin-left:8px">Rust Lang</div></div>
+              <div class="badge-safe">98% Safe</div>
+            </div>
+            <div class="stream-messages" data-stream="Rust Lang"></div>
+            <div style="font-size:0.9rem;color:var(--muted); padding-top:6px">Join the conversation...</div>
+          </div>
+
+          <div class="stream-card" data-comm="AI & LLMs">
+            <div class="stream-top">
+              <div class="title"><div class="avatar">A</div><div style="font-weight:800;margin-left:8px">AI & LLMs</div></div>
+              <div class="badge-safe">88% Safe</div>
+            </div>
+            <div class="stream-messages" data-stream="AI & LLMs"></div>
+            <div style="font-size:0.9rem;color:var(--muted); padding-top:6px">Join the conversation...</div>
+          </div>
+        </div>
+
+        <!-- Community detailed view (hidden until a community is opened) -->
+        <div id="communityView" class="community-view">
+          <div class="cv-header">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div class="avatar" id="cvAvatar">C</div>
+              <div>
+                <div id="cvName" style="font-weight:800;font-size:1.05rem">Community</div>
+                <div style="color:var(--muted); font-size:0.9rem" id="cvMeta">0 members • live</div>
+              </div>
+            </div>
+            <div class="cv-actions">
+              <button class="btn" id="closeCommunity">Close</button>
+            </div>
+          </div>
+
+          <div class="cv-messages" id="cvMessages"></div>
+
+          <div class="cv-input">
+            <input id="cvInput" placeholder="Write a message..." aria-label="Write message">
+            <button class="btn" id="cvSend">Send</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- incubator modal -->
+  <div id="incModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="incubTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="incubTitle">Create Incubator</h3>
+        <button onclick="closeIncubator()" style="border:none;background:transparent;font-weight:800;font-size:18px;">✕</button>
+      </div>
+
+      <div class="row"><label>Incubator Name</label><input id="incName" placeholder="e.g. Startup Ideas"></div>
+      <div class="row"><label>Purpose / Type</label><input id="incType" placeholder="e.g. Startup talks, Story writing..."></div>
+      <div class="row"><label>Model</label>
+        <select id="incModel">
+          <option value="chatgpt">ChatGPT</option>
+          <option value="gemini">Gemini</option>
+          <option value="claude">Claude</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="closeIncubator()" class="btn ghost" style="background:#fff;border:1px solid rgba(20,40,80,0.06);">Cancel</button>
+        <button onclick="createIncubator()" class="btn">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- settings panel (bottom-right) -->
+  <div id="settingsFab" class="settings-fab" title="Settings">
+    ⚙️ <div style="font-weight:700;color:var(--muted)">Settings</div>
+  </div>
+  <div id="settingsPanel" class="settings-panel" aria-hidden="true">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:800;color:var(--accent-2)">Settings — Incubators</div>
+      <button onclick="closeSettings()" style="border:none;background:transparent;font-weight:800;font-size:16px;">✕</button>
+    </div>
+
+    <div id="incList" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;">
+      <!-- incubators injected here -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- App state and demo streams ---------- */
+const communities = [
+  { id: 'react', name: 'React Developers', members: 12500, activity: 103 },
+  { id: 'uiux', name: 'UI/UX Design', members: 15000, activity: 116 },
+  { id: 'rust', name: 'Rust Lang', members: 3200, activity: 91 },
+  { id: 'ai', name: 'AI & LLMs', members: 8400, activity: 101 }
+];
+// a larger list for left sidebar
+const leftCommunities = [
+  'React Developers','AI & LLMs','Startup Founders','UI/UX Design','Rust Lang','Digital Nomads',
+  'Indie Hackers','Game Devs','Local Help','Project Alpha','Weekend Trip','Hackathon Squad'
+];
+
+// small multilingual message pool
+const messagesPool = [
+  "Anyone attending the meetup tomorrow?",
+  "Does this support Typescript?",
+  "Can someone help me debug this error?",
+  "We shipped this feature today.",
+  "Moderator: please review the flagged post.",
+  "నేను సహాయం చేయగలను, చెప్పండి.", // Telugu
+  "ನಿಮ್ಮ ಸಲಹೆ ಬೇಕು.", // Kannada
+  "விடுவாய் சரிகஷ எங்கேன மெச்சப்பட்டது?", // Tamil-like
+  "मैं इस पर काम कर रहा हूँ — आगे बताऊँगा।", // Hindi
+  "Check out this link.",
+  "Call 100 if urgent.",
+  "Any updates on this?"
+];
+
+// helpers
+function by(selector){ return document.querySelector(selector); }
+function byId(id){ return document.getElementById(id); }
+
+/* ---------- Sidebar rendering ---------- */
+const commListEl = byId('commList');
+function renderSidebarList(filter='') {
+  commListEl.innerHTML = '';
+  const data = leftCommunities.filter(c => c.toLowerCase().includes(filter.toLowerCase()));
+  data.forEach((name, idx) => {
+    const id = 'c-' + idx;
+    const item = document.createElement('div');
+    item.className = 'comm-item';
+    item.dataset.id = id;
+    item.dataset.name = name;
+    item.innerHTML = `<div class="avatar">💬</div>
+      <div class="comm-meta"><div class="name">${name}</div><div class="sub">~ ${Math.floor(1000 + Math.random()*20000)} members</div></div>`;
+    item.addEventListener('click', ()=> openCommunity(name));
+    commListEl.appendChild(item);
+  });
+}
+renderSidebarList();
+
+/* search */
+byId('searchInput').addEventListener('input', (e)=> renderSidebarList(e.target.value));
+
+/* create community (simple hover form) */
+byId('createCommunityBtn').addEventListener('click', ()=> {
+  // small prompt dialog for demo
+  const title = prompt('Community title');
+  if (!title) return;
+  leftCommunities.unshift(title);
+  renderSidebarList();
+});
+
+/* ---------- Sidebar open/close logic ---------- */
+const sidebar = byId('sidebar');
+const sidebarToggle = byId('sidebarToggle');
+const startIncBtn = byId('startIncBtn');
+
+function showSidebar(){
+  sidebar.classList.remove('hidden');
+  sidebarToggle.classList.remove('show');
+}
+function hideSidebar(){
+  sidebar.classList.add('hidden');
+  sidebarToggle.classList.add('show');
+}
+sidebarToggle.addEventListener('click', ()=> showSidebar());
+/* Add a small close button in header area when sidebar open */
+function updateHeaderCloseButton(){
+  const wrapper = document.getElementById('closeSidebarBtnWrapper');
+  wrapper.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'sidebar-close-fab';
+  btn.textContent = '☰ Communities';
+  btn.style.display = 'inline-flex';
+  btn.style.alignItems = 'center';
+  btn.style.gap = '8px';
+  btn.style.padding = '8px 12px';
+  btn.style.borderRadius = '12px';
+  btn.style.background = '#fff';
+  btn.style.border = '1px solid rgba(10,20,40,0.04)';
+  btn.style.cursor = 'pointer';
+  btn.addEventListener('click', ()=> {
+    // toggle
+    if (sidebar.classList.contains('hidden')) showSidebar(); else hideSidebar();
+  });
+  wrapper.appendChild(btn);
+}
+updateHeaderCloseButton();
+
+/* ---------- Grid live streams (simulate live messages) ---------- */
+const streamEls = document.querySelectorAll('.stream-messages');
+function seedStreams() {
+  streamEls.forEach(el=>{
+    // initial few messages
+    for (let i=0;i<4;i++){
+      pushMessageToStream(el, randomMessage());
+    }
+  });
+}
+function randomMessage(){
+  const name = ['Frank','Priya','Dave','Grace','Karan','Meera','Anita','Ravi','Divya'][ Math.floor(Math.random()*9) ];
+  const text = messagesPool[ Math.floor(Math.random()*messagesPool.length) ];
+  return {name, text, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
+}
+function pushMessageToStream(el, msg){
+  const div = document.createElement('div');
+  div.className = 'msg';
+  const initials = msg.name.charAt(0).toUpperCase();
+  div.innerHTML = `<div class="m-avatar">${initials}</div>
+                   <div>
+                     <div class="m-body"><strong style="font-weight:800;margin-right:8px">${msg.name}</strong> ${escapeHtml(msg.text)}</div>
+                     <div class="m-time">${msg.time}</div>
+                   </div>`;
+  el.appendChild(div);
+  // keep only latest ~12 messages for visual neatness
+  while (el.children.length > 14) el.removeChild(el.firstChild);
+  // auto-scroll to bottom subtle (but grid cards are fixed; show newest at bottom)
+  el.scrollTop = el.scrollHeight;
+}
+seedStreams();
+
+// periodically add new messages to each stream (simulating live)
+setInterval(()=>{
+  streamEls.forEach(el=> {
+    if (Math.random() > 0.35) pushMessageToStream(el, randomMessage());
+  });
+}, 2200);
+
+/* ---------- Community open / grid <-> community view transitions ---------- */
+const gridView = byId('gridView');
+const communityView = byId('communityView');
+const cvName = byId('cvName');
+const cvMeta = byId('cvMeta');
+const cvAvatar = byId('cvAvatar');
+const cvMessages = byId('cvMessages');
+const cvInput = byId('cvInput');
+const cvSend = byId('cvSend');
+
+let activeCommunity = null;
+
+function openCommunity(name){
+  activeCommunity = name;
+  // If sidebar closed, right content should expand naturally (flexbox gives it)
+  // Hide grid and show community view
+  gridView.style.display = 'none';
+  communityView.classList.add('show');
+  cvName.textContent = name;
+  cvMeta.textContent = `${Math.floor(800 + Math.random()*12000)} members • live`;
+  cvAvatar.textContent = name.charAt(0).toUpperCase();
+
+  // load messages for this community (simulated) — create a small buffer
+  cvMessages.innerHTML = '';
+  for (let i=0;i<8;i++) {
+    appendCVMessage({name: ['Frank','Priya','Dave','Meera','Anita'][i%5], text: messagesPool[Math.floor(Math.random()*messagesPool.length)], time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+  }
+  // Scroll to bottom
+  setTimeout(()=> cvMessages.scrollTop = cvMessages.scrollHeight, 50);
+
+  // If sidebar is hidden, ensure content uses full width (flex takes care)
+  // Not much else needed; clicking "Close" will return to grid.
+}
+
+function closeCommunityView(){
+  activeCommunity = null;
+  communityView.classList.remove('show');
+  gridView.style.display = 'grid';
+}
+
+/* append message to community view */
+function appendCVMessage(msg){
+  const el = document.createElement('div');
+  el.style.display='flex'; el.style.gap='12px';
+  el.innerHTML = `<div class="m-avatar">${msg.name.charAt(0).toUpperCase()}</div>
+                  <div style="display:flex;flex-direction:column;">
+                    <div style="font-weight:800;margin-bottom:6px">${escapeHtml(msg.name)}</div>
+                    <div style="background:#f3f9ff;padding:10px 12px;border-radius:10px;max-width:80%">${escapeHtml(msg.text)}</div>
+                    <div style="color:var(--muted);font-size:0.8rem;margin-top:6px">${msg.time}</div>
+                  </div>`;
+  cvMessages.appendChild(el);
+}
+
+/* send from input */
+cvSend.addEventListener('click', ()=>{
+  const text = cvInput.value.trim();
+  if (!text) return;
+  appendCVMessage({name:'You', text, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+  cvInput.value = '';
+  cvMessages.scrollTop = cvMessages.scrollHeight;
+});
+
+/* allow Enter to send */
+cvInput.addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') { e.preventDefault(); cvSend.click(); }
+});
+
+byId('closeCommunity').addEventListener('click', ()=> closeCommunityView());
+
+/* clicking any grid card opens that community in full */
+document.querySelectorAll('.stream-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const name = card.dataset.comm;
+    openCommunity(name);
+  });
+});
+
+/* ---------- Sidebar close/open behavior: when sidebar closed we show toggle; also animate a small top offset */ 
+// Put a little "up" offset on grid when sidebar is closing so it's visually neat
+function animateHideSidebar(){
+  // small slide effect: add left padding to content
+  const mainWrap = document.querySelector('.main-wrap');
+  mainWrap.style.transition = 'padding-left .28s ease';
+  mainWrap.style.paddingLeft = '34px';
+  setTimeout(()=> mainWrap.style.paddingLeft = '', 320);
+}
+document.querySelector('.sidebar-toggle').addEventListener('click', ()=> {
+  showSidebar();
+});
+/* close sidebar when clicking the small header button */
+document.querySelector('#closeSidebarBtnWrapper').addEventListener('click', (e)=>{
+  // delegates: if user clicked the created control
+  const btn = e.target.closest('button');
+  if (btn) { hideSidebar(); animateHideSidebar(); }
+});
+
+/* also detect manual hide by clicking outside on narrow screens */
+window.addEventListener('resize', ()=> {
+  if (window.innerWidth < 720) {
+    // if narrow, start with sidebar hidden for cleaner view
+    // hideSidebar();
+  }
+});
+
+/* ---------- Incubator modal (create & store) ---------- */
+const incModal = byId('incModal');
+const incName = byId('incName');
+const incType = byId('incType');
+const incModel = byId('incModel');
+
+function openIncubator(){ incModal.style.display='flex'; incModal.setAttribute('aria-hidden','false'); incName.value=''; incType.value=''; incModel.value='chatgpt'; }
+function closeIncubator(){ incModal.style.display='none'; incModal.setAttribute('aria-hidden','true'); }
+
+startIncBtn.addEventListener('click', ()=> openIncubator());
+function createIncubator(){
+  const name = incName.value.trim();
+  if (!name) { alert('Enter a name'); return; }
+  const obj = { id: 'inc-' + Date.now(), name, type: incType.value, model: incModel.value, created: Date.now() };
+  // persist in localStorage
+  let arr = JSON.parse(localStorage.getItem('shakti_incubators') || '[]');
+  arr.unshift(obj);
+  localStorage.setItem('shakti_incubators', JSON.stringify(arr));
+  closeIncubator();
+  renderIncubators();
+  // add to sidebar communities as a private incubator
+  leftCommunities.unshift(name + ' (Incubator)');
+  renderSidebarList();
+  alert('Incubator created. A secret key was generated for you (stored in Settings).');
+}
+
+/* ---------- Settings panel (shows incubators saved data) ---------- */
+const settingsFab = byId('settingsFab');
+const settingsPanel = byId('settingsPanel');
+settingsFab.addEventListener('click', ()=> {
+  settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+  renderIncubators();
+});
+function closeSettings(){ settingsPanel.style.display = 'none'; }
+function renderIncubators(){
+  const container = byId('incList');
+  container.innerHTML = '';
+  const arr = JSON.parse(localStorage.getItem('shakti_incubators') || '[]');
+  if (!arr.length) container.innerHTML = '<div style="color:var(--muted)">No incubators created yet.</div>';
+  arr.forEach(i => {
+    const card = document.createElement('div');
+    card.style.display='flex'; card.style.justifyContent='space-between'; card.style.alignItems='center';
+    card.style.padding='8px'; card.style.borderRadius='8px'; card.style.border='1px solid rgba(20,40,80,0.03)';
+    card.innerHTML = `<div><div style="font-weight:800">${escapeHtml(i.name)}</div><div style="font-size:0.85rem;color:var(--muted)">${escapeHtml(i.type)} • ${escapeHtml(i.model)}</div></div>
+                      <div style="display:flex;flex-direction:column;gap:6px">
+                        <button style="padding:6px 8px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer" onclick='restoreIncubator("${i.id}")'>Restore</button>
+                        <button style="padding:6px 8px;border-radius:8px;border:1px solid rgba(20,40,80,0.06);background:#fff;cursor:pointer" onclick='deleteIncubator("${i.id}")'>Delete</button>
+                      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function restoreIncubator(id){
+  // Simulate "re-creating" incubator into sidebar; data is preserved in settings
+  const arr = JSON.parse(localStorage.getItem('shakti_incubators') || '[]');
+  const inc = arr.find(x=>x.id===id);
+  if (!inc) return alert('Not found');
+  leftCommunities.unshift(inc.name + ' (Incubator)');
+  renderSidebarList();
+  alert('Incubator restored to sidebar. It will open empty (no demo messages).');
+}
+
+function deleteIncubator(id){
+  let arr = JSON.parse(localStorage.getItem('shakti_incubators') || '[]');
+  arr = arr.filter(x=>x.id!==id);
+  localStorage.setItem('shakti_incubators', JSON.stringify(arr));
+  renderIncubators();
+}
+
+/* ---------- Utilities & small behaviors ---------- */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* automatically hide native page scrollbars by ensuring outermost container doesn't scroll (done via CSS) */
+/* done: body overflow hidden; all scrolls inside y containers */
+
+/* initialize: hide sidebar toggle only when sidebar visible */
+function init(){
+  // check saved incubators and render
+  renderIncubators();
+  // initial sidebar visible
+  sidebar.classList.remove('hidden');
+  sidebarToggle.classList.remove('show');
+  // small: seed some streams already did
+}
+init();
+
+/* Close sidebar by clicking the built-in header button (the one we added earlier) - we also expose a simple hide on double-click for testing */
+document.querySelector('#closeSidebarBtnWrapper button')?.addEventListener('dblclick', ()=> { hideSidebar(); });
+
+/* Ensure left list scroll and right content scroll operate independently. Already configured via CSS overflow on containers. */
+
+/* small: hide inc modal on outside click */
+byId('incModal').addEventListener('click', (e)=> { if (e.target === byId('incModal')) closeIncubator(); });
+
+/* hide settings when clicked outside */
+document.addEventListener('click', (e)=> {
+  if (!settingsPanel.contains(e.target) && !settingsFab.contains(e.target)) {
+    // close panel
+    // do nothing to be less aggressive; user can close manually
+  }
+});
+</script>
+</body>
+</html>

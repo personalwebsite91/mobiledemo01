@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SHAKTI-IND Spiral Animation - Optimized</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+        height: 100vh;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    .container {
+        width: 100%;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #linesCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+        will-change: transform, opacity;
+    }
+
+    .spiral {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        /* CORRECTED: Indian flag colors restored */
+        background: conic-gradient(
+            from 0deg,
+            #FF7A33,   /* Saffron */
+            #FFFFFF,   /* White */
+            #0F9D58,   /* Green */
+            #FFFFFF,   /* White again for smooth transition/balance */
+            #FF7A33    /* Saffron to complete the circle */
+        );
+        filter: blur(45px);
+        opacity: 0;
+        transform: scale(0);
+        animation: spiralMix 2s ease-out forwards 1.4s;
+        z-index: 4;
+    }
+
+    @keyframes spiralMix {
+        0% { opacity: 0; transform: scale(0) rotate(0deg); }
+        50% { opacity: 1; transform: scale(1.5) rotate(180deg); }
+        100% { opacity: 1; transform: scale(1.2) rotate(360deg); }
+    }
+
+    .flag {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        background: linear-gradient(180deg, #FF7A33, #FFFFFF, #0F9D58);
+        animation: none;
+        z-index: 3;
+        mix-blend-mode: screen;
+        pointer-events: none;
+        display: none;
+    }
+
+    .app-name {
+        position: absolute;
+        font-size: 60px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        opacity: 0;
+        background: linear-gradient(90deg, #FF7A33, #0F9D58);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: logoReveal 2s ease forwards 2.8s;
+        z-index: 6;
+        text-align: center;
+    }
+
+    @keyframes logoReveal {
+        0% { opacity: 0; transform: scale(0.4); filter: blur(25px); }
+        100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+    }
+
+    .slogan {
+        position: absolute;
+        top: 55%;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        opacity: 0;
+        color: #FFFFFF;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        animation: logoReveal 2s ease forwards 3.8s;
+        z-index: 6;
+    }
+
+    @media (max-width: 600px) {
+        .app-name { font-size: 40px; }
+        .slogan { font-size: 15px; }
+    }
+
+    .page-zoom-in {
+    animation: zoomIn 0.9s ease forwards;
+ }
+
+@keyframes zoomIn {
+    0% { transform: scale(1); }
+    100% { transform: scale(2); }
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <canvas id="linesCanvas"></canvas>
+
+    <div class="spiral"></div>
+    <div class="flag"></div>
+    <h1 class="app-name">SHAKTI-IND</h1>
+    <h2 class="slogan">Social|Safety|Community</h2>
+
+
+</div>
+
+<script>
+/*
+  OPTIMIZED & FASTER VERSION
+  - Reduced MAX_LINES for lag-free performance.
+  - Reduced BASE_DURATION and DELAY for faster animation.
+  - Simplified per-frame calculations inside the main drawing loop.
+  - Corrected spiral conic-gradient colors.
+*/
+
+(function () {
+    const canvas = document.getElementById('linesCanvas');
+    const ctx = canvas.getContext('2d', { alpha: true });
+    const bgMusic = document.getElementById('bgMusic');
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    let DPR = Math.max(1, window.devicePixelRatio || 1);
+    let cx = W / 2, cy = H / 2;
+    let MAX_DIST = Math.sqrt(W * W + H * H) / 2;
+
+    const colors = [
+        '#FF7A33', '#FF8F50', '#FFAB7A', // saffron/orange family
+        '#FFFFFF', '#F6F8FA', // whites / off-whites
+        '#0F9D58', '#1AA05D', '#39B573', // greens
+        '#87CEEB', '#B3E6FF'  // light blues
+    ];
+
+    const MAX_LINES = () => Math.min(1200, Math.max(400, Math.floor((W * H) / 3000)));
+    let lines = [];
+    let convergedCount = 0;
+    const START_TIME = { v: 0 };
+    const BASE_DURATION = 400;
+    let animRunning = false;
+    let isFinalized = false;
+
+    function resize() {
+        W = window.innerWidth; H = window.innerHeight;
+        DPR = Math.max(1, window.devicePixelRatio || 1);
+        canvas.width = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        cx = W / 2; cy = H / 2;
+        MAX_DIST = Math.sqrt(W * W + H * H) / 2;
+    }
+
+    function rand(a = 0, b = 1) { return a + Math.random() * (b - a); }
+
+    function pickEdgeStart() {
+        const side = Math.floor(rand(0, 4));
+        let x, y;
+        const pad = Math.max(28, Math.min(W, H) * 0.06);
+        if (side === 0) { x = rand(-pad, W + pad); y = -pad; }
+        else if (side === 1) { x = W + pad; y = rand(-pad, H + pad); }
+        else if (side === 2) { x = rand(-pad, W + pad); y = H + pad; }
+        else { x = -pad; y = rand(-pad, H + pad); }
+        return { x, y };
+    }
+
+    function spawnLine(i) {
+        const start = pickEdgeStart();
+        const jitter = Math.min(W, H) * 0.13;
+        const cx1 = start.x + (cx - start.x) * rand(0.16, 0.78) + rand(-jitter, jitter);
+        const cy1 = start.y + (cy - start.y) * rand(0.16, 0.78) + rand(-jitter, jitter);
+
+        const midx = (start.x + cx) / 2;
+        const midy = (start.y + cy) / 2;
+        
+        const color = colors[Math.floor(rand(0, colors.length))];
+        const width = rand(0.24, 1.1) * (1 + (Math.random() - 0.5) * 0.45);
+        const speed = rand(1.05, 2.1); 
+        const delay = rand(0, 100);
+
+        return {
+            id: i,
+            x0: start.x,
+            y0: start.y,
+            cx1, cy1,
+            midx, midy,
+            color,
+            width,
+            speed,
+            delay,
+            done: false
+        };
+    }
+
+    function initLines() {
+        lines = [];
+        convergedCount = 0;
+        isFinalized = false;
+        const N = MAX_LINES();
+        for (let i = 0; i < N; i++) lines.push(spawnLine(i));
+    }
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function finalizeBackground() {
+        if (isFinalized) return;
+        isFinalized = true;
+
+        ctx.clearRect(0, 0, W, H);
+        
+        ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
+        
+        const safeGradient = ctx.createLinearGradient(0, 0, 0, H);
+        safeGradient.addColorStop(0, 'rgba(255,182,193,0.1)');
+        safeGradient.addColorStop(0.5, 'rgba(255,255,255,0.2)');
+        safeGradient.addColorStop(1, 'rgba(173,216,230,0.1)');
+        ctx.globalAlpha = 0.9; ctx.fillStyle = safeGradient; ctx.fillRect(0, 0, W, H);
+
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
+        glow.addColorStop(0, 'rgba(255,218,185,0.1)');
+        glow.addColorStop(0.6, 'rgba(255,255,255,0.05)');
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        
+        ctx.globalAlpha = 0.8; 
+        ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+    }
+
+
+    function draw(now) {
+        if (isFinalized) return;
+
+        if (!START_TIME.v) START_TIME.v = now;
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+
+        let activeLines = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            const p = lines[i];
+            
+            if (now - START_TIME.v < p.delay) {
+                continue;
+            }
+
+            const elapsed = now - START_TIME.v - p.delay;
+            const dur = BASE_DURATION / p.speed;
+            let t = Math.min(1, elapsed / dur);
+            const e = easeOutCubic(t);
+
+            const ex = p.x0 + (cx - p.x0) * e;
+            const ey = p.y0 + (cy - p.y0) * e;
+
+            const ccx = p.cx1 + (p.midx - p.cx1) * (0.56 + 0.44 * e);
+            const ccy = p.cy1 + (p.midy - p.cy1) * (0.56 + 0.44 * e);
+
+            const dist = Math.hypot(ex - cx, ey - cy);
+            
+            const normalizedDist = dist / MAX_DIST; 
+            const alpha = Math.max(0.06, 0.98 * (1 - normalizedDist) + 0.01);
+            
+            const lw = Math.max(0.12, p.width * (1 - e) * 2.6 + (e * 0.42));
+
+            ctx.lineWidth = lw;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = p.color;
+            ctx.globalAlpha = alpha;
+
+            ctx.beginPath();
+            ctx.moveTo(p.x0, p.y0);
+            ctx.quadraticCurveTo(ccx, ccy, ex, ey);
+            ctx.stroke();
+
+            if (t > 0.8) {
+                ctx.globalAlpha = (t - 0.8) * 0.85 * (alpha + 0.12);
+                ctx.lineWidth = lw * 1.5;
+                ctx.beginPath();
+                ctx.moveTo(p.x0, p.y0);
+                ctx.quadraticCurveTo(ccx, ccy, ex, ey);
+                ctx.stroke();
+            }
+
+            if (t >= 1 && !p.done) { p.done = true; convergedCount++; }
+            if (t < 1) activeLines++;
+        }
+
+        ctx.globalAlpha = 1;
+
+        const doneRatio = convergedCount / lines.length;
+        
+        if (doneRatio > 0.02) {
+            const bloomP = Math.min(1, (doneRatio - 0.02) / 0.6);
+            const bloomEase = easeOutCubic(bloomP);
+            const maxRadius = Math.max(W, H) * 0.8;
+            const radius = 20 + bloomEase * maxRadius;
+
+            const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            rg.addColorStop(0, `rgba(255,255,255,${0.95 * bloomEase})`);
+            rg.addColorStop(0.6, `rgba(255,255,255,${0.28 * bloomEase})`);
+            rg.addColorStop(1, 'rgba(255,255,255,0)');
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = rg;
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+        }
+
+        if (doneRatio > 0.18) {
+            const reveal = Math.min(1, (doneRatio - 0.18) / 0.7);
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, `rgba(255,122,51,${0.06 * reveal})`);
+            g.addColorStop(0.5, `rgba(255,255,255,${0.04 * reveal})`);
+            g.addColorStop(1, `rgba(15,157,88,${0.08 * reveal})`);
+            
+            ctx.save();
+            ctx.globalAlpha = 0.95 * reveal; 
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+
+            const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.9);
+            vg.addColorStop(0, `rgba(135,206,235,${0.015 * reveal})`);
+            vg.addColorStop(0.6, `rgba(135,206,235,${0.006 * reveal})`);
+            vg.addColorStop(1, 'rgba(0,0,0,0)');
+            
+            ctx.save();
+            ctx.globalAlpha = 0.5 * reveal;
+            ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+            ctx.restore();
+        }
+
+        if (convergedCount < lines.length * 0.985) {
+            animRunning = true;
+            requestAnimationFrame(draw);
+        } else {
+            animRunning = false;
+            setTimeout(finalizeBackground, 20); 
+        }
+    }
+
+    function start() {
+        resize();
+        initLines();
+        START_TIME.v = 0;
+        setTimeout(() => { if (!animRunning) requestAnimationFrame(draw); }, 40);
+    }
+
+    window.addEventListener('resize', () => { 
+        resize(); 
+        initLines(); 
+        if (!animRunning && !isFinalized) requestAnimationFrame(draw);
+    });
+
+    setTimeout(() => {
+        bgMusic.volume = 0.2;
+        bgMusic.play().catch(e => console.log('Audio play failed:', e));
+    }, 2800); 
+
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq.matches) {
+        resize();
+        finalizeBackground();
+        document.querySelector('.app-name').style.opacity = 1;
+        document.querySelector('.slogan').style.opacity = 1;
+    } else {
+        start();
+    }
+
+})();
+</script>
+<script>
+setTimeout(() => {
+    document.body.classList.add("page-zoom-in");
+
+    setTimeout(() => {
+        window.location.href = "Homepage/HP2.html";
+    }, 800);
+
+}, 8000);
+</script>
+</body>
+</html>
