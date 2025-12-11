@@ -12,10 +12,12 @@
     *{margin:0;padding:0;box-sizing:border-box;}
     body{
         font-family:'Poppins',sans-serif;
-        height:100vh;
+        min-height:100vh;
         background:#fff8f0;
-        overflow:hidden;
-        position:relative;
+        display:flex;
+        align-items:flex-start;
+        justify-content:center;
+        padding:40px 20px;
     }
 
     .bg-gradient{
@@ -25,28 +27,84 @@
     }
 
     .card{
-        background:rgba(255,255,255,0.95);
-        backdrop-filter:blur(15px);
-        padding:42px 32px;
-        width:100%;max-width:390px;
+        background:rgba(255,255,255,0.98);
+        backdrop-filter:blur(10px);
+        padding:40px 32px;
+        width:100%;max-width:420px;
         border-radius:28px;
         box-shadow:0 20px 40px rgba(0,0,0,0.08);
-        border:1px solid rgba(255,153,51,0.15);
+        border:1px solid rgba(255,153,51,0.12);
         text-align:center;
-        margin:auto;
-        margin-top:60px;
+        margin-top:20px;
     }
 
     h2{font-size:24px;margin-bottom:10px;color:#2c3e50;}
 
-    input,textarea{
+    /* Avatar + upload area */
+    .avatar-wrap{
+        display:flex;
+        align-items:center;
+        gap:16px;
+        justify-content:center;
+        margin:14px 0 6px;
+    }
+
+    #previewPic{
+        width:120px;height:120px;
+        border-radius:50%;
+        object-fit:cover;
+        display:block;
+        border:4px solid #FF9933;
+        box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    /* hidden native file input */
+    #profilePicInput{ display:none; }
+
+    .upload-controls{
+        text-align:left;
+        max-width:220px;
+    }
+
+    .upload-btn{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        padding:10px 14px;
+        border-radius:12px;
+        border:1px solid rgba(0,0,0,0.06);
+        background:#fff;
+        cursor:pointer;
+        font-weight:600;
+        box-shadow:0 6px 18px rgba(255,122,51,0.06);
+    }
+
+    .upload-btn i{ font-size:16px;color:#126d09; }
+
+    .filename{
+        margin-top:8px;
+        display:block;
+        font-size:13px;
+        color:#666;
+        background:#fafafa;
+        padding:8px 10px;
+        border-radius:10px;
+        border:1px solid #eee;
+        max-width:220px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    input[type="text"], textarea{
         width:100%;
         padding:14px 18px;
-        margin:12px 0;
+        margin:14px 0;
         border-radius:16px;
         border:2px solid #eee;
         background:#fafafa;
         font-size:15px;
+        resize:vertical;
     }
 
     .btn-gradient{
@@ -56,17 +114,22 @@
         font-size:17px;font-weight:600;
         color:white;background:var(--green);
         cursor:pointer;
-        margin-top:10px;
-        box-shadow:0 10px 30px rgba(255,122,51,0.4);
-        transition:0.3s;
+        margin-top:14px;
+        box-shadow:0 10px 30px rgba(255,122,51,0.35);
+        transition:transform .15s ease;
     }
 
-    #previewPic{
-        width:120px;height:120px;
-        border-radius:50%;
-        object-fit:cover;
-        margin:10px auto;
-        border:3px solid #FF9933;
+    .btn-gradient:active{ transform:translateY(2px); }
+
+    /* small helper text */
+    .muted{
+        font-size:13px;color:#7b8a84;margin-top:6px;
+    }
+
+    /* responsive */
+    @media (max-width:420px){
+        .avatar-wrap{ flex-direction:column; gap:10px; }
+        .upload-controls{ text-align:center; }
     }
 </style>
 </head>
@@ -78,9 +141,28 @@
 <div class="card">
     <h2>Complete Your Profile</h2>
 
-    <!-- Profile Picture Upload -->
-    <input type="file" id="profilePicInput" accept="image/*">
-    <img id="previewPic" src="" style="display:none;">
+    <!-- Avatar + nicer upload controls -->
+    <div class="avatar-wrap">
+        <label for="profilePicInput" style="cursor:pointer;">
+            <img id="previewPic" src="" alt="Avatar preview" style="display:none;">
+            <!-- placeholder circle when no image -->
+            <div id="placeholder" style="width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fff7f0,#fff2e6);border:4px solid #FF9933;box-shadow:0 8px 20px rgba(0,0,0,0.04);font-weight:600;color:#126d09;font-size:14px;">
+                Upload
+            </div>
+        </label>
+
+        <div class="upload-controls">
+            <!-- Keep original input id so your logic stays identical -->
+            <input type="file" id="profilePicInput" accept="image/*">
+            <label class="upload-btn" for="profilePicInput">
+                <i class="fa-solid fa-upload"></i>
+                <span>Choose Photo</span>
+            </label>
+
+            <span class="filename" id="fileName">No file chosen</span>
+            <div class="muted">Recommended: square image (≥ 300×300)</div>
+        </div>
+    </div>
 
     <!-- Bio -->
     <input type="text" id="bio" placeholder="Your bio (e.g., Student, Developer...)">
@@ -109,23 +191,38 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Load selected image preview
+    // Load selected image preview (keeps same id/profileImageBase64 variable for logic)
     let profileImageBase64 = "";
-    document.getElementById("profilePicInput").addEventListener("change", function(event){
+    const fileInput = document.getElementById("profilePicInput");
+    const fileNameEl = document.getElementById("fileName");
+    const previewImg = document.getElementById("previewPic");
+    const placeholder = document.getElementById("placeholder");
+
+    fileInput.addEventListener("change", function(event){
         const file = event.target.files[0];
+        if(!file) {
+            fileNameEl.textContent = 'No file chosen';
+            previewImg.style.display = 'none';
+            placeholder.style.display = 'flex';
+            profileImageBase64 = "";
+            return;
+        }
+
+        fileNameEl.textContent = file.name;
         const reader = new FileReader();
 
         reader.onload = function(e){
             profileImageBase64 = e.target.result;
-            const img = document.getElementById("previewPic");
-            img.src = e.target.result;
-            img.style.display = "block";
+            previewImg.src = e.target.result;
+            previewImg.style.display = "block";
+            placeholder.style.display = "none";
         };
 
-        if(file){ reader.readAsDataURL(file); }
+        reader.readAsDataURL(file);
     });
 
-    // Save profile details
+    // Also allow clicking placeholder/avatar to open file chooser (label already does this)
+    // Save profile details - logic unchanged
     window.saveProfile = async function (){
         const bio = document.getElementById("bio").value.trim();
         const desc = document.getElementById("description").value.trim();
@@ -158,7 +255,11 @@
 
                 // After saving → back to login
                 window.location.href = "login_page.html";
+            } else {
+                alert("User not found. Please sign up first.");
             }
+        } else {
+            alert("No users data found in database.");
         }
     }
 </script>
