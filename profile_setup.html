@@ -46,25 +46,38 @@
         align-items:center;
         gap:16px;
         justify-content:center;
-        margin:14px 0 6px;
+        margin:14px 0;
+        flex-direction:column;
     }
 
     #previewPic{
         width:120px;height:120px;
         border-radius:50%;
         object-fit:cover;
-        display:block;
+        display:none;
         border:4px solid #FF9933;
         box-shadow:0 8px 20px rgba(0,0,0,0.08);
+        cursor:pointer;
+    }
+
+    /* placeholder circle */
+    #placeholder{
+        width:120px;height:120px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:linear-gradient(180deg,#fff7f0,#fff2e6);
+        border:4px solid #FF9933;
+        box-shadow:0 8px 20px rgba(0,0,0,0.04);
+        font-weight:600;
+        color:#126d09;
+        font-size:14px;
+        cursor:pointer;
     }
 
     /* hidden native file input */
     #profilePicInput{ display:none; }
-
-    .upload-controls{
-        text-align:left;
-        max-width:220px;
-    }
 
     .upload-btn{
         display:inline-flex;
@@ -81,21 +94,6 @@
 
     .upload-btn i{ font-size:16px;color:#126d09; }
 
-    .filename{
-        margin-top:8px;
-        display:block;
-        font-size:13px;
-        color:#666;
-        background:#fafafa;
-        padding:8px 10px;
-        border-radius:10px;
-        border:1px solid #eee;
-        max-width:220px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-    }
-
     input[type="text"], textarea{
         width:100%;
         padding:14px 18px;
@@ -104,8 +102,19 @@
         border:2px solid #eee;
         background:#fafafa;
         font-size:15px;
-        resize:vertical;
     }
+.logo {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #FF9933 50%, #138808 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+  text-align: center;
+  margin-bottom: 8px;
+}
 
     .btn-gradient{
         --green:#126d09;
@@ -116,20 +125,6 @@
         cursor:pointer;
         margin-top:14px;
         box-shadow:0 10px 30px rgba(255,122,51,0.35);
-        transition:transform .15s ease;
-    }
-
-    .btn-gradient:active{ transform:translateY(2px); }
-
-    /* small helper text */
-    .muted{
-        font-size:13px;color:#7b8a84;margin-top:6px;
-    }
-
-    /* responsive */
-    @media (max-width:420px){
-        .avatar-wrap{ flex-direction:column; gap:10px; }
-        .upload-controls{ text-align:center; }
     }
 </style>
 </head>
@@ -139,35 +134,25 @@
 <div class="bg-gradient"></div>
 
 <div class="card">
+    <h1 class="logo">Shakti-Ind</h1>
     <h2>Complete Your Profile</h2>
 
-    <!-- Avatar + nicer upload controls -->
+    <!-- Avatar + Upload -->
     <div class="avatar-wrap">
-        <label for="profilePicInput" style="cursor:pointer;">
-            <img id="previewPic" src="" alt="Avatar preview" style="display:none;">
-            <!-- placeholder circle when no image -->
-            <div id="placeholder" style="width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fff7f0,#fff2e6);border:4px solid #FF9933;box-shadow:0 8px 20px rgba(0,0,0,0.04);font-weight:600;color:#126d09;font-size:14px;">
-                Upload
-            </div>
+        <label for="profilePicInput">
+            <img id="previewPic" src="">
+            <div id="placeholder">Upload</div>
         </label>
 
-        <div class="upload-controls">
-            <!-- Keep original input id so your logic stays identical -->
-            <input type="file" id="profilePicInput" accept="image/*">
-            <label class="upload-btn" for="profilePicInput">
-                <i class="fa-solid fa-upload"></i>
-                <span>Choose Photo</span>
-            </label>
+        <label class="upload-btn" for="profilePicInput">
+            <i class="fa-solid fa-upload"></i>
+            <span>Choose Photo</span>
+        </label>
 
-            <span class="filename" id="fileName">No file chosen</span>
-            <div class="muted">Recommended: square image (≥ 300×300)</div>
-        </div>
+        <input type="file" id="profilePicInput" accept="image/*">
     </div>
 
-    <!-- Bio -->
     <input type="text" id="bio" placeholder="Your bio (e.g., Student, Developer...)">
-
-    <!-- Description -->
     <textarea id="description" rows="3" placeholder="Tell something about yourself..."></textarea>
 
     <button class="btn-gradient" onclick="saveProfile()">Save Profile</button>
@@ -176,7 +161,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, update, get, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, update, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDvZYHuZ2NHVrTpS3NhVS0f1wDeW-phZ10",
@@ -191,38 +176,26 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Load selected image preview (keeps same id/profileImageBase64 variable for logic)
     let profileImageBase64 = "";
+
     const fileInput = document.getElementById("profilePicInput");
-    const fileNameEl = document.getElementById("fileName");
-    const previewImg = document.getElementById("previewPic");
+    const preview = document.getElementById("previewPic");
     const placeholder = document.getElementById("placeholder");
 
     fileInput.addEventListener("change", function(event){
         const file = event.target.files[0];
-        if(!file) {
-            fileNameEl.textContent = 'No file chosen';
-            previewImg.style.display = 'none';
-            placeholder.style.display = 'flex';
-            profileImageBase64 = "";
-            return;
-        }
+        if(!file) return;
 
-        fileNameEl.textContent = file.name;
         const reader = new FileReader();
-
         reader.onload = function(e){
             profileImageBase64 = e.target.result;
-            previewImg.src = e.target.result;
-            previewImg.style.display = "block";
+            preview.src = e.target.result;
+            preview.style.display = "block";
             placeholder.style.display = "none";
         };
-
         reader.readAsDataURL(file);
     });
 
-    // Also allow clicking placeholder/avatar to open file chooser (label already does this)
-    // Save profile details - logic unchanged
     window.saveProfile = async function (){
         const bio = document.getElementById("bio").value.trim();
         const desc = document.getElementById("description").value.trim();
@@ -233,7 +206,6 @@
             return;
         }
 
-        // Fetch user by mobile number
         const snap = await get(ref(db, "shaktiind/users"));
         if(snap.exists()){
             const users = snap.val();
@@ -253,13 +225,8 @@
                     description: desc
                 });
 
-                // After saving → back to login
                 window.location.href = "login_page.html";
-            } else {
-                alert("User not found. Please sign up first.");
             }
-        } else {
-            alert("No users data found in database.");
         }
     }
 </script>
