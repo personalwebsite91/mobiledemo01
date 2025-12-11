@@ -321,123 +321,171 @@
 
     .hidden { display:none !important; }
     /* ---------- like heart burst + small pulse ---------- */
-.burst-heart {
-  position: fixed;
-  pointer-events: none;
-  transform: translate(-50%,-50%);
-  font-size: 48px;
-  line-height: 1;
-  color: #ff4d6d;
-  text-shadow: 0 6px 18px rgba(255,77,109,0.16);
-  z-index: 5000;
-  animation: heartPop 760ms cubic-bezier(.2,.9,.2,1) forwards;
-}
+    .burst-heart {
+      position: fixed;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      font-size: 48px;
+      line-height: 1;
+      color: #ff4d6d;
+      text-shadow: 0 6px 18px rgba(255,77,109,0.16);
+      z-index: 5000;
+      animation: heartPop 760ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
 
-@keyframes heartPop {
-  0%   { transform: translate(-50%,-50%) scale(.45); opacity: 0; }
-  20%  { transform: translate(-50%,-50%) scale(1.18); opacity: 1; }
-  55%  { transform: translate(-50%,-110%) scale(1.0); opacity: 0.9; }
-  100% { transform: translate(-50%,-220%) scale(.6); opacity: 0; }
-}
+    @keyframes heartPop {
+      0%   { transform: translate(-50%,-50%) scale(.45); opacity: 0; }
+      20%  { transform: translate(-50%,-50%) scale(1.18); opacity: 1; }
+      55%  { transform: translate(-50%,-110%) scale(1.0); opacity: 0.9; }
+      100% { transform: translate(-50%,-220%) scale(.6); opacity: 0; }
+    }
 
-/* subtle button pulse when liked */
-.liked-pulse {
-  animation: likedPulse 380ms cubic-bezier(.2,.9,.2,1);
-}
-@keyframes likedPulse {
-  0%   { transform: scale(1); }
-  45%  { transform: scale(1.14); }
-  100% { transform: scale(1); }
-}
-/* Top loading progress bar */
-#topProgress {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 3px;
-  width: 0%;
-  background: linear-gradient(90deg, #00c853, #1b5e20);
-  z-index: 9999;
-  box-shadow: 0 2px 10px rgba(3, 155, 93, 0.12);
-  transition: width 260ms linear, opacity 260ms ease;
-  opacity: 0;
-  pointer-events: none;
-}
-#topProgress.show { opacity: 1; }
-#topProgress.finish {
-  transition: width 160ms ease, opacity 420ms ease;
-  background: linear-gradient(90deg,#00e676,#00c853);
-}
-@media (max-width:480px) {
-  #popupPlayPauseBtn {
-    display: none !important;
-  }
-}
-/* Music button styling + spin when active */
-.popup-actions #popupMusicBtn { 
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:6px 10px;
-  border-radius:999px;
-  background: rgba(255,255,255,0.06);
-  border: none;
-  color: #fff;
-  font-weight:700;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-  font-size:13px;
-}
+    /* subtle button pulse when liked */
+    .liked-pulse {
+      animation: likedPulse 380ms cubic-bezier(.2,.9,.2,1);
+    }
+    @keyframes likedPulse {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.14); }
+      100% { transform: scale(1); }
+    }
+    /* Top loading progress bar */
+    #topProgress {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, #00c853, #1b5e20);
+      z-index: 9999;
+      box-shadow: 0 2px 10px rgba(3, 155, 93, 0.12);
+      transition: width 260ms linear, opacity 260ms ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #topProgress.show { opacity: 1; }
+    #topProgress.finish {
+      transition: width 160ms ease, opacity 420ms ease;
+      background: linear-gradient(90deg,#00e676,#00c853);
+    }
+    @media (max-width:480px) {
+      #popupPlayPauseBtn {
+        display: none !important;
+      }
+    }
+    /* Music button styling + spin when active */
+    .popup-actions #popupMusicBtn {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: #fff;
+      font-weight:700;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      font-size:13px;
+    }
 
-.popup-actions #popupMusicBtn.music-active {
-  background: linear-gradient(90deg, rgba(255,153,51,0.12), rgba(19,136,8,0.12));
-}
+    .popup-actions #popupMusicBtn.music-active {
+      background: linear-gradient(90deg, rgba(255,153,51,0.12), rgba(19,136,8,0.12));
+    }
 
-/* tiny rotating icon effect for the emoji */
-.popup-actions #popupMusicBtn.music-active::before {
-  content: '🎧';
-  display:inline-block;
-  margin-right:6px;
-  animation: musicSpin 1600ms linear infinite;
-  transform-origin: 50% 50%;
-}
+    /* tiny rotating icon effect for the emoji */
+    .popup-actions #popupMusicBtn.music-active::before {
+      content: '🎧';
+      display:inline-block;
+      margin-right:6px;
+      animation: musicSpin 1600ms linear infinite;
+      transform-origin: 50% 50%;
+    }
 
-@keyframes musicSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+    @keyframes musicSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
 
-/* small toast used to show track name (inserted by JS) */
-#musicToast {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom, 10px) + 84px);
-  background: rgba(0,0,0,0.72);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-weight: 700;
-  z-index: 99999;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-#musicToast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
-
+    /* small toast used to show track name (inserted by JS) */
+    #musicToast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom, 10px) + 84px);
+      background: rgba(0,0,0,0.72);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      z-index: 99999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+    #musicToast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
   /* Safety map specific small styles */
-  #safetyMap { width:100%; height: 44vh; border-radius:10px; }
+  #safetyMap { width:100%; height: 44vh; border-radius:10px; background: #f7fafc; /* subtle neutral bg while tiles load */ }
   .safety-card { background:#fff; border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-top:12px; }
-  .cat-grid { display:flex; gap:12px; flex-wrap:wrap; }
-  .cat-box { flex:1; min-width:45%; background:#fff; padding:12px; border-radius:10px; cursor:pointer; border:1px solid rgba(0,0,0,0.04); }
+  /* Make grid 2x2 fixed tiles (not scrollable) */
+  .cat-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-top:12px; }
+  .cat-box { background:#fff; padding:14px; border-radius:12px; cursor:pointer; border:1px solid rgba(0,0,0,0.04); box-shadow:0 6px 14px rgba(0,0,0,0.04); min-height:82px; display:flex; flex-direction:column; justify-content:center; }
+  .cat-box strong { font-size:15px; display:block; }
+  .cat-box p { margin:6px 0 0; color:var(--muted); font-size:13px; }
   .cat-detail { background:#fafafa; padding:12px; border-radius:10px; margin-top:10px; }
   .back-x { background:#fff; border-radius:8px; padding:6px 10px; border:none; cursor:pointer; font-weight:700; }
   .leaflet-container { border-radius:10px; }
   @media (max-width:480px) {
     #safetyMap { height:38vh; }
+    .cat-box { min-height:72px; padding:12px; }
   }
+
+  /* Notification bubble (floating) */
+  .safety-notification-bubble {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 40;
+    background: linear-gradient(90deg,#ff6b6b,#ff4d4d);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow:0 8px 22px rgba(255,77,109,0.14);
+    cursor:pointer;
+    font-size:12px; /* small text as requested */
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+  .safety-notification-bubble .dot { width:10px;height:10px;border-radius:10px;background:#fff;opacity:0.95; }
+
+  /* Notification modal */
+  .safety-notif-modal {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 12vh;
+    max-height: 66vh;
+    overflow:auto;
+    margin: 0 auto;
+    z-index: 5000;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+    padding: 14px;
+  }
+  .safety-notif-modal h3 { margin:0 0 8px; font-size:16px; }
+  .safety-notif-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .safety-notif-item { padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.04); background:#fafafa; font-size:13px; }
+  .safety-notif-close { position:absolute; top:10px; right:12px; background:transparent; border:none; font-size:20px; cursor:pointer; }
+
+  /* make the Live label small */
+  .safety-live-small { font-weight:800; color:#ff2d2d; font-size:13px; margin-right:8px; }
+  .safety-live-line { font-size:13px; color:#111; font-weight:700; }
 
   </style>
 </head>
@@ -1615,36 +1663,44 @@
   function renderSafetyHTML(){
     return `
       <div class="main-feed-container" id="safetyMain" style="padding-bottom:120px;">
-        <div class="feed-card" style="border-radius:12px;padding:14px;">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="color:#ff2d2d;font-weight:900">Live</div>
-            <div style="font-weight:700">Alert acknowledged — you're protected.</div>
+        <div class="feed-card" style="border-radius:12px;padding:14px; position:relative;">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="safety-live-small">Live</div>
+            <div class="safety-live-line">Alert acknowledged — you're protected.</div>
           </div>
         </div>
 
         <!-- Map card: map occupies approx half/large portion -->
-        <div class="feed-card" style="padding:12px;border-radius:12px;">
-          <div style="font-weight:700;color:#fff;background:linear-gradient(180deg,#053b4a,#03313d);padding:12px;border-radius:8px">
+        <div class="feed-card" style="padding:12px;border-radius:12px; position:relative;">
+          <div style="font-weight:700;color:#111;padding:8px;border-radius:8px">
             <div style="font-weight:800;font-size:18px;text-align:center">Nearby Live Codes</div>
-            <div style="text-align:center;opacity:0.9;margin-top:6px">Showing active codes in your region</div>
+            <div style="text-align:center;opacity:0.85;margin-top:6px;font-size:13px">Showing active codes in your region</div>
+
+            <!-- Map (clean, no dark gradient) -->
             <div id="safetyMap" style="margin-top:12px;"></div>
-            <div style="margin-top:10px;">
+
+            <div style="margin-top:10px; display:flex; justify-content:center;">
               <span style="display:inline-flex;align-items:center;gap:8px;background:#fff;padding:6px 10px;border-radius:10px;color:#111;font-weight:700">
                 <span style="width:10px;height:10px;border-radius:10px;background:#ff4d4d;display:inline-block"></span> Active
               </span>
             </div>
           </div>
 
+          <!-- floating notification bubble (top-right of this card) -->
+          <div id="safetyNotifBubble" class="safety-notification-bubble" title="View safety notifications" style="display:none;">
+            <span class="dot"></span><span id="safetyNotifCount">0</span>
+          </div>
+
           <!-- card below map that covers till navbar -->
           <div class="safety-card" style="margin-top:12px;">
             <div style="font-weight:800;font-size:18px">Quick categories</div>
-            <div style="color:var(--muted);margin-top:8px">Tap a category to open details</div>
+            <div style="color:var(--muted);margin-top:8px;font-size:13px">Tap a category to open details</div>
 
             <div class="cat-grid" style="margin-top:12px">
-              <div class="cat-box" id="catMen"><strong>Men / Women</strong><div style="color:var(--muted);margin-top:6px">Personal safety & reporting</div></div>
-              <div class="cat-box" id="catAnimals"><strong>Animal / Nature</strong><div style="color:var(--muted);margin-top:6px">Wildlife & environmental alerts</div></div>
-              <div class="cat-box" id="catHuman"><strong>Humanity / Emergency</strong><div style="color:var(--muted);margin-top:6px">SOS & community help</div></div>
-              <div class="cat-box" id="catShakti"><strong>Quick access to Shakti Code</strong><div style="color:var(--muted);margin-top:6px">Activate emergency code</div></div>
+              <div class="cat-box" id="catMen"><strong>Men / Women</strong><p>Personal safety & reporting</p></div>
+              <div class="cat-box" id="catAnimals"><strong>Animal / Nature</strong><p>Wildlife & environmental alerts</p></div>
+              <div class="cat-box" id="catHuman"><strong>Humanity / Emergency</strong><p>SOS & community help</p></div>
+              <div class="cat-box" id="catShakti"><strong>Quick access to Shakti Code</strong><p>Activate emergency code</p></div>
             </div>
 
             <!-- detail area that opens inside the same card -->
@@ -1657,13 +1713,21 @@
             </div>
           </div>
         </div>
+<!-- SHAKTI CODE POPUP (persistent, global) -->
+<div id="shaktiPopup" 
+     style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 99999;">
+  <div style="width: 92%; max-width:1100px; height: 88%; background: #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.35);">
+    <button id="shaktiPopupClose" aria-label="Close Shakti" style="position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.9); color: #fff; border: none; padding: 6px 10px; font-size: 16px; border-radius: 6px; cursor: pointer;">✕</button>
+    <iframe id="shaktiFrame" src="" style="width:100%;height:100%;border:none;" title="Shakti Code"></iframe>
+  </div>
+</div>
 
       </div>
     `;
   }
 
   // -------------------------
-  // NEW: functions to initialize safety page (map + categories)
+  // NEW: functions to initialize safety page (map + categories + notifications)
   // Called right after we inject safety HTML in swapMainContent
   // -------------------------
   async function initSafetyPage(){
@@ -1671,6 +1735,7 @@
     await ensureLeafletLoaded();
     initSafetyMap();
     wireSafetyCategories();
+    initSafetyNotifications();
   }
 
   function ensureLeafletLoaded(){
@@ -1678,18 +1743,15 @@
       const CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       const JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       if (window.L && window.L.map) return resolve();
-      // load css if not present
       if (!document.querySelector(`link[href="${CSS}"]`)){
         const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = CSS; document.head.appendChild(l);
       }
-      // load js
       if (!document.querySelector(`script[src="${JS}"]`)){
         const s = document.createElement('script'); s.src = JS;
         s.onload = () => resolve();
         s.onerror = () => reject(new Error('Failed loading Leaflet'));
         document.head.appendChild(s);
       } else {
-        // script tag exists but maybe not ready — wait a tick
         let tries = 0;
         const wait = setInterval(()=> {
           if (window.L && window.L.map) { clearInterval(wait); resolve(); }
@@ -1708,24 +1770,29 @@
     { id: 120, lat: 12.9800, lng: 77.6100, type: 'human', label: '120 — Help requested' }
   ];
 
+  // Demo notifications list for safety (replace with real API)
+  const DEMO_NOTIFICATIONS = [
+    { id: 'n1', text: 'SOS triggered at Richmond Town — code 107', time: '2m ago' },
+    { id: 'n2', text: 'Animal sighting reported near Lalbagh — code 112', time: '12m ago' },
+    { id: 'n3', text: 'Shakti Code 101 acknowledged by police', time: '30m ago' },
+    { id: 'n4', text: 'Volunteer requested near Wilson Garden', time: '1h ago' }
+  ];
+
   // Keep a global map ref so re-opening safety doesn't double-initialize
   window.__safetyMap = window.__safetyMap || null;
   function initSafetyMap(){
     try {
       const el = document.getElementById('safetyMap');
       if (!el) return;
-      // if map exists, remove and re-create so markers reset
       if (window.__safetyMap) {
         try { window.__safetyMap.remove(); } catch(e){}
         window.__safetyMap = null;
       }
 
-      // Use first code as center or fallback
       const center = DEMO_CODES.length ? [DEMO_CODES[0].lat, DEMO_CODES[0].lng] : [12.9716,77.5946];
-      const map = L.map(el, { center, zoom: 13, zoomControl: true });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
+      const map = L.map(el, { center, zoom: 13, zoomControl: true, attributionControl:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-      // add markers with small number badges
       DEMO_CODES.forEach(c => {
         const html = `<div style="background:#ff4d4d;color:#fff;padding:6px 8px;border-radius:20px;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,0.12)">${c.id}</div>`;
         const icon = L.divIcon({ className: '', html, iconSize:[44,24], iconAnchor:[22,12] });
@@ -1748,10 +1815,32 @@
         return elBtn;
       };
       locate.addTo(map);
+
       window.__safetyMap = map;
+
+      // ensure the floating notif is positioned relative to the map container
+      positionSafetyNotif();
+      window.addEventListener('resize', positionSafetyNotif);
+
     } catch (err){
       console.warn('initSafetyMap error', err);
     }
+  }
+
+  // position the floating notification bubble inside the map card
+  function positionSafetyNotif(){
+    try {
+      const card = document.querySelector('.feed-card');
+      const bubble = document.getElementById('safetyNotifBubble');
+      const mapEl = document.getElementById('safetyMap');
+      if (!bubble || !mapEl) return;
+      // show bubble
+      bubble.style.display = 'flex';
+      // ensure bubble sits on top-right of the map area: place it inside same parent and absolute top/right
+      const parentRect = mapEl.getBoundingClientRect();
+      // bubble is already absolutely placed in the card via CSS (top/right)
+      // keep default placement (top-right) — no need to compute pixel-perfect here.
+    } catch(e){}
   }
 
   function wireSafetyCategories(){
@@ -1768,7 +1857,6 @@
       titleEl.innerText = t;
       bodyEl.innerHTML = html;
       detail.style.display = 'block';
-      // scroll card into view slightly
       try { detail.scrollIntoView({behavior:'smooth', block:'center'}); } catch(e){}
     }
     function closeDetail(){ detail.style.display = 'none'; }
@@ -1793,11 +1881,64 @@
       </ul>`);
 
     if (shakti) shakti.onclick = () => {
-      const ok = confirm('Activate Shakti Code (demo)?');
-      if (ok) alert('Shakti Code activated (demo).');
+     if (shakti) shakti.onclick = () => openShaktiPopup();
     };
 
     if (closeBtn) closeBtn.onclick = closeDetail;
+  }
+
+  // -------------------------
+  // Safety notifications UX: bubble + modal
+  // -------------------------
+  function initSafetyNotifications(){
+    const bubble = document.getElementById('safetyNotifBubble');
+    if (!bubble) return;
+    const countEl = document.getElementById('safetyNotifCount');
+
+    // initialize with demo notifications
+    const notifs = DEMO_NOTIFICATIONS.slice(); // copy
+    countEl.innerText = notifs.length;
+
+    // clicking the bubble opens the modal
+    bubble.onclick = () => openSafetyNotifModal(notifs);
+
+    // expose for later update (demo)
+    window.__updateSafetyNotifs = (arr) => {
+      const n = Array.isArray(arr) ? arr : [];
+      countEl.innerText = n.length;
+      bubble.style.display = n.length ? 'flex' : 'none';
+    };
+
+    // show if there are notifs
+    bubble.style.display = notifs.length ? 'flex' : 'none';
+  }
+
+  function openSafetyNotifModal(notifs = []){
+    // create modal element if not already present
+    let existing = document.getElementById('safetyNotifModal');
+    if (existing) { existing.remove(); } // recreate each time for simplicity
+    const modal = document.createElement('div');
+    modal.id = 'safetyNotifModal';
+    modal.className = 'safety-notif-modal';
+    modal.innerHTML = `
+      <button class="safety-notif-close" aria-label="Close">✕</button>
+      <h3>Safety notifications</h3>
+      <div class="safety-notif-list">
+        ${notifs.map(n => `<div class="safety-notif-item"><strong>${escapeHtml(n.text)}</strong><div style="color:var(--muted);margin-top:6px">${escapeHtml(n.time)}</div></div>`).join('')}
+      </div>
+    `;
+    // clicking close removes modal
+    modal.querySelector('.safety-notif-close').onclick = () => modal.remove();
+    // clicking outside modal should also close it; we add an overlay behavior
+    const overlay = document.createElement('div');
+    overlay.id = 'safetyNotifOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.zIndex = 4999;
+    overlay.style.background = 'rgba(0,0,0,0.26)';
+    overlay.onclick = () => { modal.remove(); overlay.remove(); };
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
   }
 
   // -------------------------
@@ -1809,7 +1950,7 @@
     if (page === 'safety'){
       wrapper.innerHTML = renderSafetyHTML();
 
-      // safety buttons
+      // safety buttons (if still present in markup)
       document.getElementById('sosBtn')?.addEventListener('click', () => {
         if (confirm('Trigger SOS? (demo)')) alert('SOS simulated — notify contacts');
       });
@@ -1820,7 +1961,7 @@
       rebuildStoryStrip(['shaktisafety']);
       window.__pauseAutoplay?.();
 
-      // initialize map and categories for safety page
+      // initialize map, categories and notifications for safety page
       try { await initSafetyPage(); } catch(e){ console.warn('initSafetyPage failed', e); }
 
       return;
@@ -1863,7 +2004,7 @@
 
   await generateFeed(null);        // null => all folders
 
-  setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.(); 
+  setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.();
     if (window.finishLoadingBar) window.finishLoadingBar();
   }, 250);
 });
@@ -1872,6 +2013,31 @@
   function escapeHtml(text){
     return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
+function openShaktiPopup() {
+  const popup = document.getElementById('shaktiPopup');
+  const frame = document.getElementById('shaktiFrame');
+  if (!popup || !frame) return;
+  // set the url once when opening (so it stops loading when closed)
+  frame.src = "https://environments-videos-respected-panel.trycloudflare.com/index.html";
+  popup.style.display = 'flex';
+  // optionally block body scroll while open
+  document.body.style.overflow = 'hidden';
+}
+
+function closeShaktiPopup() {
+  const popup = document.getElementById('shaktiPopup');
+  const frame = document.getElementById('shaktiFrame');
+  if (!popup || !frame) return;
+  frame.src = ''; // stop/clear iframe
+  popup.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// wire the close button
+document.addEventListener('click', function(e){
+  if (e.target && e.target.id === 'shaktiPopupClose') closeShaktiPopup();
+});
+
 </script>
 
 </body>
