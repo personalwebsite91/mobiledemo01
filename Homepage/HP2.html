@@ -10,7 +10,7 @@
       --bg:#ffffff;
       --saffron:#FF9933;
       --green:#138808;
-      --card:#fff;
+      --card:#ffffff;
       --muted:#777;
       --popup-comments-height: 0vh; /* toggled by JS (0 or 36vh) */
       --avatar-bg: #f3f4f6; /* neutral avatar background */
@@ -374,7 +374,7 @@
   }
 }
 /* Music button styling + spin when active */
-.popup-actions #popupMusicBtn {
+.popup-actions #popupMusicBtn { 
   display:inline-flex;
   align-items:center;
   gap:6px;
@@ -427,6 +427,18 @@
 #musicToast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
 
+  /* Safety map specific small styles */
+  #safetyMap { width:100%; height: 44vh; border-radius:10px; }
+  .safety-card { background:#fff; border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-top:12px; }
+  .cat-grid { display:flex; gap:12px; flex-wrap:wrap; }
+  .cat-box { flex:1; min-width:45%; background:#fff; padding:12px; border-radius:10px; cursor:pointer; border:1px solid rgba(0,0,0,0.04); }
+  .cat-detail { background:#fafafa; padding:12px; border-radius:10px; margin-top:10px; }
+  .back-x { background:#fff; border-radius:8px; padding:6px 10px; border:none; cursor:pointer; font-weight:700; }
+  .leaflet-container { border-radius:10px; }
+  @media (max-width:480px) {
+    #safetyMap { height:38vh; }
+  }
+
   </style>
 </head>
 <body>
@@ -451,8 +463,8 @@
       </div>
     </div>
 
-    <!-- main feed -->
-    <div style="width:100%;max-width:720px;">
+    <!-- MAIN CONTENT REGION (we will swap this inner HTML for Safety or Home) -->
+    <div id="mainContentWrapper" style="width:100%;max-width:720px;">
       <div class="main-feed-container" id="mainFeed">
         <div id="feed" class="feed-scroll-area"></div>
       </div>
@@ -502,11 +514,11 @@
     <!-- bottom nav -->
     <div class="bottom-nav">
       <div class="nav-inner">
-        <div class="nav-item active" id="navHome"><span class="icon">🏠</span>Home</div>
-        <div class="nav-item" id="navSafety"><span class="icon">🚨</span>Safety</div>
-        <div class="nav-item" id="navPlus"><span class="icon" style="background:linear-gradient(90deg,var(--saffron),var(--green)); -webkit-background-clip:text; color:transparent;">＋</span></div>
-        <div class="nav-item" id="navCommunity"><span class="icon">👥</span>Community</div>
-        <div class="nav-item" id="navProfile"><span class="icon">👤</span>Profile</div>
+        <div class="nav-item active" id="navHome" data-page="home"><span class="icon">🏠</span>Home</div>
+        <div class="nav-item" id="navSafety" data-page="safety"><span class="icon">🚨</span>Safety</div>
+        <div class="nav-item" id="navPlus" data-page="plus"><span class="icon" style="background:linear-gradient(90deg,var(--saffron),var(--green)); -webkit-background-clip:text; color:transparent;">＋</span></div>
+        <div class="nav-item" id="navCommunity" data-page="community"><span class="icon">👥</span>Community</div>
+        <div class="nav-item" id="navProfile" data-page="profile"><span class="icon">👤</span>Profile</div>
       </div>
     </div>
 
@@ -524,6 +536,7 @@
 
   // -------------------------
   // CHANGES: realistic user pool + neutral avatars
+  // (unchanged from your original - kept as-is)
   // -------------------------
   const REALISTIC_USERNAMES = [
     "Aarav_21", "PriyaSharma", "RohanK", "Meera_88", "Siddharth", "Nitya", "Ananya_R", "Kiran.verma",
@@ -540,7 +553,6 @@
   }
 
   function getInitials(name){
-    // take first two letters of first name-like token
     try {
       const tokens = name.split(/[_\.\- ]+/).filter(Boolean);
       if (!tokens.length) return name.slice(0,2).toUpperCase();
@@ -552,14 +564,13 @@
     } catch(e){ return name.slice(0,2).toUpperCase(); }
   }
 
-  // ========= FOLDER NAMES (exactly like in your /pics tree) =========
+  // ========= FOLDER NAMES (unchanged)
   const ALL_FOLDER_CATS = [
     "culture","economy","educational","entertainment","ethical",
     "health","legal","localnews","Nature","news",
     "shaktisafety","society","sports","students","technology"
   ];
 
-  // mapping for UI display names
   const CAT_DISPLAY = {
     all: 'All',
     shaktisafety: 'Safety',
@@ -589,7 +600,6 @@
       const res = await fetch(url, { method: 'HEAD' });
       return res && res.ok;
     } catch(e){
-      // HEAD might be blocked on some hosts; fallback to try GET small range would be heavier.
       return false;
     }
   }
@@ -602,7 +612,6 @@
       for (let i = 1; i <= maxCount; i++){
         for (const ext of EXTS){
           const path = `${prefix}/${cat}/${i}.${ext}`;
-          /* eslint-disable no-await-in-loop */
           const ok = await fileExists(path);
           if (ok){
             const type = (ext === 'mp4' || ext === 'webm') ? 'video' : 'image';
@@ -618,7 +627,8 @@
   }
 
   // -------------------------
-  // CHANGES: comment generation uses realistic names and neutral avatars
+  // generateCommentsHTML, buildPostHTML, buildFeedRow, etc.
+  // (kept unchanged — original code)
   // -------------------------
   function generateCommentsHTML(count){
     const names = ["Meera_88","Aarav_21","PriyaSharma","RohanK","Nitya","Kiran.verma","Somu_Reddy","BhavyaS"];
@@ -635,11 +645,7 @@
     return out;
   }
 
-  // -------------------------
-  // Build post HTML — CHANGES: use post.username & initials for header avatar
-  // -------------------------
   function buildPostHTML(post){
-    // determine header avatar display (neutral background + initials)
     const initials = post.initials || getInitials(post.title || post.category || 'U');
     const avatarHtml = `<div class="post-user-pic" title="${post.username || post.title || ''}">${initials}</div>`;
 
@@ -693,7 +699,6 @@
   }
 
   function sampleFallbackPosts(){
-    // use realistic sample users
     const u1 = pickUser();
     const u2 = pickUser();
     return [
@@ -707,26 +712,20 @@
   // -------------------------
   function rebuildStoryStrip(presentCategories = []) {
     const wrapper = $('#storyStrip');
+    if (!wrapper) return;
     wrapper.innerHTML = '';
-    // Always show All first
     const items = [{ key:'all', label: CAT_DISPLAY.all || 'All' }];
-
-    // Build items in a stable order: prefer STORY_TO_FOLDER keys and then other present categories
     const preferred = ['shaktisafety','health','technology','Nature','culture','localnews'];
     const added = new Set();
-
     for (const k of preferred) {
       if (presentCategories.includes(k)) {
         items.push({ key: k, label: CAT_DISPLAY[k] || (k.charAt(0).toUpperCase()+k.slice(1)) });
         added.add(k);
       }
     }
-    // add any other present categories not in preferred
     for (const k of presentCategories) {
       if (!added.has(k)) items.push({ key: k, label: CAT_DISPLAY[k] || (k.charAt(0).toUpperCase()+k.slice(1)) });
     }
-
-    // render
     items.forEach((it, idx) => {
       const div = document.createElement('div');
       div.className = 'story-item' + (idx===0 ? ' active' : '');
@@ -749,6 +748,7 @@
   // -------------------------
   async function generateFeed(folderCategory = null){
     const feed = $('#feed');
+    if (!feed) return;
     feed.innerHTML = '';
     if (window.startLoadingBar) window.startLoadingBar();
     const catsToLoad = folderCategory ? [folderCategory] : ALL_FOLDER_CATS;
@@ -758,8 +758,6 @@
       list.forEach(m => {
         const type = m.type === 'video' ? 'video' : 'image';
         const poster = (type === 'video') ? m.path.replace(/\.(webm|mp4)$/i, '.jpg') : '';
-
-        // CHANGES: pick a realistic username and attach initials to the post object
         const user = pickUser();
         mediaItems.push({
           type,
@@ -775,11 +773,8 @@
     }
 
     if (mediaItems.length === 0) mediaItems = sampleFallbackPosts();
-
-    // keep order but mix a bit:
     mediaItems.sort(() => Math.random() - 0.5);
 
-    // Build feed DOM
     mediaItems.forEach((post, i) => {
       const card = document.createElement('div');
       card.className = 'feed-card';
@@ -787,21 +782,16 @@
       feed.appendChild(card);
     });
 
-    // assign feed indices to both images and videos
     assignFeedIndices();
-
-    // Rebuild story strip to show only present categories (plus All)
     const present = Array.from(new Set(mediaItems.map(m=>m.category)));
     rebuildStoryStrip(present);
 
-        attachFeedInteractions();
+    attachFeedInteractions();
     window.__observeMedia?.();
     window.__setupSingleVideoAutoplay?.();
     if (window.finishLoadingBar) window.finishLoadingBar();
-
   }
 
-  // assign incremental feed index to each media element (order in DOM) — includes images & videos
   function assignFeedIndices(){
     const mediaEls = document.querySelectorAll('#feed video, #feed img');
     mediaEls.forEach((v, idx) => { v.dataset.feedIndex = idx; });
@@ -835,43 +825,35 @@
     let autoTickTimer = null;
     let isRunning = false;
 
-    // possible gradient choices (you can tweak)
     const GRADIENTS = [
-      'linear-gradient(90deg, #00c853, #1b5e20)',              // green
-      'linear-gradient(90deg, #ff9933, #ff6a00)',              // saffron / orange
-      'linear-gradient(90deg, #0d47a1, #ff9933)',              // navy blue -> saffron mix
-      'linear-gradient(90deg, #00c853, #ff9933)',              // green -> orange
-      'linear-gradient(90deg, #1b5e20, #0d47a1)'               // deep green -> navy
+      'linear-gradient(90deg, #00c853, #1b5e20)',
+      'linear-gradient(90deg, #ff9933, #ff6a00)',
+      'linear-gradient(90deg, #0d47a1, #ff9933)',
+      'linear-gradient(90deg, #00c853, #ff9933)',
+      'linear-gradient(90deg, #1b5e20, #0d47a1)'
     ];
 
     function pickGradient(){
       return GRADIENTS[Math.floor(Math.random()*GRADIENTS.length)];
     }
 
-    // start: show and begin auto-increment (idempotent)
     window.startLoadingBar = function(){
       if (!progressEl) progressEl = document.getElementById('topProgress');
-      // if already running, don't restart (but still ensure it's visible)
       if (isRunning) {
         progressEl.classList.add('show');
         progressEl.style.opacity = '1';
         return;
       }
       isRunning = true;
-
-      // pick a dynamic gradient
       progressEl.style.background = pickGradient();
-
       progressEl.classList.add('show');
       progressEl.classList.remove('finish');
       progressEl.style.opacity = '1';
       progressEl.style.width = '6%';
-      // clear any previous timer
       clearInterval(autoTickTimer);
       autoTickTimer = setInterval(() => {
         try {
           const cur = parseFloat(progressEl.style.width) || 0;
-          // increase slower as it approaches 85%
           const delta = cur < 60 ? (Math.random()*6 + 3) : (Math.random()*2 + 0.6);
           const next = Math.min(88, cur + delta);
           progressEl.style.width = next + '%';
@@ -879,36 +861,28 @@
       }, 350);
     };
 
-    // set explicit percent (0..100)
     window.setLoadingBar = function(pct){
       if (!progressEl) progressEl = document.getElementById('topProgress');
       pct = Math.max(0, Math.min(100, Number(pct) || 0));
       progressEl.style.width = pct + '%';
     };
 
-    // finish: jump to 100, flash, hide
     window.finishLoadingBar = function(){
       if (!progressEl) progressEl = document.getElementById('topProgress');
       clearInterval(autoTickTimer);
       autoTickTimer = null;
       progressEl.classList.add('finish');
-      // ensure it goes to 100%
       progressEl.style.width = '100%';
-      // tiny flash (use a slightly different gradient to emphasize completion)
       try { progressEl.style.background = pickGradient(); } catch(e){}
-      // after short delay fade out and fully reset
       setTimeout(() => {
         try {
           progressEl.style.opacity = '0';
-          // reset after opacity gone
           setTimeout(() => {
             try {
               progressEl.classList.remove('show','finish');
               progressEl.style.width = '0%';
               progressEl.style.opacity = '';
-              // clear running flag
               isRunning = false;
-              // reset background to a default (so next start picks new)
               progressEl.style.background = '';
             } catch(e){}
           }, 420);
@@ -917,13 +891,10 @@
     };
   })();
 
-
   // show floating heart animation centered on the clicked element
   function showLikeAnimation(evt) {
     try {
-      // if event is a native mouse event, currentTarget is element; if called manually pass element
       const el = (evt && evt.currentTarget) ? evt.currentTarget : (evt && evt.target) ? evt.target : null;
-      // find a sensible fallback position if el missing
       let x = window.innerWidth / 2, y = window.innerHeight / 2;
       if (el && el.getBoundingClientRect) {
         const r = el.getBoundingClientRect();
@@ -936,10 +907,7 @@
       heart.style.left = `${x}px`;
       heart.style.top = `${y}px`;
       document.body.appendChild(heart);
-      // remove after animation
       setTimeout(() => { try { heart.remove(); } catch(e){} }, 820);
-
-      // add small pulse to the clicked element for tactile feedback
       if (el && el.classList) {
         el.classList.add('liked-pulse');
         setTimeout(() => el.classList.remove('liked-pulse'), 420);
@@ -948,25 +916,20 @@
   }
 
   function attachFeedInteractions(){
-    // comment like buttons
     $all('.comment-box .heart-small').forEach(btn => {
       btn.removeEventListener('click', commentLikeHandler);
       btn.addEventListener('click', commentLikeHandler);
     });
 
-    // helper to attach popup-opening handlers to a media element (image or video)
     function attachOpenHandlers(el){
-      // remove any previous handlers to avoid duplicates
       el.removeEventListener('click', onPostMediaClick);
       el.removeEventListener('pointerup', onPostMediaClick);
       el.removeEventListener('touchend', onPostMediaClick);
 
-      // Add multiple handlers: click (desktop), pointerup (Edge), touchend (mobile)
       el.addEventListener('click', onPostMediaClick);
       el.addEventListener('pointerup', onPostMediaClick, {passive:true});
       el.addEventListener('touchend', onPostMediaClick, {passive:true});
 
-      // small local toggle (feed-level) — doesn't open popup if user interacts with controls
       if (el.tagName === 'VIDEO'){
         el.addEventListener('click', (ev) => {
           try {
@@ -976,7 +939,6 @@
       }
     }
 
-    // ensure video and image elements are clickable and above overlays
     $all('.post-img, .post-video').forEach(el => {
       try {
         el.style.position = el.style.position || 'relative';
@@ -985,7 +947,6 @@
       attachOpenHandlers(el);
     });
 
-    // like buttons on post
     $all('.like-btn').forEach(btn => {
       btn.removeEventListener('click', postLikeHandler);
       btn.addEventListener('click', postLikeHandler);
@@ -993,7 +954,6 @@
       btn.addEventListener('click', showLikeAnimation);
     });
 
-    // MutationObserver to auto-bind future elements
     if (!window.__feedInteractionObserverAttached) {
       window.__feedInteractionObserverAttached = true;
       const observer = new MutationObserver(() => {
@@ -1009,7 +969,6 @@
       observer.observe(document.getElementById('feed') || document.body, { childList: true, subtree: true });
     }
   }
-
 
   /* --------- Auto-play / single video logic (feed) --------- */
   (function singleVideoAutoplay(){
@@ -1070,7 +1029,6 @@
 
   })();
 
-
   function findPostBoxFromMedia(el){ return el.closest('.post-box'); }
   function onPostMediaClick(e){ const mediaEl = e.currentTarget; openPopupWithMedia(mediaEl); }
 
@@ -1099,7 +1057,7 @@
   const popupCommentsEl = $('#popupComments');
   const popupBg = $('#popupBg');
   const popupInner = $('#popupInner');
-  const popupActions = $('.popup-actions');
+  const popupActions = document.querySelector('.popup-actions');
 
   let popupPlayingVideo = null;
   let popupSourcePostBox = null;
@@ -1107,10 +1065,9 @@
   let currentPopupIndex = -1;
 
   // ---------- ACTION BAR VISIBILITY CONTROL ----------
-  // single source of truth for actions visibility
   let actionsVisible = true;
   let _actionsTimer = null;
-  let _actionsForceHidden = false; // when true, prevent accidental re-show until timer clears
+  let _actionsForceHidden = false;
   const ACTIONS_AUTO_SHOW_MS = 3500;
 
   function _clearActionsTimer(){
@@ -1118,7 +1075,6 @@
   }
 
   function setPopupActionsVisible(visible, { forceHidden = false, autoShowAfterMs = null } = {}) {
-    // forceHidden true means user intentionally hid; we lock it until timer clears
     _clearActionsTimer();
     if (forceHidden) {
       _actionsForceHidden = true;
@@ -1127,7 +1083,6 @@
       if (autoShowAfterMs) {
         _actionsTimer = setTimeout(() => {
           _actionsForceHidden = false;
-          // only auto-show if not explicitly hidden again
           actionsVisible = true;
           popupActions?.classList.remove('actions-hidden');
           _actionsTimer = null;
@@ -1135,17 +1090,12 @@
       }
       return;
     }
-
-    // if we're not forcing hidden, only show when not forceHidden
     if (!visible) {
       actionsVisible = false;
       popupActions?.classList.add('actions-hidden');
       return;
     }
-
-    // visible true and not forced
     if (_actionsForceHidden) {
-      // do nothing — user forced a hide in the recent timeframe
       return;
     }
     actionsVisible = true;
@@ -1153,7 +1103,6 @@
   }
 
   function hidePopupActionsWithAutoShow() {
-    // user tapped to hide; set forceHidden & schedule auto-show after ACTIONS_AUTO_SHOW_MS
     setPopupActionsVisible(false, { forceHidden: true, autoShowAfterMs: ACTIONS_AUTO_SHOW_MS });
   }
 
@@ -1162,14 +1111,12 @@
   }
 
   function togglePopupActionsByUser(){
-    // If currently forced-hidden, user wants to bring back actions
     if (_actionsForceHidden) {
       _actionsForceHidden = false;
       showPopupActionsImmediate();
       _clearActionsTimer();
       return;
     }
-    // otherwise toggle
     if (actionsVisible) {
       hidePopupActionsWithAutoShow();
     } else {
@@ -1177,7 +1124,6 @@
     }
   }
 
-  // build ordered list of feed media (use dataset.src/source.src)
   function refreshFeedMediaSources(){
     const mediaEls = Array.from(document.querySelectorAll('#feed video, #feed img'));
     feedMediaSources = mediaEls.map((el, idx) => {
@@ -1187,26 +1133,18 @@
     });
   }
 
-  // show a particular index inside popup (replaces popup media and comments)
   function showPopupIndex(idx){
     if (idx < 0 || idx >= feedMediaSources.length) return;
     currentPopupIndex = idx;
-
-    // stop previous popup video
     if (popupPlayingVideo){
       try{ popupPlayingVideo.pause(); popupPlayingVideo.src=''; } catch(e){}
       popupPlayingVideo = null;
     }
-
-    // reset background
     if (popupBg) { popupBg.style.display = 'none'; popupBg.style.backgroundImage = ''; }
-
     popupMediaHolder.innerHTML = '';
     const info = feedMediaSources[idx];
-
     if (!info || !info.src) return;
     const isImage = /\.(jpe?g|png|webp|jpeg)$/i.test(info.src);
-
     if (isImage) {
       const img = document.createElement('img');
       img.src = info.src;
@@ -1215,8 +1153,6 @@
       popupMediaHolder.appendChild(img);
       popupPlayingVideo = null;
       popupPlayPauseBtn.style.display = 'none';
-
-      // clicking the image toggles action bar visibility (and closes comments if open)
       img.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const c = $('#popupComments');
@@ -1232,25 +1168,20 @@
       video.loop = false;
       video.style.width = '100%';
       video.style.height = '100%';
-      video.muted = true; // start muted to satisfy autoplay on mobile
+      video.muted = true;
       video.style.maxWidth = '100%';
       video.style.maxHeight = '100%';
-      video.style.objectFit = 'cover'; // default; may change after metadata
+      video.style.objectFit = 'cover';
       const source = document.createElement('source');
       source.src = info.src;
       video.appendChild(source);
       if (info.poster) video.setAttribute('poster', info.poster);
-
-      // clicking video toggles play/pause; if comments open, it closes comments first
       video.addEventListener('click', (ev) => {
         ev.stopPropagation();
-        // If comments open - close them first (existing behavior)
         if (popupCommentsEl && popupCommentsEl.classList.contains("open")) {
           closeComments();
           return;
         }
-
-        // toggle play/pause as before
         if (video.paused) {
           video.play().catch(()=>{});
           if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "⏸";
@@ -1258,18 +1189,12 @@
           video.pause();
           if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "▶";
         }
-
-        // IMPORTANT: when user taps the video, we hide actions and schedule auto-show
-        // This prevents overlap when native controls appear
         togglePopupActionsByUser();
       });
-
-      // When metadata loaded, decide fit mode: landscape -> contain + blurred background; portrait -> cover
       video.addEventListener('loadedmetadata', () => {
         try {
           const vidAR = video.videoWidth / (video.videoHeight || 1);
           const winAR = window.innerWidth / (window.innerHeight || 1);
-          // If video is wider than screen (landscape), use contain + blurred background
           if (vidAR > winAR * 1.05) {
             video.style.objectFit = 'contain';
             const bgUrl = info.poster || info.src;
@@ -1283,19 +1208,11 @@
           }
         } catch(e){}
       });
-
-      // AUTO MOVE TO NEXT WHEN VIDEO ENDS
       video.addEventListener('ended', () => {
         setTimeout(()=> navigatePopup(1), 260);
       });
-
-      // When native controls appear (some browsers fire 'playing' or 'pause' events),
-      // we do not change the actions visibility unless user explicitly toggled.
-      // That behavior is enforced by _actionsForceHidden flag.
-
       popupMediaHolder.appendChild(video);
       popupPlayingVideo = video;
-      // attempt play
       video.play().then(()=> {
         setTimeout(()=> { try{ video.muted = false; } catch(e){} }, 300);
       }).catch(()=>{});
@@ -1303,7 +1220,6 @@
       popupPlayPauseBtn.textContent = '⏸';
     }
 
-    // populate comments for that feed card (if available)
     popupCommentsList.innerHTML = '';
     try {
       const postCard = info.postBox;
@@ -1316,109 +1232,74 @@
           const initials = (username) ? (username.split(/[_\.\- ]+/)[0].slice(0,1).toUpperCase() + (username.split(/[_\.\- ]+/)[1]?.slice(0,1)?.toUpperCase()||'')) : 'U';
           const div = document.createElement('div');
           div.className = 'popup-comment';
-          div.innerHTML = `<div class="avatar">${initials}</div>
+          div.innerHTML = `<div class="avatar">${escapeHtml(initials)}</div>
                            <div class="body"><div style="font-weight:700">${escapeHtml(username)}</div><div style="margin-top:6px">${escapeHtml(text)}</div>
                            <div class="meta">${escapeHtml(meta)} <button class="like">♡</button></div></div>`;
           popupCommentsList.appendChild(div);
         });
       } else {
-        // fallback: some dummy comments so UI doesn't feel empty
         popupCommentsList.innerHTML = generateCommentsHTML(6);
       }
     } catch(e){
       popupCommentsList.innerHTML = generateCommentsHTML(6);
     }
 
-    // attach like handlers for newly created likes
     $all('.popup-comment .like').forEach(btn => { btn.onclick = popupCommentLikeHandler; });
 
-    // ensure actions visible on new media (unless we are currently forced-hidden)
     if (!_actionsForceHidden) showPopupActionsImmediate();
   }
 
-  // Open popup and show specific media element
   function openPopupWithMedia(mediaEl){
-    // pause feed autoplay
     if (window.__pauseAutoplay) window.__pauseAutoplay();
-
-    // refresh ordered feed sources (and feedIndex assignments)
     assignFeedIndices();
     refreshFeedMediaSources();
-
-    // determine which index this mediaEl corresponds to
     const feedIndex = parseInt(mediaEl.dataset.feedIndex || -1);
     let idx = feedMediaSources.findIndex(s => s.feedIndex === feedIndex);
     if (idx === -1) {
-      // fallback: match by src
       const src = mediaEl.dataset.src || mediaEl.querySelector('source')?.src || mediaEl.src || '';
       idx = feedMediaSources.findIndex(s => s.src === src);
     }
     if (idx === -1) idx = 0;
-
     popupSourcePostBox = findPostBoxFromMedia(mediaEl);
-    // lock background scroll for better fullscreen experience
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-
     popup.style.display = 'block';
     popup.setAttribute('aria-hidden','false');
-
-    // ensure comments closed
     closeComments();
-    // reset actions state (show actions by default when opening)
     _actionsForceHidden = false;
     _clearActionsTimer();
     showPopupActionsImmediate();
-
     showPopupIndex(idx);
     attachPopupHandlers();
   }
 
-  // helper to open comments (shrinks the media area & shows comments)
   function openComments(){
     if (!popup) return;
     const media = popupMedia;
-    const mediaWrap = popupMediaWrap;
-    // add class to make media top-aligned and slightly smaller
     media.classList.add('comments-open');
-    // set css var so .popup-media height accounts for comment area
     document.documentElement.style.setProperty('--popup-comments-height', '36vh');
-    // open the comments panel
     popupCommentsEl.classList.add('open');
-    // ensure the comment handle shows
     document.querySelector('.comment-handle')?.classList.add('visible');
-    // pause popup playing video
     if (popupPlayingVideo && !popupPlayingVideo.paused) {
       try { popupPlayingVideo.pause(); popupPlayPauseBtn.textContent = '▶'; } catch(e){}
     }
-    // focus the input after animation
     setTimeout(()=> { try { popupReplyInput.focus(); } catch(e){} }, 260);
-
-    // when comments open, make the action buttons visible (so user can comment/share)
-    _actionsForceHidden = false; // don't block showing
+    _actionsForceHidden = false;
     showPopupActionsImmediate();
   }
 
-  // helper to close comments (restore media area)
   function closeComments(){
     if (!popup) return;
     popupMedia.classList.remove('comments-open');
     document.documentElement.style.setProperty('--popup-comments-height', '0vh');
     popupCommentsEl.classList.remove('open');
     document.querySelector('.comment-handle')?.classList.remove('visible');
-    // do not automatically resume playback — leave to user
-
-    // show actions again once comments closed, only if not forced hidden
     if (!_actionsForceHidden) showPopupActionsImmediate();
   }
 
   function attachPopupHandlers(){
-    // prevent duplicate attachments by clearing previous listeners where necessary
-
-    // touch swipe handlers for next/prev
     let startX = 0, startY = 0, isMoving = false;
-    const threshold = 50; // px to consider swipe
-
+    const threshold = 50;
     function onTouchStart(e){
       const t = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
       if (!t) return;
@@ -1442,15 +1323,12 @@
       else if (dx < -threshold) navigatePopup(1);
     }
 
-    // overlay click closes popup when clicking outside media wrap
     function onOverlayClick(ev){
       const target = ev.target;
-      // If click happened inside the media wrap (arrows, top controls, actions, or media) don't close
       if (target.closest && target.closest('.popup-media-wrap')) return;
       closePopup();
     }
 
-    // bind once to the popupMediaWrap (touch + swipe)
     const mediaWrap = $('#popupMediaWrap') || $('#popupMedia');
     if (mediaWrap) {
       mediaWrap.removeEventListener('touchstart', onTouchStart);
@@ -1464,21 +1342,17 @@
     popup.removeEventListener('click', onOverlayClick);
     popup.addEventListener('click', onOverlayClick);
 
-    // arrows (prev/next)
     popupPrevBtn.removeEventListener('click', onPrev);
     popupNextBtn.removeEventListener('click', onNext);
     popupPrevBtn.addEventListener('click', onPrev);
     popupNextBtn.addEventListener('click', onNext);
 
-    // play/pause
     popupPlayPauseBtn.removeEventListener('click', togglePopupPlayPause);
     popupPlayPauseBtn.addEventListener('click', togglePopupPlayPause);
 
-    // close
     popupCloseBtn.removeEventListener('click', closePopup);
     popupCloseBtn.addEventListener('click', closePopup);
 
-    // comments area focus (pauses video)
     popupCommentsArea.removeEventListener('click', pauseVideoOnCommentFocus);
     popupCommentsArea.addEventListener('click', pauseVideoOnCommentFocus);
     popupCommentsArea.removeEventListener('focusin', pauseVideoOnCommentFocus);
@@ -1492,11 +1366,9 @@
     document.removeEventListener('keydown', popupKeyHandler);
     document.addEventListener('keydown', popupKeyHandler);
 
-    // helper handler functions
     function onPrev(e){ e.stopPropagation(); navigatePopup(-1); }
     function onNext(e){ e.stopPropagation(); navigatePopup(1); }
 
-    // bottom comment button opens/hides comments
     if (popupCommentBtn) {
       popupCommentBtn.removeEventListener('click', popupCommentBtnHandler);
       popupCommentBtn.addEventListener('click', popupCommentBtnHandler);
@@ -1513,7 +1385,6 @@
       }
     }
 
-    /***** action bar wiring (Like / Comment / Share / Music) *****/
     if (popupLikeBtn) {
       popupLikeBtn.removeEventListener('click', popupLikeHandlerSafe);
       popupLikeBtn.addEventListener('click', popupLikeHandlerSafe);
@@ -1532,7 +1403,6 @@
       popupShareBtn.addEventListener('click', popupShareHandler);
     }
 
-    // Music button handler (toggle visual + show track name toast)
     if (popupMusicBtn) {
       popupMusicBtn.removeEventListener('click', popupMusicHandler);
       popupMusicBtn.addEventListener('click', popupMusicHandler);
@@ -1542,10 +1412,7 @@
       e.stopPropagation();
       if (!popupMusicBtn) return;
 
-      // toggle visual active state
       const isActive = popupMusicBtn.classList.toggle('music-active');
-
-      // derive a simple "track name" from current media src as a placeholder
       const info = feedMediaSources[currentPopupIndex] || {};
       let trackName = 'Unknown track';
       try {
@@ -1554,12 +1421,9 @@
         trackName = file.replace(/\.(webm|mp4|m4a|mp3|ogg)$/i,'').replace(/[_\-]/g,' ');
         if (!trackName) trackName = 'Unknown track';
       } catch(err){}
-
-      // show ephemeral toast
       showMusicToast(isActive ? `Playing: ${trackName}` : `Stopped: ${trackName}`);
     }
 
-    // small toast utility
     function showMusicToast(text, timeout = 1600){
       let t = document.getElementById('musicToast');
       if (!t) {
@@ -1584,27 +1448,20 @@
       } catch(err){}
     }
 
-    // When comments are open and user taps anywhere on the media area, close comments (and do not toggle play)
     if (popupMedia) {
       popupMedia.removeEventListener('click', mediaAreaClickHandler);
       popupMedia.addEventListener('click', mediaAreaClickHandler);
     }
     function mediaAreaClickHandler(ev){
       const c = $('#popupComments');
-      // If user clicked directly on the underlying video element, ignore here (video click handler handles it)
       const clickedVideo = Boolean(ev.target && ev.target.tagName && ev.target.tagName.toLowerCase() === 'video');
       if (c && c.classList.contains('open')) {
-        // if user taps media while comments are open, close comments (UX: easier to return to fullscreen)
         closeComments();
         ev.stopPropagation();
         ev.preventDefault();
         return;
       }
-
-      // If clicked on video element itself, don't double-toggle (video's own handler does toggle)
       if (clickedVideo) return;
-
-      // otherwise toggle actions (useful for taps outside video element)
       togglePopupActionsByUser();
     }
 
@@ -1656,11 +1513,8 @@
         popupCommentsList.prepend(div);
     const likeBtn = div.querySelector('.like'); if (likeBtn) likeBtn.onclick = popupCommentLikeHandler;
 
-    // ensure comments panel scrolls to top so the newly-prepended comment is visible
-    // use a tiny timeout to allow layout to settle on some browsers
     try {
       setTimeout(() => {
-        // popupCommentsEl is the scroll container for comments
         if (popupCommentsEl && typeof popupCommentsEl.scrollTop !== 'undefined') {
           popupCommentsEl.scrollTop = 0;
         } else if (popupCommentsList && typeof popupCommentsList.scrollTop !== 'undefined') {
@@ -1669,7 +1523,6 @@
       }, 40);
     } catch(e){}
 
-    // mirror into feed comments of the source post if visible
     const info = feedMediaSources[currentPopupIndex];
     if (info && info.postBox){
       const feedCommentBox = info.postBox.querySelector('.comment-box');
@@ -1695,21 +1548,16 @@
       try { popupPlayingVideo.pause(); popupPlayingVideo.src = ''; } catch(e){}
       popupPlayingVideo = null;
     }
-    // hide bg too
     if (popupBg) { popupBg.style.display = 'none'; popupBg.style.backgroundImage = ''; }
-    // ensure comments closed and CSS var reset
     closeComments();
     popup.style.display = 'none';
     popup.setAttribute('aria-hidden','true');
     document.removeEventListener('keydown', popupKeyHandler);
-    // restore scrolling
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
-    // reset actions state
     _actionsForceHidden = false;
     _clearActionsTimer();
     actionsVisible = true;
-    // after closing, let feed autoplay pick up again
     setTimeout(()=> window.__setupSingleVideoAutoplay?.(), 200);
   }
 
@@ -1753,33 +1601,272 @@
     };
   })();
 
-  // bottom nav basic highlight (no routing yet)
-  function setActiveNav(id){
-    $all('.nav-item').forEach(n => n.classList.remove('active'));
-    const el = document.getElementById(id); if (el) el.classList.add('active');
+  // --------------------------------------------------------------------------------
+  // CONTENT SWAP LOGIC - persists header + footer and swaps only the main content
+  // --------------------------------------------------------------------------------
+
+  // store original home container HTML so we can restore exactly
+  const originalHomeHTML = document.getElementById('mainContentWrapper').innerHTML;
+
+  // -------------------------
+  // NEW: Safety page markup replaced with requested layout.
+  // Only this function was changed from your original file.
+  // -------------------------
+  function renderSafetyHTML(){
+    return `
+      <div class="main-feed-container" id="safetyMain" style="padding-bottom:120px;">
+        <div class="feed-card" style="border-radius:12px;padding:14px;">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="color:#ff2d2d;font-weight:900">Live</div>
+            <div style="font-weight:700">Alert acknowledged — you're protected.</div>
+          </div>
+        </div>
+
+        <!-- Map card: map occupies approx half/large portion -->
+        <div class="feed-card" style="padding:12px;border-radius:12px;">
+          <div style="font-weight:700;color:#fff;background:linear-gradient(180deg,#053b4a,#03313d);padding:12px;border-radius:8px">
+            <div style="font-weight:800;font-size:18px;text-align:center">Nearby Live Codes</div>
+            <div style="text-align:center;opacity:0.9;margin-top:6px">Showing active codes in your region</div>
+            <div id="safetyMap" style="margin-top:12px;"></div>
+            <div style="margin-top:10px;">
+              <span style="display:inline-flex;align-items:center;gap:8px;background:#fff;padding:6px 10px;border-radius:10px;color:#111;font-weight:700">
+                <span style="width:10px;height:10px;border-radius:10px;background:#ff4d4d;display:inline-block"></span> Active
+              </span>
+            </div>
+          </div>
+
+          <!-- card below map that covers till navbar -->
+          <div class="safety-card" style="margin-top:12px;">
+            <div style="font-weight:800;font-size:18px">Quick categories</div>
+            <div style="color:var(--muted);margin-top:8px">Tap a category to open details</div>
+
+            <div class="cat-grid" style="margin-top:12px">
+              <div class="cat-box" id="catMen"><strong>Men / Women</strong><div style="color:var(--muted);margin-top:6px">Personal safety & reporting</div></div>
+              <div class="cat-box" id="catAnimals"><strong>Animal / Nature</strong><div style="color:var(--muted);margin-top:6px">Wildlife & environmental alerts</div></div>
+              <div class="cat-box" id="catHuman"><strong>Humanity / Emergency</strong><div style="color:var(--muted);margin-top:6px">SOS & community help</div></div>
+              <div class="cat-box" id="catShakti"><strong>Quick access to Shakti Code</strong><div style="color:var(--muted);margin-top:6px">Activate emergency code</div></div>
+            </div>
+
+            <!-- detail area that opens inside the same card -->
+            <div id="catDetail" style="display:none;margin-top:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div id="catDetailTitle" style="font-weight:800">Title</div>
+                <button id="catDetailClose" class="back-x">✕</button>
+              </div>
+              <div id="catDetailBody" class="cat-detail"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
   }
-  $('#navHome').addEventListener('click', ()=> setActiveNav('navHome'));
-  $('#navSafety').addEventListener('click', ()=> setActiveNav('navSafety'));
-  $('#navCommunity').addEventListener('click', ()=> setActiveNav('navCommunity'));
-  $('#navProfile').addEventListener('click', ()=> setActiveNav('navProfile'));
+
+  // -------------------------
+  // NEW: functions to initialize safety page (map + categories)
+  // Called right after we inject safety HTML in swapMainContent
+  // -------------------------
+  async function initSafetyPage(){
+    // load external leaflet if needed, then init map and wire cats
+    await ensureLeafletLoaded();
+    initSafetyMap();
+    wireSafetyCategories();
+  }
+
+  function ensureLeafletLoaded(){
+    return new Promise((resolve, reject) => {
+      const CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      const JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      if (window.L && window.L.map) return resolve();
+      // load css if not present
+      if (!document.querySelector(`link[href="${CSS}"]`)){
+        const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = CSS; document.head.appendChild(l);
+      }
+      // load js
+      if (!document.querySelector(`script[src="${JS}"]`)){
+        const s = document.createElement('script'); s.src = JS;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed loading Leaflet'));
+        document.head.appendChild(s);
+      } else {
+        // script tag exists but maybe not ready — wait a tick
+        let tries = 0;
+        const wait = setInterval(()=> {
+          if (window.L && window.L.map) { clearInterval(wait); resolve(); }
+          tries++;
+          if (tries > 60) { clearInterval(wait); reject(new Error('Leaflet did not initialize')); }
+        }, 50);
+      }
+    });
+  }
+
+  // Demo live codes - replace these with your real service/API later
+  const DEMO_CODES = [
+    { id: 101, lat: 12.9716, lng: 77.5946, type: 'men', label: '101 — Personal safety' },
+    { id: 107, lat: 12.9667, lng: 77.6000, type: 'human', label: '107 — Emergency' },
+    { id: 112, lat: 12.9550, lng: 77.5900, type: 'animal', label: '112 — Animal' },
+    { id: 120, lat: 12.9800, lng: 77.6100, type: 'human', label: '120 — Help requested' }
+  ];
+
+  // Keep a global map ref so re-opening safety doesn't double-initialize
+  window.__safetyMap = window.__safetyMap || null;
+  function initSafetyMap(){
+    try {
+      const el = document.getElementById('safetyMap');
+      if (!el) return;
+      // if map exists, remove and re-create so markers reset
+      if (window.__safetyMap) {
+        try { window.__safetyMap.remove(); } catch(e){}
+        window.__safetyMap = null;
+      }
+
+      // Use first code as center or fallback
+      const center = DEMO_CODES.length ? [DEMO_CODES[0].lat, DEMO_CODES[0].lng] : [12.9716,77.5946];
+      const map = L.map(el, { center, zoom: 13, zoomControl: true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '' }).addTo(map);
+
+      // add markers with small number badges
+      DEMO_CODES.forEach(c => {
+        const html = `<div style="background:#ff4d4d;color:#fff;padding:6px 8px;border-radius:20px;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,0.12)">${c.id}</div>`;
+        const icon = L.divIcon({ className: '', html, iconSize:[44,24], iconAnchor:[22,12] });
+        const m = L.marker([c.lat, c.lng], { icon }).addTo(map);
+        m.bindPopup(`<strong>${escapeHtml(c.label)}</strong><div style="margin-top:8px"><button onclick="(function(){ alert('Open demo for code ${c.id}'); })()" style="padding:6px 8px;border-radius:8px;border:none;background:#138808;color:#fff;cursor:pointer">View</button></div>`);
+      });
+
+      // simple locate control
+      const locate = L.control({position:'topright'});
+      locate.onAdd = function(){
+        const elBtn = L.DomUtil.create('button','locate-btn');
+        elBtn.innerHTML = '📍';
+        elBtn.style.background = '#fff';
+        elBtn.style.padding = '8px';
+        elBtn.style.border = 'none';
+        elBtn.style.borderRadius = '8px';
+        elBtn.style.cursor = 'pointer';
+        elBtn.title = 'Center';
+        elBtn.onclick = () => map.setView(center, 13);
+        return elBtn;
+      };
+      locate.addTo(map);
+      window.__safetyMap = map;
+    } catch (err){
+      console.warn('initSafetyMap error', err);
+    }
+  }
+
+  function wireSafetyCategories(){
+    const men = document.getElementById('catMen');
+    const animals = document.getElementById('catAnimals');
+    const human = document.getElementById('catHuman');
+    const shakti = document.getElementById('catShakti');
+    const detail = document.getElementById('catDetail');
+    const titleEl = document.getElementById('catDetailTitle');
+    const bodyEl = document.getElementById('catDetailBody');
+    const closeBtn = document.getElementById('catDetailClose');
+
+    function openDetail(t, html){
+      titleEl.innerText = t;
+      bodyEl.innerHTML = html;
+      detail.style.display = 'block';
+      // scroll card into view slightly
+      try { detail.scrollIntoView({behavior:'smooth', block:'center'}); } catch(e){}
+    }
+    function closeDetail(){ detail.style.display = 'none'; }
+
+    if (men) men.onclick = () => openDetail('Men / Women', `<p style="color:#777">Personal safety steps:</p>
+      <ol style="color:#333;margin-top:8px">
+        <li>Move to a safe, public area</li>
+        <li>Call emergency services</li>
+        <li>Share live location with a trusted contact</li>
+      </ol>`);
+
+    if (animals) animals.onclick = () => openDetail('Animal / Nature', `<p style="color:#777">Wildlife & environment:</p>
+      <ul style="color:#333;margin-top:8px">
+        <li>Keep a safe distance</li>
+        <li>Notify local wildlife authorities</li>
+      </ul>`);
+
+    if (human) human.onclick = () => openDetail('Humanity / Emergency', `<p style="color:#777">Community help:</p>
+      <ul style="color:#333;margin-top:8px">
+        <li>Request volunteers nearby</li>
+        <li>Share details and live location</li>
+      </ul>`);
+
+    if (shakti) shakti.onclick = () => {
+      const ok = confirm('Activate Shakti Code (demo)?');
+      if (ok) alert('Shakti Code activated (demo).');
+    };
+
+    if (closeBtn) closeBtn.onclick = closeDetail;
+  }
+
+  // -------------------------
+  // swap function: page = 'home' | 'safety' | 'plus' | ...
+  // -------------------------
+  async function swapMainContent(page){
+    const wrapper = document.getElementById('mainContentWrapper');
+    if (!wrapper) return;
+    if (page === 'safety'){
+      wrapper.innerHTML = renderSafetyHTML();
+
+      // safety buttons
+      document.getElementById('sosBtn')?.addEventListener('click', () => {
+        if (confirm('Trigger SOS? (demo)')) alert('SOS simulated — notify contacts');
+      });
+      document.getElementById('callPolice')?.addEventListener('click', () => alert('Calling police (demo)'));
+      document.getElementById('shareLoc')?.addEventListener('click', () => alert('Share location (demo)'));
+
+      // rebuild story strip to focus on safety
+      rebuildStoryStrip(['shaktisafety']);
+      window.__pauseAutoplay?.();
+
+      // initialize map and categories for safety page
+      try { await initSafetyPage(); } catch(e){ console.warn('initSafetyPage failed', e); }
+
+      return;
+    }
+
+    // default: restore home feed HTML and reinitialize feed
+    wrapper.innerHTML = originalHomeHTML;
+    setTimeout(async () => {
+      await generateFeed(null);
+      assignFeedIndices();
+      attachFeedInteractions();
+      window.__observeMedia?.();
+      window.__setupSingleVideoAutoplay?.();
+    }, 30);
+  }
+
+  // simplified setActiveNav that swaps content
+  function setActiveNavAndSwap(elId){
+    $all('.nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById(elId);
+    if (el) el.classList.add('active');
+    const page = el?.dataset?.page || 'home';
+    swapMainContent(page);
+  }
+
+  // bottom nav wiring (use swap)
+  document.getElementById('navHome').addEventListener('click', ()=> setActiveNavAndSwap('navHome'));
+  document.getElementById('navSafety').addEventListener('click', ()=> setActiveNavAndSwap('navSafety'));
+  document.getElementById('navPlus').addEventListener('click', ()=> setActiveNavAndSwap('navPlus'));
+  document.getElementById('navCommunity').addEventListener('click', ()=> setActiveNavAndSwap('navCommunity'));
+  document.getElementById('navProfile').addEventListener('click', ()=> setActiveNavAndSwap('navProfile'));
 
   // -------------------------
   // Init on load: show ALL (all folders in /pics)
   // -------------------------
-  window.addEventListener('load', async () => {
-    document.documentElement.style.setProperty('--popup-comments-height', '0vh');
+ window.addEventListener('load', async () => {
+  document.documentElement.style.setProperty('--popup-comments-height', '0vh');
 
-    // show top loader while we generate feed
-    if (window.startLoadingBar) window.startLoadingBar();
+  if (window.startLoadingBar) window.startLoadingBar();
 
-    await generateFeed(null);        // null => all folders
+  await generateFeed(null);        // null => all folders
 
-    setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.();
-      // finish loader after UI initializes
-      if (window.finishLoadingBar) window.finishLoadingBar();
-    }, 250);
-  });
-
+  setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.(); 
+    if (window.finishLoadingBar) window.finishLoadingBar();
+  }, 250);
+});
 
   // small util
   function escapeHtml(text){

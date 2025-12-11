@@ -1,0 +1,207 @@
+<!-- savethis as safetypage.html in same folder as index.html -->
+<!-- This file is only the inner main content — it's safe to be fetched into index.html -->
+<div style="padding-bottom:120px; box-sizing:border-box;">
+  <!-- Live header -->
+  <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04);margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="color:#ff2d2d;font-weight:900">Live</div>
+      <div style="font-weight:700">Alert acknowledged — you're protected.</div>
+    </div>
+  </div>
+
+  <!-- Map card -->
+  <div style="background:linear-gradient(180deg,#053b4a,#03313d);border-radius:12px;padding:12px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04);margin-bottom:12px">
+    <div style="text-align:center;font-weight:800;font-size:18px">Nearby Live Codes</div>
+    <div style="text-align:center;opacity:0.9;margin-top:6px">Showing active codes in your region</div>
+    <div id="safetyMap" style="height:300px;border-radius:12px;overflow:hidden;margin-top:12px;background:#002"></div>
+    <div style="margin-top:10px;">
+      <span style="display:inline-flex;align-items:center;gap:8px;background:#fff;padding:6px 10px;border-radius:10px;color:#111;font-weight:700">
+        <span style="width:10px;height:10px;border-radius:10px;background:#ff4d4d;display:inline-block"></span> Active
+      </span>
+    </div>
+  </div>
+
+  <!-- Quick categories -->
+  <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.04);margin-bottom:12px">
+    <div style="font-weight:800;font-size:18px;margin-bottom:8px">Quick categories</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="cat-card" id="catMen" style="flex:1;min-width:45%;background:#fff;padding:14px;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.04);cursor:pointer">
+        <h4 style="margin:0">Men / Women</h4>
+        <div style="color:#777;font-size:13px;margin-top:6px">Personal safety & reporting</div>
+      </div>
+      <div class="cat-card" id="catAnimals" style="flex:1;min-width:45%;background:#fff;padding:14px;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.04);cursor:pointer">
+        <h4 style="margin:0">Animal / Nature</h4>
+        <div style="color:#777;font-size:13px;margin-top:6px">Wildlife & environmental alerts</div>
+      </div>
+      <div class="cat-card" id="catHuman" style="flex:1;min-width:45%;background:#fff;padding:14px;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.04);cursor:pointer">
+        <h4 style="margin:0">Humanity / Emergency</h4>
+        <div style="color:#777;font-size:13px;margin-top:6px">SOS & community help</div>
+      </div>
+      <div class="cat-card" id="catShakti" style="flex:1;min-width:45%;background:#fff;padding:14px;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.04);cursor:pointer">
+        <h4 style="margin:0">Quick Access to Shakti Code</h4>
+        <div style="color:#777;font-size:13px;margin-top:6px">Activate emergency code instantly</div>
+      </div>
+    </div>
+
+    <div id="safetyCategoryView" style="display:none;margin-top:12px;background:#fafafa;padding:12px;border-radius:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="safetyCatTitle" style="font-weight:800">Category</div>
+        <button id="closeSafetyCat" style="background:#eee;border:none;padding:8px;border-radius:8px;cursor:pointer">✕</button>
+      </div>
+      <div id="safetyCatContent" style="margin-top:10px;color:#333"></div>
+      <div style="margin-top:12px">
+        <button id="safetyCatAction" style="padding:10px 12px;border-radius:10px;background:linear-gradient(90deg,#ff6b6b,#ff8a65);color:#fff;border:none;cursor:pointer">Report / Request Help</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- expose small init function that parent page will call after injection -->
+  <script>
+    // SAFETY PAGE: uses Leaflet (we load the CDN below in parent or you can allow it here).
+    // We'll lazy load Leaflet JS/CSS dynamically if not present.
+
+    (function(){
+      // Helpers
+      function loadScript(url){ return new Promise((res, rej) => { const s=document.createElement('script'); s.src=url; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
+      function loadCSS(url){ if (document.querySelector('link[href="' + url + '"]')) return; const l=document.createElement('link'); l.rel='stylesheet'; l.href=url; document.head.appendChild(l); }
+
+      // fake codes for demo. Replace with your real source later.
+      const fakeLiveCodes = [
+        { id:101, lat:12.9716, lng:77.5946, type:'men', label:'Incident 101 — Personal safety' },
+        { id:107, lat:12.9667, lng:77.6000, type:'human', label:'Incident 107 — Emergency' },
+        { id:112, lat:12.9550, lng:77.5900, type:'animal', label:'Incident 112 — Animal' },
+        { id:120, lat:12.9800, lng:77.6100, type:'human', label:'Incident 120 — Help requested' }
+      ];
+
+      // create/refresh map
+      async function initMap(){
+        // ensure leaflet css/js present
+        const LEAFLET_CSS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        if (!window.L) {
+          loadCSS(LEAFLET_CSS);
+          await loadScript(LEAFLET_JS);
+        }
+
+        // remove existing map if present
+        if (window._safetyMapInstance){
+          try{ window._safetyMapInstance.remove(); }catch(e){}
+          window._safetyMapInstance = null;
+        }
+
+        const mapEl = document.getElementById('safetyMap');
+        if (!mapEl) return;
+
+        const center = fakeLiveCodes.length ? [fakeLiveCodes[0].lat, fakeLiveCodes[0].lng] : [12.9716,77.5946];
+        const map = L.map(mapEl, { center, zoom:13, attributionControl:false, zoomControl:true, scrollWheelZoom:false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map);
+
+        fakeLiveCodes.forEach(c => {
+          const iconHtml = `<div style="background:#ff4d4d;color:#fff;padding:6px 8px;border-radius:20px;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,0.12)">${c.id}</div>`;
+          const icon = L.divIcon({ className:'', html:iconHtml, iconSize:[44,24], iconAnchor:[22,12] });
+          const marker = L.marker([c.lat, c.lng], { icon }).addTo(map);
+          marker.bindPopup(`<strong>${escapeHtml(c.label)}</strong><div style="margin-top:8px"><button onclick="(function(){ alert('Demo open for code ${c.id}'); })()" style="padding:6px 8px;border-radius:8px;border:none;background:#138808;color:#fff;cursor:pointer">View</button></div>`);
+        });
+
+        // small locate control (centers map on center)
+        const locate = L.control({position:'topright'});
+        locate.onAdd = function(){
+          const el = L.DomUtil.create('button','locate-btn');
+          el.innerHTML = '📍';
+          el.style.background = '#fff';
+          el.style.padding = '8px';
+          el.style.border = 'none';
+          el.style.borderRadius = '8px';
+          el.style.cursor = 'pointer';
+          el.title = 'Center map';
+          el.onclick = () => map.setView(center, 13);
+          return el;
+        };
+        locate.addTo(map);
+
+        window._safetyMapInstance = map;
+      }
+
+      // category behavior wiring
+      function wireCategories(){
+        const catMen = document.getElementById('catMen');
+        const catAnimals = document.getElementById('catAnimals');
+        const catHuman = document.getElementById('catHuman');
+        const catShakti = document.getElementById('catShakti');
+        const catView = document.getElementById('safetyCategoryView');
+        const closeBtn = document.getElementById('closeSafetyCat');
+        const catTitle = document.getElementById('safetyCatTitle');
+        const catContent = document.getElementById('safetyCatContent');
+        const catAction = document.getElementById('safetyCatAction');
+
+        function openCat(title, html){
+          catTitle.innerText = title;
+          catContent.innerHTML = html;
+          catView.style.display = 'block';
+          // scroll into view if mobile
+          try { catView.scrollIntoView({behavior:'smooth',block:'center'}); } catch(e){}
+        }
+
+        catMen?.addEventListener('click', ()=>{
+          openCat('Men / Women — Personal safety', `
+            <p style="color:#777">Immediate steps:</p>
+            <ol style="margin-top:8px;color:#333">
+              <li>Move to safety</li>
+              <li>Call emergency services</li>
+              <li>Share live location</li>
+            </ol>`);
+          catAction.dataset.type = 'men';
+        });
+
+        catAnimals?.addEventListener('click', ()=>{
+          openCat('Animal / Nature — Wildlife & environment', `
+            <p style="color:#777">Guidelines:</p>
+            <ul style="margin-top:8px;color:#333">
+              <li>Keep distance</li>
+              <li>Alert local officials</li>
+            </ul>`);
+          catAction.dataset.type = 'animal';
+        });
+
+        catHuman?.addEventListener('click', ()=>{
+          openCat('Humanity / Emergency — Community help', `
+            <p style="color:#777">Actions:</p>
+            <ul style="margin-top:8px;color:#333">
+              <li>Request help</li>
+              <li>Notify volunteers nearby</li>
+            </ul>`);
+          catAction.dataset.type = 'human';
+        });
+
+        catShakti?.addEventListener('click', ()=>{
+          const ok = confirm('Activate Shakti Code? (demo)');
+          if (ok) alert('Shakti Code activated (demo).');
+        });
+
+        closeBtn?.addEventListener('click', ()=> catView.style.display = 'none');
+        catAction?.addEventListener('click', ()=> {
+          const t = catAction.dataset.type || 'general';
+          alert('Report / request sent (demo) for: ' + t);
+          catView.style.display = 'none';
+        });
+      }
+
+      // small html escape
+      function escapeHtml(t){ return String(t||'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
+
+      // Expose init method that parent calls after fetch injection
+      window.__safetyPageInit = async function(){
+        try {
+          await initMap();
+          wireCategories();
+        } catch (e) { console.warn('safety init error', e); }
+      };
+
+      // If this safetypage.html is loaded directly (not injected) we still want it to init:
+      if (!window.__safetyPageLoadedAsFragment) {
+        // When opened directly in a browser as standalone page, call init.
+        // Guard to avoid double-init when fetched into index which calls __safetyPageInit.
+        setTimeout(()=> { if (!window.parent || window.parent === window) window.__safetyPageInit(); }, 120);
+      }
+    })();
+  </script>
