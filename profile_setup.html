@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Complete Your Profile</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+        font-family:'Poppins',sans-serif;
+        height:100vh;
+        background:#fff8f0;
+        overflow:hidden;
+        position:relative;
+    }
+
+    .bg-gradient{
+        position:fixed; inset:0;
+        background:linear-gradient(135deg,#fff3e6 0%,#f8fff8 45%,#e6f7f0 100%);
+        z-index:-1;
+    }
+
+    .card{
+        background:rgba(255,255,255,0.95);
+        backdrop-filter:blur(15px);
+        padding:42px 32px;
+        width:100%;max-width:390px;
+        border-radius:28px;
+        box-shadow:0 20px 40px rgba(0,0,0,0.08);
+        border:1px solid rgba(255,153,51,0.15);
+        text-align:center;
+        margin:auto;
+        margin-top:60px;
+    }
+
+    h2{font-size:24px;margin-bottom:10px;color:#2c3e50;}
+
+    input,textarea{
+        width:100%;
+        padding:14px 18px;
+        margin:12px 0;
+        border-radius:16px;
+        border:2px solid #eee;
+        background:#fafafa;
+        font-size:15px;
+    }
+
+    .btn-gradient{
+        --green:#126d09;
+        width:100%;padding:16px;
+        border:none;border-radius:16px;
+        font-size:17px;font-weight:600;
+        color:white;background:var(--green);
+        cursor:pointer;
+        margin-top:10px;
+        box-shadow:0 10px 30px rgba(255,122,51,0.4);
+        transition:0.3s;
+    }
+
+    #previewPic{
+        width:120px;height:120px;
+        border-radius:50%;
+        object-fit:cover;
+        margin:10px auto;
+        border:3px solid #FF9933;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="card">
+    <h2>Complete Your Profile</h2>
+
+    <!-- Profile Picture Upload -->
+    <input type="file" id="profilePicInput" accept="image/*">
+    <img id="previewPic" src="" style="display:none;">
+
+    <!-- Bio -->
+    <input type="text" id="bio" placeholder="Your bio (e.g., Student, Developer...)">
+
+    <!-- Description -->
+    <textarea id="description" rows="3" placeholder="Tell something about yourself..."></textarea>
+
+    <button class="btn-gradient" onclick="saveProfile()">Save Profile</button>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, update, get, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDvZYHuZ2NHVrTpS3NhVS0f1wDeW-phZ10",
+        authDomain: "shaktiind-31e08.firebaseapp.com",
+        databaseURL: "https://shaktiind-31e08-default-rtdb.firebaseio.com",
+        projectId: "shaktiind-31e08",
+        storageBucket: "shaktiind-31e08.firebasestorage.app",
+        messagingSenderId: "394230439792",
+        appId: "1:394230439792:web:2178e633cff48093f5b9b5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Load selected image preview
+    let profileImageBase64 = "";
+    document.getElementById("profilePicInput").addEventListener("change", function(event){
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+            profileImageBase64 = e.target.result;
+            const img = document.getElementById("previewPic");
+            img.src = e.target.result;
+            img.style.display = "block";
+        };
+
+        if(file){ reader.readAsDataURL(file); }
+    });
+
+    // Save profile details
+    window.saveProfile = async function (){
+        const bio = document.getElementById("bio").value.trim();
+        const desc = document.getElementById("description").value.trim();
+        const mobile = localStorage.getItem("signup_mobile");
+
+        if(!bio || !desc || !profileImageBase64){
+            alert("Please upload picture and fill all details.");
+            return;
+        }
+
+        // Fetch user by mobile number
+        const snap = await get(ref(db, "shaktiind/users"));
+        if(snap.exists()){
+            const users = snap.val();
+            let userKey = null;
+
+            for(let k in users){
+                if(users[k].mobile === mobile){
+                    userKey = k;
+                    break;
+                }
+            }
+
+            if(userKey){
+                await update(ref(db, "shaktiind/users/" + userKey), {
+                    profilePic: profileImageBase64,
+                    bio: bio,
+                    description: desc
+                });
+
+                // After saving → back to login
+                window.location.href = "login_page.html";
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
