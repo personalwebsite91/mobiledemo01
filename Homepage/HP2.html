@@ -272,10 +272,43 @@
     .popup-arrow.left { left: 12px; }
     .popup-arrow.right { right: 12px; }
 
-    /* action bar (floating) */
-    .popup-actions { position:absolute; left:12px; right:12px; bottom:18px; z-index:80; display:flex; gap:12px; justify-content:center; align-items:center; pointer-events:auto; }
-    .popup-actions button { background:rgba(255,255,255,0.06); border:none; color:#fff; padding:10px 14px; border-radius:999px; font-weight:700; backdrop-filter: blur(4px); cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+    /* action bar (floating) - made smaller, tighter spacing */
+    .popup-actions {
+      position:absolute;
+      left:12px;
+      right:12px;
+      bottom:18px;
+      z-index:80;
+      display:flex;
+      gap:8px; /* reduced gap */
+      justify-content:center;
+      align-items:center;
+      pointer-events:auto;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+    .popup-actions button {
+      background:rgba(255,255,255,0.06);
+      border:none;
+      color:#fff;
+      padding:6px 10px; /* smaller */
+      border-radius:999px;
+      font-weight:700;
+      font-size:13px; /* smaller */
+      backdrop-filter: blur(4px);
+      cursor:pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
     .popup-actions button:active { transform: scale(.98); }
+
+    /* hidden state */
+    .popup-actions.actions-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+    }
 
     @media (max-width:480px){
       .post-box{ width:58%; }
@@ -340,6 +373,58 @@
     display: none !important;
   }
 }
+/* Music button styling + spin when active */
+.popup-actions #popupMusicBtn {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.06);
+  border: none;
+  color: #fff;
+  font-weight:700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  font-size:13px;
+}
+
+.popup-actions #popupMusicBtn.music-active {
+  background: linear-gradient(90deg, rgba(255,153,51,0.12), rgba(19,136,8,0.12));
+}
+
+/* tiny rotating icon effect for the emoji */
+.popup-actions #popupMusicBtn.music-active::before {
+  content: '🎧';
+  display:inline-block;
+  margin-right:6px;
+  animation: musicSpin 1600ms linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes musicSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* small toast used to show track name (inserted by JS) */
+#musicToast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 10px) + 84px);
+  background: rgba(0,0,0,0.72);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  z-index: 99999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+#musicToast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
 
   </style>
@@ -392,10 +477,11 @@
 
             <div id="popupMediaHolder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"></div>
 
-            <!-- action bar (overlay) - horizontal like / comment / share -->
+            <!-- action bar (overlay) - horizontal like / comment / share / music -->
             <div class="popup-actions" aria-hidden="false">
               <button id="popupLikeBtn" aria-label="Like">♡ Like</button>
               <button id="popupCommentBtn" aria-label="Comment">💬 Comment</button>
+              <button id="popupMusicBtn" aria-label="Music">🎵 Music</button>
               <button id="popupShareBtn" aria-label="Share">↗ Share</button>
             </div>
           </div>
@@ -737,252 +823,252 @@
     btn.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:180});
   }
 
-/* ---------- Top loading progress (dynamic colors + robust start/finish) ---------- */
-(function(){
-  const existing = document.getElementById('topProgress');
-  if (!existing) {
-    const el = document.createElement('div');
-    el.id = 'topProgress';
-    document.documentElement.appendChild(el);
-  }
-  let progressEl = document.getElementById('topProgress');
-  let autoTickTimer = null;
-  let isRunning = false;
+  /* ---------- Top loading progress (dynamic colors + robust start/finish) ---------- */
+  (function(){
+    const existing = document.getElementById('topProgress');
+    if (!existing) {
+      const el = document.createElement('div');
+      el.id = 'topProgress';
+      document.documentElement.appendChild(el);
+    }
+    let progressEl = document.getElementById('topProgress');
+    let autoTickTimer = null;
+    let isRunning = false;
 
-  // possible gradient choices (you can tweak)
-  const GRADIENTS = [
-    'linear-gradient(90deg, #00c853, #1b5e20)',              // green
-    'linear-gradient(90deg, #ff9933, #ff6a00)',              // saffron / orange
-    'linear-gradient(90deg, #0d47a1, #ff9933)',              // navy blue -> saffron mix
-    'linear-gradient(90deg, #00c853, #ff9933)',              // green -> orange
-    'linear-gradient(90deg, #1b5e20, #0d47a1)'               // deep green -> navy
-  ];
+    // possible gradient choices (you can tweak)
+    const GRADIENTS = [
+      'linear-gradient(90deg, #00c853, #1b5e20)',              // green
+      'linear-gradient(90deg, #ff9933, #ff6a00)',              // saffron / orange
+      'linear-gradient(90deg, #0d47a1, #ff9933)',              // navy blue -> saffron mix
+      'linear-gradient(90deg, #00c853, #ff9933)',              // green -> orange
+      'linear-gradient(90deg, #1b5e20, #0d47a1)'               // deep green -> navy
+    ];
 
-  function pickGradient(){
-    return GRADIENTS[Math.floor(Math.random()*GRADIENTS.length)];
-  }
+    function pickGradient(){
+      return GRADIENTS[Math.floor(Math.random()*GRADIENTS.length)];
+    }
 
-  // start: show and begin auto-increment (idempotent)
-  window.startLoadingBar = function(){
-    if (!progressEl) progressEl = document.getElementById('topProgress');
-    // if already running, don't restart (but still ensure it's visible)
-    if (isRunning) {
+    // start: show and begin auto-increment (idempotent)
+    window.startLoadingBar = function(){
+      if (!progressEl) progressEl = document.getElementById('topProgress');
+      // if already running, don't restart (but still ensure it's visible)
+      if (isRunning) {
+        progressEl.classList.add('show');
+        progressEl.style.opacity = '1';
+        return;
+      }
+      isRunning = true;
+
+      // pick a dynamic gradient
+      progressEl.style.background = pickGradient();
+
       progressEl.classList.add('show');
+      progressEl.classList.remove('finish');
       progressEl.style.opacity = '1';
-      return;
-    }
-    isRunning = true;
-
-    // pick a dynamic gradient
-    progressEl.style.background = pickGradient();
-
-    progressEl.classList.add('show');
-    progressEl.classList.remove('finish');
-    progressEl.style.opacity = '1';
-    progressEl.style.width = '6%';
-    // clear any previous timer
-    clearInterval(autoTickTimer);
-    autoTickTimer = setInterval(() => {
-      try {
-        const cur = parseFloat(progressEl.style.width) || 0;
-        // increase slower as it approaches 85%
-        const delta = cur < 60 ? (Math.random()*6 + 3) : (Math.random()*2 + 0.6);
-        const next = Math.min(88, cur + delta);
-        progressEl.style.width = next + '%';
-      } catch(e){}
-    }, 350);
-  };
-
-  // set explicit percent (0..100)
-  window.setLoadingBar = function(pct){
-    if (!progressEl) progressEl = document.getElementById('topProgress');
-    pct = Math.max(0, Math.min(100, Number(pct) || 0));
-    progressEl.style.width = pct + '%';
-  };
-
-  // finish: jump to 100, flash, hide
-  window.finishLoadingBar = function(){
-    if (!progressEl) progressEl = document.getElementById('topProgress');
-    clearInterval(autoTickTimer);
-    autoTickTimer = null;
-    progressEl.classList.add('finish');
-    // ensure it goes to 100%
-    progressEl.style.width = '100%';
-    // tiny flash (use a slightly different gradient to emphasize completion)
-    try { progressEl.style.background = pickGradient(); } catch(e){}
-    // after short delay fade out and fully reset
-    setTimeout(() => {
-      try {
-        progressEl.style.opacity = '0';
-        // reset after opacity gone
-        setTimeout(() => {
-          try {
-            progressEl.classList.remove('show','finish');
-            progressEl.style.width = '0%';
-            progressEl.style.opacity = '';
-            // clear running flag
-            isRunning = false;
-            // reset background to a default (so next start picks new)
-            progressEl.style.background = '';
-          } catch(e){}
-        }, 420);
-      } catch(e){}
-    }, 260);
-  };
-})();
-
-
-// show floating heart animation centered on the clicked element
-function showLikeAnimation(evt) {
-  try {
-    // if event is a native mouse event, currentTarget is element; if called manually pass element
-    const el = (evt && evt.currentTarget) ? evt.currentTarget : (evt && evt.target) ? evt.target : null;
-    // find a sensible fallback position if el missing
-    let x = window.innerWidth / 2, y = window.innerHeight / 2;
-    if (el && el.getBoundingClientRect) {
-      const r = el.getBoundingClientRect();
-      x = r.left + r.width / 2;
-      y = r.top + r.height / 2;
-    }
-    const heart = document.createElement('div');
-    heart.className = 'burst-heart';
-    heart.textContent = '♥';
-    heart.style.left = `${x}px`;
-    heart.style.top = `${y}px`;
-    document.body.appendChild(heart);
-    // remove after animation
-    setTimeout(() => { try { heart.remove(); } catch(e){} }, 820);
-
-    // add small pulse to the clicked element for tactile feedback
-    if (el && el.classList) {
-      el.classList.add('liked-pulse');
-      setTimeout(() => el.classList.remove('liked-pulse'), 420);
-    }
-  } catch (e) { /* silent */ }
-}
-
-function attachFeedInteractions(){
-  // comment like buttons
-  $all('.comment-box .heart-small').forEach(btn => {
-    btn.removeEventListener('click', commentLikeHandler);
-    btn.addEventListener('click', commentLikeHandler);
-  });
-
-  // helper to attach popup-opening handlers to a media element (image or video)
-  function attachOpenHandlers(el){
-    // remove any previous handlers to avoid duplicates
-    el.removeEventListener('click', onPostMediaClick);
-    el.removeEventListener('pointerup', onPostMediaClick);
-    el.removeEventListener('touchend', onPostMediaClick);
-
-    // Add multiple handlers: click (desktop), pointerup (Edge), touchend (mobile)
-    el.addEventListener('click', onPostMediaClick);
-    el.addEventListener('pointerup', onPostMediaClick, {passive:true});
-    el.addEventListener('touchend', onPostMediaClick, {passive:true});
-
-    // small local toggle (feed-level) — doesn't open popup if user interacts with controls
-    if (el.tagName === 'VIDEO'){
-      el.addEventListener('click', (ev) => {
+      progressEl.style.width = '6%';
+      // clear any previous timer
+      clearInterval(autoTickTimer);
+      autoTickTimer = setInterval(() => {
         try {
-          if (el.paused) { el.play().catch(()=>{}); } else { el.pause(); }
+          const cur = parseFloat(progressEl.style.width) || 0;
+          // increase slower as it approaches 85%
+          const delta = cur < 60 ? (Math.random()*6 + 3) : (Math.random()*2 + 0.6);
+          const next = Math.min(88, cur + delta);
+          progressEl.style.width = next + '%';
         } catch(e){}
+      }, 350);
+    };
+
+    // set explicit percent (0..100)
+    window.setLoadingBar = function(pct){
+      if (!progressEl) progressEl = document.getElementById('topProgress');
+      pct = Math.max(0, Math.min(100, Number(pct) || 0));
+      progressEl.style.width = pct + '%';
+    };
+
+    // finish: jump to 100, flash, hide
+    window.finishLoadingBar = function(){
+      if (!progressEl) progressEl = document.getElementById('topProgress');
+      clearInterval(autoTickTimer);
+      autoTickTimer = null;
+      progressEl.classList.add('finish');
+      // ensure it goes to 100%
+      progressEl.style.width = '100%';
+      // tiny flash (use a slightly different gradient to emphasize completion)
+      try { progressEl.style.background = pickGradient(); } catch(e){}
+      // after short delay fade out and fully reset
+      setTimeout(() => {
+        try {
+          progressEl.style.opacity = '0';
+          // reset after opacity gone
+          setTimeout(() => {
+            try {
+              progressEl.classList.remove('show','finish');
+              progressEl.style.width = '0%';
+              progressEl.style.opacity = '';
+              // clear running flag
+              isRunning = false;
+              // reset background to a default (so next start picks new)
+              progressEl.style.background = '';
+            } catch(e){}
+          }, 420);
+        } catch(e){}
+      }, 260);
+    };
+  })();
+
+
+  // show floating heart animation centered on the clicked element
+  function showLikeAnimation(evt) {
+    try {
+      // if event is a native mouse event, currentTarget is element; if called manually pass element
+      const el = (evt && evt.currentTarget) ? evt.currentTarget : (evt && evt.target) ? evt.target : null;
+      // find a sensible fallback position if el missing
+      let x = window.innerWidth / 2, y = window.innerHeight / 2;
+      if (el && el.getBoundingClientRect) {
+        const r = el.getBoundingClientRect();
+        x = r.left + r.width / 2;
+        y = r.top + r.height / 2;
+      }
+      const heart = document.createElement('div');
+      heart.className = 'burst-heart';
+      heart.textContent = '♥';
+      heart.style.left = `${x}px`;
+      heart.style.top = `${y}px`;
+      document.body.appendChild(heart);
+      // remove after animation
+      setTimeout(() => { try { heart.remove(); } catch(e){} }, 820);
+
+      // add small pulse to the clicked element for tactile feedback
+      if (el && el.classList) {
+        el.classList.add('liked-pulse');
+        setTimeout(() => el.classList.remove('liked-pulse'), 420);
+      }
+    } catch (e) { /* silent */ }
+  }
+
+  function attachFeedInteractions(){
+    // comment like buttons
+    $all('.comment-box .heart-small').forEach(btn => {
+      btn.removeEventListener('click', commentLikeHandler);
+      btn.addEventListener('click', commentLikeHandler);
+    });
+
+    // helper to attach popup-opening handlers to a media element (image or video)
+    function attachOpenHandlers(el){
+      // remove any previous handlers to avoid duplicates
+      el.removeEventListener('click', onPostMediaClick);
+      el.removeEventListener('pointerup', onPostMediaClick);
+      el.removeEventListener('touchend', onPostMediaClick);
+
+      // Add multiple handlers: click (desktop), pointerup (Edge), touchend (mobile)
+      el.addEventListener('click', onPostMediaClick);
+      el.addEventListener('pointerup', onPostMediaClick, {passive:true});
+      el.addEventListener('touchend', onPostMediaClick, {passive:true});
+
+      // small local toggle (feed-level) — doesn't open popup if user interacts with controls
+      if (el.tagName === 'VIDEO'){
+        el.addEventListener('click', (ev) => {
+          try {
+            if (el.paused) { el.play().catch(()=>{}); } else { el.pause(); }
+          } catch(e){}
+        });
+      }
+    }
+
+    // ensure video and image elements are clickable and above overlays
+    $all('.post-img, .post-video').forEach(el => {
+      try {
+        el.style.position = el.style.position || 'relative';
+        el.style.zIndex = 2;
+      } catch(e){}
+      attachOpenHandlers(el);
+    });
+
+    // like buttons on post
+    $all('.like-btn').forEach(btn => {
+      btn.removeEventListener('click', postLikeHandler);
+      btn.addEventListener('click', postLikeHandler);
+      btn.removeEventListener('click', showLikeAnimation);
+      btn.addEventListener('click', showLikeAnimation);
+    });
+
+    // MutationObserver to auto-bind future elements
+    if (!window.__feedInteractionObserverAttached) {
+      window.__feedInteractionObserverAttached = true;
+      const observer = new MutationObserver(() => {
+        $all('.post-img, .post-video').forEach(el => {
+          el.removeEventListener('click', onPostMediaClick);
+          el.removeEventListener('pointerup', onPostMediaClick);
+          el.removeEventListener('touchend', onPostMediaClick);
+          el.addEventListener('click', onPostMediaClick);
+          el.addEventListener('pointerup', onPostMediaClick, {passive:true});
+          el.addEventListener('touchend', onPostMediaClick, {passive:true});
+        });
       });
+      observer.observe(document.getElementById('feed') || document.body, { childList: true, subtree: true });
     }
   }
-
-  // ensure video and image elements are clickable and above overlays
-  $all('.post-img, .post-video').forEach(el => {
-    try {
-      el.style.position = el.style.position || 'relative';
-      el.style.zIndex = 2;
-    } catch(e){}
-    attachOpenHandlers(el);
-  });
-
-  // like buttons on post
-  $all('.like-btn').forEach(btn => {
-    btn.removeEventListener('click', postLikeHandler);
-    btn.addEventListener('click', postLikeHandler);
-    btn.removeEventListener('click', showLikeAnimation);
-    btn.addEventListener('click', showLikeAnimation);
-  });
-
-  // MutationObserver to auto-bind future elements
-  if (!window.__feedInteractionObserverAttached) {
-    window.__feedInteractionObserverAttached = true;
-    const observer = new MutationObserver(() => {
-      $all('.post-img, .post-video').forEach(el => {
-        el.removeEventListener('click', onPostMediaClick);
-        el.removeEventListener('pointerup', onPostMediaClick);
-        el.removeEventListener('touchend', onPostMediaClick);
-        el.addEventListener('click', onPostMediaClick);
-        el.addEventListener('pointerup', onPostMediaClick, {passive:true});
-        el.addEventListener('touchend', onPostMediaClick, {passive:true});
-      });
-    });
-    observer.observe(document.getElementById('feed') || document.body, { childList: true, subtree: true });
-  }
-}
 
 
   /* --------- Auto-play / single video logic (feed) --------- */
-(function singleVideoAutoplay(){
-  let currentlyPlaying = null;
-  let observer = null;
+  (function singleVideoAutoplay(){
+    let currentlyPlaying = null;
+    let observer = null;
 
-  function playVideoEl(videoEl){
-    if (!videoEl) return;
-    try {
-      document.querySelectorAll('#feed video').forEach(v => { if (v !== videoEl) try { v.pause(); v.dataset.isPlaying='false'; } catch(e){} });
-      videoEl.muted = true;
-      const p = videoEl.play();
-      if (p && p.then) p.catch(()=>{});
-      videoEl.dataset.isPlaying = 'true';
-      currentlyPlaying = videoEl;
-    } catch(e){}
-  }
+    function playVideoEl(videoEl){
+      if (!videoEl) return;
+      try {
+        document.querySelectorAll('#feed video').forEach(v => { if (v !== videoEl) try { v.pause(); v.dataset.isPlaying='false'; } catch(e){} });
+        videoEl.muted = true;
+        const p = videoEl.play();
+        if (p && p.then) p.catch(()=>{});
+        videoEl.dataset.isPlaying = 'true';
+        currentlyPlaying = videoEl;
+      } catch(e){}
+    }
 
-  function pauseVideoEl(videoEl){
-    if (!videoEl) return;
-    try { videoEl.pause(); videoEl.dataset.isPlaying='false'; } catch(e){}
-    if (currentlyPlaying === videoEl) currentlyPlaying = null;
-  }
+    function pauseVideoEl(videoEl){
+      if (!videoEl) return;
+      try { videoEl.pause(); videoEl.dataset.isPlaying='false'; } catch(e){}
+      if (currentlyPlaying === videoEl) currentlyPlaying = null;
+    }
 
-  function switchTo(videoEl){
-    if (currentlyPlaying && currentlyPlaying !== videoEl) pauseVideoEl(currentlyPlaying);
-    if (videoEl && (videoEl.paused || videoEl.dataset.isPlaying !== 'true')) playVideoEl(videoEl);
-  }
+    function switchTo(videoEl){
+      if (currentlyPlaying && currentlyPlaying !== videoEl) pauseVideoEl(currentlyPlaying);
+      if (videoEl && (videoEl.paused || videoEl.dataset.isPlaying !== 'true')) playVideoEl(videoEl);
+    }
 
-  function startObservingVideos(){
-    if (observer) try { observer.disconnect(); } catch(e){}
-    observer = null;
+    function startObservingVideos(){
+      if (observer) try { observer.disconnect(); } catch(e){}
+      observer = null;
 
-    const videos = Array.from(document.querySelectorAll('#feed video.post-video, #feed video'));
-    if (!videos.length) return;
-    if (!('IntersectionObserver' in window)){ switchTo(videos[0]); return; }
+      const videos = Array.from(document.querySelectorAll('#feed video.post-video, #feed video'));
+      if (!videos.length) return;
+      if (!('IntersectionObserver' in window)){ switchTo(videos[0]); return; }
 
-    observer = new IntersectionObserver((entries) => {
-      const visible = entries.filter(e => e.isIntersecting).sort((a,b)=> b.intersectionRatio - a.intersectionRatio);
-      if (visible.length === 0) return;
-      const candidate = visible[0].target;
-      switchTo(candidate);
-    }, { root:null, rootMargin:'0px', threshold:[0,0.25,0.5,0.6,0.75,1] });
+      observer = new IntersectionObserver((entries) => {
+        const visible = entries.filter(e => e.isIntersecting).sort((a,b)=> b.intersectionRatio - a.intersectionRatio);
+        if (visible.length === 0) return;
+        const candidate = visible[0].target;
+        switchTo(candidate);
+      }, { root:null, rootMargin:'0px', threshold:[0,0.25,0.5,0.6,0.75,1] });
 
-    videos.forEach(v => { v.playsInline = true; v.muted = true; observer.observe(v); });
+      videos.forEach(v => { v.playsInline = true; v.muted = true; observer.observe(v); });
 
-    setTimeout(()=> {
-      const firstVisible = videos.find(v => { const r=v.getBoundingClientRect(); return (r.top < window.innerHeight && r.bottom > 0); }) || videos[0];
-      if (firstVisible) switchTo(firstVisible);
-    }, 220);
-  }
+      setTimeout(()=> {
+        const firstVisible = videos.find(v => { const r=v.getBoundingClientRect(); return (r.top < window.innerHeight && r.bottom > 0); }) || videos[0];
+        if (firstVisible) switchTo(firstVisible);
+      }, 220);
+    }
 
-  window.__setupSingleVideoAutoplay = startObservingVideos;
-  window.__pauseAutoplay = function(){ const cur = document.querySelector('#feed video[data-is-playing="true"]'); if (cur) try { cur.pause(); cur.dataset.isPlaying='false'; } catch(e){} };
+    window.__setupSingleVideoAutoplay = startObservingVideos;
+    window.__pauseAutoplay = function(){ const cur = document.querySelector('#feed video[data-is-playing="true"]'); if (cur) try { cur.pause(); cur.dataset.isPlaying='false'; } catch(e){} };
 
-  const popupCommentsArea = document.getElementById('popupComments');
-  if (popupCommentsArea) popupCommentsArea.addEventListener('focusin', () => { const cur = document.querySelector('#feed video[data-is-playing="true"]'); if (cur) try { cur.pause(); cur.dataset.isPlaying='false'; } catch(e){} });
+    const popupCommentsArea = document.getElementById('popupComments');
+    if (popupCommentsArea) popupCommentsArea.addEventListener('focusin', () => { const cur = document.querySelector('#feed video[data-is-playing="true"]'); if (cur) try { cur.pause(); cur.dataset.isPlaying='false'; } catch(e){} });
 
-})();
+  })();
 
 
   function findPostBoxFromMedia(el){ return el.closest('.post-box'); }
@@ -1003,20 +1089,93 @@ function attachFeedInteractions(){
   const popupNextBtn = $('#popupNextBtn');
   const commentHandle = $('#commentHandle');
 
-  /***** NEW: popup action buttons and media container references *****/
+  /***** popup action buttons and media container references *****/
   const popupLikeBtn = $('#popupLikeBtn');
   const popupCommentBtn = $('#popupCommentBtn');
   const popupShareBtn = $('#popupShareBtn');
+  const popupMusicBtn = $('#popupMusicBtn'); // NEW
   const popupMedia = $('#popupMedia');
   const popupMediaWrap = $('#popupMediaWrap');
   const popupCommentsEl = $('#popupComments');
   const popupBg = $('#popupBg');
   const popupInner = $('#popupInner');
+  const popupActions = $('.popup-actions');
 
   let popupPlayingVideo = null;
   let popupSourcePostBox = null;
   let feedMediaSources = []; // ordered list of feed media srcs (images + videos)
   let currentPopupIndex = -1;
+
+  // ---------- ACTION BAR VISIBILITY CONTROL ----------
+  // single source of truth for actions visibility
+  let actionsVisible = true;
+  let _actionsTimer = null;
+  let _actionsForceHidden = false; // when true, prevent accidental re-show until timer clears
+  const ACTIONS_AUTO_SHOW_MS = 3500;
+
+  function _clearActionsTimer(){
+    if (_actionsTimer) { clearTimeout(_actionsTimer); _actionsTimer = null; }
+  }
+
+  function setPopupActionsVisible(visible, { forceHidden = false, autoShowAfterMs = null } = {}) {
+    // forceHidden true means user intentionally hid; we lock it until timer clears
+    _clearActionsTimer();
+    if (forceHidden) {
+      _actionsForceHidden = true;
+      actionsVisible = false;
+      popupActions?.classList.add('actions-hidden');
+      if (autoShowAfterMs) {
+        _actionsTimer = setTimeout(() => {
+          _actionsForceHidden = false;
+          // only auto-show if not explicitly hidden again
+          actionsVisible = true;
+          popupActions?.classList.remove('actions-hidden');
+          _actionsTimer = null;
+        }, autoShowAfterMs);
+      }
+      return;
+    }
+
+    // if we're not forcing hidden, only show when not forceHidden
+    if (!visible) {
+      actionsVisible = false;
+      popupActions?.classList.add('actions-hidden');
+      return;
+    }
+
+    // visible true and not forced
+    if (_actionsForceHidden) {
+      // do nothing — user forced a hide in the recent timeframe
+      return;
+    }
+    actionsVisible = true;
+    popupActions?.classList.remove('actions-hidden');
+  }
+
+  function hidePopupActionsWithAutoShow() {
+    // user tapped to hide; set forceHidden & schedule auto-show after ACTIONS_AUTO_SHOW_MS
+    setPopupActionsVisible(false, { forceHidden: true, autoShowAfterMs: ACTIONS_AUTO_SHOW_MS });
+  }
+
+  function showPopupActionsImmediate(){
+    setPopupActionsVisible(true, { forceHidden: false });
+  }
+
+  function togglePopupActionsByUser(){
+    // If currently forced-hidden, user wants to bring back actions
+    if (_actionsForceHidden) {
+      _actionsForceHidden = false;
+      showPopupActionsImmediate();
+      _clearActionsTimer();
+      return;
+    }
+    // otherwise toggle
+    if (actionsVisible) {
+      hidePopupActionsWithAutoShow();
+    } else {
+      showPopupActionsImmediate();
+    }
+  }
 
   // build ordered list of feed media (use dataset.src/source.src)
   function refreshFeedMediaSources(){
@@ -1056,6 +1215,14 @@ function attachFeedInteractions(){
       popupMediaHolder.appendChild(img);
       popupPlayingVideo = null;
       popupPlayPauseBtn.style.display = 'none';
+
+      // clicking the image toggles action bar visibility (and closes comments if open)
+      img.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const c = $('#popupComments');
+        if (c && c.classList.contains('open')) { closeComments(); return; }
+        togglePopupActionsByUser();
+      });
     } else {
       const video = document.createElement('video');
       video.controls = true;
@@ -1077,11 +1244,13 @@ function attachFeedInteractions(){
       // clicking video toggles play/pause; if comments open, it closes comments first
       video.addEventListener('click', (ev) => {
         ev.stopPropagation();
+        // If comments open - close them first (existing behavior)
         if (popupCommentsEl && popupCommentsEl.classList.contains("open")) {
-          // close comments on tapping video if comments open (common UX)
           closeComments();
           return;
         }
+
+        // toggle play/pause as before
         if (video.paused) {
           video.play().catch(()=>{});
           if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "⏸";
@@ -1089,6 +1258,10 @@ function attachFeedInteractions(){
           video.pause();
           if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "▶";
         }
+
+        // IMPORTANT: when user taps the video, we hide actions and schedule auto-show
+        // This prevents overlap when native controls appear
+        togglePopupActionsByUser();
       });
 
       // When metadata loaded, decide fit mode: landscape -> contain + blurred background; portrait -> cover
@@ -1115,6 +1288,10 @@ function attachFeedInteractions(){
       video.addEventListener('ended', () => {
         setTimeout(()=> navigatePopup(1), 260);
       });
+
+      // When native controls appear (some browsers fire 'playing' or 'pause' events),
+      // we do not change the actions visibility unless user explicitly toggled.
+      // That behavior is enforced by _actionsForceHidden flag.
 
       popupMediaHolder.appendChild(video);
       popupPlayingVideo = video;
@@ -1154,6 +1331,9 @@ function attachFeedInteractions(){
 
     // attach like handlers for newly created likes
     $all('.popup-comment .like').forEach(btn => { btn.onclick = popupCommentLikeHandler; });
+
+    // ensure actions visible on new media (unless we are currently forced-hidden)
+    if (!_actionsForceHidden) showPopupActionsImmediate();
   }
 
   // Open popup and show specific media element
@@ -1185,6 +1365,11 @@ function attachFeedInteractions(){
 
     // ensure comments closed
     closeComments();
+    // reset actions state (show actions by default when opening)
+    _actionsForceHidden = false;
+    _clearActionsTimer();
+    showPopupActionsImmediate();
+
     showPopupIndex(idx);
     attachPopupHandlers();
   }
@@ -1208,6 +1393,10 @@ function attachFeedInteractions(){
     }
     // focus the input after animation
     setTimeout(()=> { try { popupReplyInput.focus(); } catch(e){} }, 260);
+
+    // when comments open, make the action buttons visible (so user can comment/share)
+    _actionsForceHidden = false; // don't block showing
+    showPopupActionsImmediate();
   }
 
   // helper to close comments (restore media area)
@@ -1218,6 +1407,9 @@ function attachFeedInteractions(){
     popupCommentsEl.classList.remove('open');
     document.querySelector('.comment-handle')?.classList.remove('visible');
     // do not automatically resume playback — leave to user
+
+    // show actions again once comments closed, only if not forced hidden
+    if (!_actionsForceHidden) showPopupActionsImmediate();
   }
 
   function attachPopupHandlers(){
@@ -1321,7 +1513,7 @@ function attachFeedInteractions(){
       }
     }
 
-    /***** action bar wiring (Like / Comment / Share) *****/
+    /***** action bar wiring (Like / Comment / Share / Music) *****/
     if (popupLikeBtn) {
       popupLikeBtn.removeEventListener('click', popupLikeHandlerSafe);
       popupLikeBtn.addEventListener('click', popupLikeHandlerSafe);
@@ -1339,6 +1531,48 @@ function attachFeedInteractions(){
       popupShareBtn.removeEventListener('click', popupShareHandler);
       popupShareBtn.addEventListener('click', popupShareHandler);
     }
+
+    // Music button handler (toggle visual + show track name toast)
+    if (popupMusicBtn) {
+      popupMusicBtn.removeEventListener('click', popupMusicHandler);
+      popupMusicBtn.addEventListener('click', popupMusicHandler);
+    }
+
+    function popupMusicHandler(e){
+      e.stopPropagation();
+      if (!popupMusicBtn) return;
+
+      // toggle visual active state
+      const isActive = popupMusicBtn.classList.toggle('music-active');
+
+      // derive a simple "track name" from current media src as a placeholder
+      const info = feedMediaSources[currentPopupIndex] || {};
+      let trackName = 'Unknown track';
+      try {
+        const src = info.src || '';
+        const file = src.split('/').pop() || src;
+        trackName = file.replace(/\.(webm|mp4|m4a|mp3|ogg)$/i,'').replace(/[_\-]/g,' ');
+        if (!trackName) trackName = 'Unknown track';
+      } catch(err){}
+
+      // show ephemeral toast
+      showMusicToast(isActive ? `Playing: ${trackName}` : `Stopped: ${trackName}`);
+    }
+
+    // small toast utility
+    function showMusicToast(text, timeout = 1600){
+      let t = document.getElementById('musicToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'musicToast';
+        document.body.appendChild(t);
+      }
+      t.textContent = text;
+      t.classList.add('show');
+      clearTimeout(t._hideTimer);
+      t._hideTimer = setTimeout(()=> { t.classList.remove('show'); }, timeout);
+    }
+
     function popupShareHandler(e){
       e.stopPropagation();
       try {
@@ -1357,6 +1591,8 @@ function attachFeedInteractions(){
     }
     function mediaAreaClickHandler(ev){
       const c = $('#popupComments');
+      // If user clicked directly on the underlying video element, ignore here (video click handler handles it)
+      const clickedVideo = Boolean(ev.target && ev.target.tagName && ev.target.tagName.toLowerCase() === 'video');
       if (c && c.classList.contains('open')) {
         // if user taps media while comments are open, close comments (UX: easier to return to fullscreen)
         closeComments();
@@ -1364,6 +1600,12 @@ function attachFeedInteractions(){
         ev.preventDefault();
         return;
       }
+
+      // If clicked on video element itself, don't double-toggle (video's own handler does toggle)
+      if (clickedVideo) return;
+
+      // otherwise toggle actions (useful for taps outside video element)
+      togglePopupActionsByUser();
     }
 
   }
@@ -1463,6 +1705,10 @@ function attachFeedInteractions(){
     // restore scrolling
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    // reset actions state
+    _actionsForceHidden = false;
+    _clearActionsTimer();
+    actionsVisible = true;
     // after closing, let feed autoplay pick up again
     setTimeout(()=> window.__setupSingleVideoAutoplay?.(), 200);
   }
@@ -1520,19 +1766,19 @@ function attachFeedInteractions(){
   // -------------------------
   // Init on load: show ALL (all folders in /pics)
   // -------------------------
- window.addEventListener('load', async () => {
-  document.documentElement.style.setProperty('--popup-comments-height', '0vh');
+  window.addEventListener('load', async () => {
+    document.documentElement.style.setProperty('--popup-comments-height', '0vh');
 
-  // show top loader while we generate feed
-  if (window.startLoadingBar) window.startLoadingBar();
+    // show top loader while we generate feed
+    if (window.startLoadingBar) window.startLoadingBar();
 
-  await generateFeed(null);        // null => all folders
+    await generateFeed(null);        // null => all folders
 
-  setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.(); 
-    // finish loader after UI initializes
-    if (window.finishLoadingBar) window.finishLoadingBar();
-  }, 250);
-});
+    setTimeout(() => { assignFeedIndices(); window.__observeMedia?.(); window.__setupSingleVideoAutoplay?.();
+      // finish loader after UI initializes
+      if (window.finishLoadingBar) window.finishLoadingBar();
+    }, 250);
+  });
 
 
   // small util
