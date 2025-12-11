@@ -268,11 +268,11 @@
       transition: transform .12s ease, background .12s ease, opacity .12s;
       opacity: 0.86;
     }
+
     .popup-arrow:hover { transform: translateY(-50%) scale(1.06); background: rgba(255,255,255,0.10); }
 
     .popup-arrow.left { left: 12px; }
     .popup-arrow.right { right: 12px; }
-
     /* action bar (floating) - made smaller, tighter spacing */
     .popup-actions {
       position:absolute;
@@ -2000,17 +2000,79 @@
 
 </div>`);
 
-    if (animals) animals.onclick = () => openDetail('Animal / Nature', `<p style="color:#777">Wildlife & environment:</p>
-      <ul style="color:#333;margin-top:8px">
-        <li>Keep a safe distance</li>
-        <li>Notify local wildlife authorities</li>
-      </ul>`);
+      if (men) animals.onclick = () => openDetail('Animal / Nature', `<p style="color:#777">Animal and surroundig safety codes</p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
 
-    if (human) human.onclick = () => openDetail('Humanity / Emergency', `<p style="color:#777">Community help:</p>
-      <ul style="color:#333;margin-top:8px">
-        <li>Request volunteers nearby</li>
-        <li>Share details and live location</li>
-      </ul>`);
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  <!-- ANS-201 -->
+  <div class="safety-code-box">
+    <div class="title">ANS-201 — Street Animal Protection</div>
+    <div class="desc">Report injured or sick street animals, request animal rescue.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_ANS-201.html')">Activate</button>
+  </div>
+
+  <!-- ANS-240 -->
+  <div class="safety-code-box">
+    <div class="title">ANS-240 — Forest Fire Alert</div>
+    <div class="desc">Community-reported fire alerts combined with official data.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('Shakti_code_ANS-240.html')">Activate</button>
+  </div>
+
+  <!-- ANS 260 -->
+  <div class="safety-code-box">
+    <div class="title">ANS-260 — Waterbody Pollution Report</div>
+    <div class="desc">Report pollution events with photos and location metadata.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_ANS-260.html')">Activate</button>
+  </div>
+
+  
+
+</div>`);
+
+
+   if (men) human.onclick = () => openDetail('Humanity & Emergency Management', `<p style="color:#777">Codes for daily life</p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  <!-- Hes 301 -->
+  <div class="safety-code-box">
+    <div class="title">HES-301 — Medical Emergency Response</div>
+    <div class="desc">Quick-request for nearest ambulance & first-aid steps.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_HES-301.html')">Activate</button>
+  </div>
+
+  <!-- ANS-240 -->
+  <div class="safety-code-box">
+    <div class="title">HES-320 — Disaster Management</div>
+    <div class="desc">Report infrastructure damage, request rescue and shelter info.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_HES-320.html')">Activate</button>
+  </div>
+
+  <!-- ANS 260 -->
+  <div class="safety-code-box">
+    <div class="title">HES-376 — Ambulance Route Management</div>
+    <div class="desc">Optimize ambulance routing, ETA tracking and priority dispatching.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_HES-376.html')">Activate</button>
+  </div>
+
+  <div class="safety-code-box">
+    <div class="title">HES-350 — Lost-Person Reporting</div>
+    <div class="desc">Register lost-person data and broadcast on local networks.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_HES-350.html')">Activate</button>
+  </div>
+
+  
+
+</div>`);
 
     if (shakti) shakti.onclick = () => { openShaktiPopupURL('shakti_code_WMS-0101.html'); };
 

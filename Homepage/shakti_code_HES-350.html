@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shakti · Live Search — Missing Person (Map Search Animation) — FIXED GOTO</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  /* Theme derived from previous pages (ARAH / Shakti) */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap');
+  :root{
+    --bg:#fbf9ff; --card:#fff; --accent:#7B2FF7; --accent-2:#0b74ff; --muted:#6b7280; --radius:12px; --danger:#d43f3f;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:linear-gradient(180deg,#fdfbff,#fbf9ff);}
+  .root{display:flex;gap:16px;height:100vh;padding:18px}
+  .left,.right{background:var(--card);border-radius:var(--radius);box-shadow:0 14px 40px rgba(6,12,20,0.06);overflow:hidden}
+  .left{width:460px;display:flex;flex-direction:column}
+  .right{flex:1;display:flex;flex-direction:column}
+
+  .console-top{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(90deg,rgba(255,255,255,0.6),#f8f6ff)}
+  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(120deg,var(--accent),#b07CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900}
+  .title{font-weight:900;font-size:18px}
+  .subtitle{font-size:12px;color:var(--muted)}
+
+  .left .panel{padding:14px;overflow:auto;max-height:calc(100vh - 120px)}
+  .left .panel::-webkit-scrollbar{display:none}
+  .left .panel{-ms-overflow-style:none;scrollbar-width:none}
+
+  .form-row{display:flex;gap:8px;align-items:center}
+  label{font-weight:700;margin-top:10px;display:block}
+  input[type=text], textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #eef2f6}
+  textarea{min-height:100px;resize:vertical}
+  .pill{border:0;padding:10px 14px;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer}
+  .ghost{background:#fff;border:1px solid #eef2f6;padding:8px;border-radius:10px;cursor:pointer}
+
+  .contacts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .contact{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;border:1px solid #f3f4f6}
+
+  .right .map-top{flex:1;position:relative}
+  #map{width:100%;height:100%;border-radius:10px}
+
+  .live-panel{position:absolute;left:16px;bottom:16px;z-index:1800;width:360px;background:rgba(255,255,255,0.98);border-radius:12px;padding:12px;box-shadow:0 18px 50px rgba(6,12,20,0.12);border:1px solid #eef2f6;display:none;touch-action:auto}
+  .live-panel h4{margin:0 0 6px 0}
+  .matches{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .match{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;border:1px solid #f3f4f6}
+  .match img{width:56px;height:56px;border-radius:8px;object-fit:cover}
+  .match .meta{flex:1}
+  .progress{height:6px;background:#f1f2f6;border-radius:6px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:2500}
+  .modal{width:800px;background:#fff;border-radius:12px;padding:18px;box-shadow:0 30px 80px rgba(6,12,20,0.30);max-height:90vh;overflow:auto}
+  .modal .center{display:flex;gap:18px}
+  .modal img{width:260px;height:260px;object-fit:cover;border-radius:10px}
+  .modal .results{flex:1}
+  .blurred{filter:blur(4px);pointer-events:none}
+
+  .assign-log{position:absolute;right:18px;top:18px;z-index:2800;width:260px;background:#fff;padding:10px;border-radius:10px;border:1px solid #eef2f6;box-shadow:0 12px 40px rgba(6,12,20,0.08);display:none}
+
+  .camera-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#f1f5ff); border:2px solid rgba(11,116,255,0.12); box-shadow:0 6px 20px rgba(11,116,255,0.12); font-size:14px; font-weight:800; color:var(--accent-2); }
+  
+  .social-pulse { width:10px; height:10px; border-radius:50%; background:rgba(11,116,255,0.95); box-shadow:0 8px 28px rgba(11,116,255,0.12); animation: floatUp 1.8s infinite linear; }
+  @keyframes floatUp { 0%{ transform: translateY(0) scale(1); opacity:1 } 100%{ transform: translateY(-40px) scale(0.6); opacity:0 } }
+
+  .backBtn { position: fixed; top: 16px; right: 22px; background: #ffffff; color: #ff6b00; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.12); z-index: 20000; cursor: pointer; transition: 0.2s ease; }
+  .backBtn:hover { background: #0b74ff; color: white; }
+
+  /* ----- Responsive changes ----- */
+  @media (max-width: 1000px){
+    .root{flex-direction:column;padding:12px;height:auto;min-height:100vh}
+    .left{width:100%;order:1}
+    .right{order:2;width:100%}
+    .left .panel{max-height:none;}
+    .live-panel{left:12px;right:12px;width:auto;bottom:12px}
+    .modal{width:92%;padding:14px}
+    .modal img{width:180px;height:180px}
+    .backBtn{top:10px;right:12px}
+    /* make map take a fixed height on small screens so controls remain visible */
+    #map{height:50vh;border-radius:10px}
+    .assign-log{right:10px;top:auto;bottom:90px}
+    .left .panel{padding:12px}
+    .pill, .ghost{padding:10px 12px}
+    .match img{width:48px;height:48px}
+    .matches{max-height:220px}
+  }
+
+  /* very small devices */
+  @media (max-width:420px){
+    #map{height:46vh}
+    .live-panel{padding:10px;font-size:14px}
+    .console-top .logo{width:52px;height:52px}
+    .title{font-size:16px}
+    .modal img{width:100px;height:100px;}  
+    .modal {width: 90%;height: 50%;}
+  }
+</style>
+</head>
+<body>
+    <!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+  <div class="root">
+    <div class="left">
+      <div class="console-top">
+        <div class="logo">SI</div>
+        <div>
+          <div class="title">Shakti — Missing Person</div>
+          <div class="subtitle">Live search & focus match (demo)</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:11px;color:var(--muted)">Mode</div>
+          <div id="modeText" style="font-weight:800;color:var(--muted)">Demo</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800">Report Missing Person</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Fill details and attach a photo (optional). This is a client-only demo.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="openLiveSearchBtn" class="ghost" title="Open Live Search overlay">Live Eye</button>
+          </div>
+        </div>
+
+        <label>Name</label>
+        <input id="rpName" type="text" placeholder="Full name" />
+
+        <label>Description</label>
+        <textarea id="rpDesc" placeholder="Short description, distinguishing marks..."></textarea>
+
+        <label>Photo (optional)</label>
+        <div class="form-row">
+          <input id="rpPhoto" type="file" accept="image/*" />
+          <button id="clearPhoto" class="ghost">Clear</button>
+        </div>
+
+        <label>Location (optional)</label>
+        <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+          <input id="rpLoc" type="text" placeholder="e.g. Park near Tower" />
+          <button id="useMyLoc" class="ghost">Use my loc</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+          <button id="submitReport" class="pill">Submit Report</button>
+          <button id="simulateAssign" class="ghost">Simulate Assign Volunteer</button>
+        </div>
+
+        <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:800">Nearby NGOs & Volunteers</div>
+          <div style="font-size:12px;color:var(--muted)">Demo list</div>
+        </div>
+
+        <div class="contacts" id="ngosList"></div>
+
+        <div style="margin-top:16px;font-size:13px;color:var(--muted)">After report, matches are simulated and displayed in the Live Search panel. Tap <strong>Focus Match</strong> to run a scan & map animation.</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="map-top">
+        <div id="map" aria-hidden="false"></div>
+
+        <div class="live-panel" id="livePanel" aria-live="polite">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 id="liveTitle" style="margin:0">Live Search — Candidates</h4>
+              <div style="font-size:12px;color:var(--muted)">Scanning Shakti feed in realtime (simulated)</div>
+            </div>
+            <div>
+              <button id="closeLivePanel" class="ghost" title="Close">Close</button>
+            </div>
+          </div>
+          <div class="matches" id="matches"></div>
+        </div>
+
+        <div class="assign-log" id="assignLog">
+          <div style="font-weight:800">Activity</div>
+          <div id="assignItems" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- focus modal with map-search animation integration -->
+  <div class="modal-backdrop" id="focusBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:800">Focus Match — Live Scan</div>
+        <button id="closeFocus" class="ghost">Close</button>
+      </div>
+
+      <div class="center">
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+          <img id="focusPhoto" src="" alt="query" />
+          <div style="width:260px;text-align:center;color:var(--muted)">Query image • scanning network & cameras</div>
+        </div>
+
+        <div class="results">
+          <div id="scanStatus" style="font-weight:900;margin-bottom:10px">Preparing search...</div>
+          <div id="scanSteps" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <!-- stable button with event listener attached in JS -->
+            <button id="gotoMatch" class="pill" style="display:none" data-lat="" data-lng="">Go to Match on Map</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastRoot" aria-hidden="true"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Demo data & map init
+    const ngos = [
+      {id:'n1',name:'Street Rescue NGO',lat:17.4453,lon:78.3912},
+      {id:'n2',name:'Community Help',lat:17.4416,lon:78.3991},
+      {id:'n3',name:'Volunteer Network',lat:17.4499,lon:78.4022}
+    ];
+    const map = L.map('map', { zoomControl:true }).setView([17.4446,78.3927],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map);
+    const ngosLayer = L.layerGroup().addTo(map);
+    ngos.forEach(n => L.marker([n.lat, n.lon]).addTo(ngosLayer).bindPopup(`<strong>${n.name}</strong>`));
+    const ngosList = document.getElementById('ngosList');
+    ngos.forEach(n=>{
+      const d = document.createElement('div');
+      d.className='contact';
+      d.innerHTML = `<div style="width:36px;height:36px;border-radius:8px;background:#f5f3ff;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800">${n.name.split(' ').map(p=>p[0]).slice(0,2).join('')}</div>
+                     <div style="flex:1"><div style="font-weight:700">${n.name}</div><div style="font-size:12px;color:var(--muted)">Volunteers nearby</div></div>`;
+      ngosList.appendChild(d);
+    });
+
+    // State & animation containers
+    let uploadedPhotoData = null, currentMatches = [], volunteerMarker = null;
+    const animatedCameraMarkers = [], animatedPolylines = [], socialPulseDivs = [];
+
+    // File input
+    document.getElementById('rpPhoto').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if(!f){ uploadedPhotoData = null; return; }
+      const reader = new FileReader();
+      reader.onload = ev => { uploadedPhotoData = ev.target.result; showToast('Photo attached'); };
+      reader.readAsDataURL(f);
+    });
+    document.getElementById('clearPhoto').addEventListener('click', () => {
+      document.getElementById('rpPhoto').value = ''; uploadedPhotoData = null; showToast('Photo cleared');
+    });
+    document.getElementById('useMyLoc').addEventListener('click', () => {
+      if(!navigator.geolocation){ alert('Geolocation not available'); return; }
+      navigator.geolocation.getCurrentPosition(pos => {
+        document.getElementById('rpLoc').value = `${pos.coords.latitude.toFixed(5)},${pos.coords.longitude.toFixed(5)}`;
+        showToast('Location filled');
+      }, err => alert('Location failed: ' + (err && err.message || '')), { enableHighAccuracy:true });
+    });
+
+    // Helpers
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function showToast(txt){ const root=document.getElementById('toastRoot'); const t=document.createElement('div'); t.style.position='fixed'; t.style.right='18px'; t.style.top=(18 + (root.children.length*62))+'px'; t.style.background='#fff'; t.style.padding='12px 14px'; t.style.borderRadius='10px'; t.style.boxShadow='0 12px 40px rgba(6,12,20,0.08)'; t.style.border='1px solid #eef6ff'; t.style.zIndex=4000; t.innerHTML = `<strong>${escapeHtml(txt)}</strong>`; root.appendChild(t); setTimeout(()=> t.remove(), 3800); }
+
+    // Simulated matches
+    function createSimulatedMatches(report){
+      const baseLat = 17.4446, baseLon = 78.3927;
+      const sims = [];
+      for(let i=0;i<4;i++){
+        const lat = baseLat + (Math.random()-0.5)*0.02;
+        const lon = baseLon + (Math.random()-0.5)*0.03;
+        sims.push({
+          id: 'm' + Math.round(Math.random()*99999),
+          name: report.name ? report.name + ' (possible)' : ('Person '+(i+1)),
+          score: Math.round(60 + Math.random()*40),
+          photo: uploadedPhotoData || `https://picsum.photos/seed/m${i}/120/120`,
+          lat, lon
+        });
+      }
+      return sims;
+    }
+
+    // Render matches & wire focus buttons
+    const matchesEl = document.getElementById('matches');
+    function renderMatches(arr){
+      currentMatches = arr || [];
+      matchesEl.innerHTML = '';
+      arr.forEach(m => {
+        const el = document.createElement('div'); el.className='match';
+        el.innerHTML = `
+          <img src="${m.photo}" alt="candidate"/>
+          <div class="meta">
+            <div style="font-weight:800">${escapeHtml(m.name)}</div>
+            <div style="font-size:12px;color:${m.score>80 ? 'green' : '#666'}">Confidence: ${m.score}%</div>
+            <div style="margin-top:6px" class="progress"><i style="width:${m.score}%"></i></div>
+          </div>
+          <div>
+            <button class="ghost focusBtn" data-id="${m.id}">Focus Match</button>
+          </div>
+        `;
+        matchesEl.appendChild(el);
+        el.querySelector('.focusBtn').addEventListener('click', () => focusMatch(m));
+      });
+      document.getElementById('livePanel').style.display = arr && arr.length ? 'block' : 'none';
+    }
+
+    // Map animation utilities
+    function randomNearby(lat, lon, maxMeters=800){
+      const bearing = Math.random() * Math.PI * 2;
+      const dist = Math.random() * maxMeters;
+      const deltaLat = (dist / 111320) * Math.cos(bearing);
+      const deltaLon = (dist / (111320 * Math.cos(lat * Math.PI/180))) * Math.sin(bearing);
+      return [lat + deltaLat, lon + deltaLon];
+    }
+    function createCameraMarker(lat,lng,label){
+      const div = document.createElement('div'); div.className='camera-icon'; div.innerHTML='CAM';
+      const icon = L.divIcon({ html: div.outerHTML, className:'', iconSize:[36,36], iconAnchor:[18,18] });
+      const marker = L.marker([lat,lng], { icon }).addTo(map);
+      animatedCameraMarkers.push(marker);
+      marker.bindPopup(`<strong>Camera</strong><div class="info-small">${escapeHtml(label)}</div>`);
+      return marker;
+    }
+    function createConnectingLine(a,b,color='#7b2ff7'){
+      const pl = L.polyline([a,b], { color, weight:2, opacity:0.85, dashArray:'6,8' }).addTo(map);
+      animatedPolylines.push(pl);
+      return pl;
+    }
+    function createSocialPulse(lat,lng){
+      const div = L.DomUtil.create('div','social-pulse');
+      const marker = L.marker([lat,lng], { icon: L.divIcon({ className:'', html:div.outerHTML, iconSize:[10,10], iconAnchor:[5,5] }) }).addTo(map);
+      socialPulseDivs.push(marker);
+      setTimeout(()=> { try{ map.removeLayer(marker); }catch(e){} }, 2200 + Math.random()*2000);
+      return marker;
+    }
+    function createMatchPulse(lat,lng){
+      const circle = L.circle([lat,lng], { radius:80, color:'#ff6b6b', fillOpacity:0.08 }).addTo(map);
+      animatedPolylines.push(circle);
+      setTimeout(()=> { try{ map.removeLayer(circle); }catch(e){} }, 4000);
+    }
+    function cleanupMapAnimations(){
+      while(animatedCameraMarkers.length){ try{ map.removeLayer(animatedCameraMarkers.pop()); }catch(e){} }
+      while(animatedPolylines.length){ try{ map.removeLayer(animatedPolylines.pop()); }catch(e){} }
+      while(socialPulseDivs.length){ try{ map.removeLayer(socialPulseDivs.pop()); }catch(e){} }
+    }
+
+    // Focus match: staged steps with map animation
+    function focusMatch(match){
+      const backdrop = document.getElementById('focusBackdrop');
+      const fp = document.getElementById('focusPhoto'); fp.src = uploadedPhotoData || match.photo;
+      backdrop.style.display = 'flex'; backdrop.setAttribute('aria-hidden','false');
+      document.querySelector('.root').classList.add('blurred');
+
+      cleanupMapAnimations();
+
+      const steps = [
+        { text:'Accessing nearby CCTV & cameras', fn: stepAccessCameras },
+        { text:'Pulling camera footage & extracting frames', fn: stepCaptureFrames },
+        { text:'Scanning social media posts & shared images', fn: stepSocialScan },
+        { text:'Comparing faces across feeds', fn: stepCompareFaces },
+        { text:'Finalizing best match', fn: stepFinalize }
+      ];
+
+      const stepsEl = document.getElementById('scanSteps'); stepsEl.innerHTML = '';
+      let idx = 0;
+      document.getElementById('scanStatus').textContent = 'Initializing search...';
+
+      // prepare goto button data attributes and show it
+      const gotoBtn = document.getElementById('gotoMatch');
+      gotoBtn.dataset.lat = String(match.lat);
+      gotoBtn.dataset.lng = String(match.lon);
+      gotoBtn.style.display = 'none'; // will show when finished
+
+      const runNext = () => {
+        if(idx >= steps.length){
+          document.getElementById('scanStatus').textContent = `Match found — ${match.name} (${match.score}%)`;
+          gotoBtn.style.display = 'inline-block';
+          createMatchPulse(match.lat, match.lon);
+          return;
+        }
+        const step = steps[idx];
+        const stepDiv = document.createElement('div');
+        stepDiv.style.display='flex';
+        stepDiv.style.justifyContent='space-between';
+        stepDiv.innerHTML = `<div>${escapeHtml(step.text)}</div><div style="font-weight:800">${Math.round((idx+1)/steps.length*100)}%</div>`;
+        stepsEl.appendChild(stepDiv);
+        document.getElementById('scanStatus').textContent = step.text;
+        Promise.resolve(step.fn(match, idx)).then(() => {
+          idx++;
+          setTimeout(runNext, 350);
+        });
+      };
+      setTimeout(runNext, 300);
+    }
+
+    // Step impls (same as before, return Promises)
+    function stepAccessCameras(match, idx){
+      return new Promise(res => {
+        const cams = 3 + Math.floor(Math.random()*3);
+        const centerLat = match.lat || 17.4446;
+        const centerLon = match.lon || 78.3927;
+        let i=0;
+        const t = setInterval(()=> {
+          if(i >= cams){ clearInterval(t); return res(); }
+          const [lat,lng] = randomNearby(centerLat, centerLon, 1500);
+          const mk = createCameraMarker(lat,lng, `camera-${idx}-${i+1}`);
+          mk.openPopup();
+          setTimeout(()=> mk.closePopup(), 1000 + Math.random()*900);
+          createConnectingLine([centerLat, centerLon], [lat,lng]);
+          createSocialPulse(lat, lng);
+          i++;
+        }, 450);
+        setTimeout(()=> { clearInterval(t); res(); }, 450 * cams + 600);
+      });
+    }
+    function stepCaptureFrames(match, idx){
+      return new Promise(res => {
+        const centerLat = match.lat || 17.4446;
+        const centerLon = match.lon || 78.3927;
+        let i = 0, frames = 4 + Math.floor(Math.random()*4);
+        const t = setInterval(()=> {
+          if(i >= frames){ clearInterval(t); return res(); }
+          const [lat,lng] = randomNearby(centerLat, centerLon, 1000);
+          createSocialPulse(lat,lng);
+          createConnectingLine([centerLat, centerLon], [lat,lng], '#0b74ff');
+          i++;
+        }, 300);
+        setTimeout(()=> { clearInterval(t); res(); }, 300*frames + 300);
+      });
+    }
+    function stepSocialScan(match, idx){
+      return new Promise(res => {
+        const centerLat = match.lat || 17.4446;
+        const centerLon = match.lon || 78.3927;
+        const pulses = 10 + Math.floor(Math.random()*8);
+        let i=0;
+        const t = setInterval(()=> {
+          if(i >= pulses){ clearInterval(t); return res(); }
+          const [lat,lng] = randomNearby(centerLat, centerLon, 3500);
+          createSocialPulse(lat,lng);
+          i++;
+        }, 180);
+        setTimeout(()=> { clearInterval(t); res(); }, pulses*180 + 400);
+      });
+    }
+    function stepCompareFaces(match, idx){
+      return new Promise(res => {
+        const centerLat = match.lat || 17.4446;
+        const centerLon = match.lon || 78.3927;
+        let flashes = 4 + Math.floor(Math.random()*4);
+        let i=0;
+        const t = setInterval(()=> {
+          if(i >= flashes){ clearInterval(t); return res(); }
+          const [lat,lng] = randomNearby(centerLat, centerLon, 1200);
+          const c = L.circle([lat,lng], { radius:40, color:'#7b2ff7', fillOpacity:0.06 }).addTo(map);
+          animatedPolylines.push(c);
+          setTimeout(()=> { try{ map.removeLayer(c); }catch(e){} }, 900);
+          i++;
+        }, 350);
+        setTimeout(()=> { clearInterval(t); res(); }, flashes*350 + 350);
+      });
+    }
+    function stepFinalize(match, idx){
+      return new Promise(res => setTimeout(res, 650 + Math.random()*500));
+    }
+
+    // Close focus & cleanup
+    function closeFocus(){
+      document.getElementById('focusBackdrop').style.display = 'none';
+      document.getElementById('focusBackdrop').setAttribute('aria-hidden','true');
+      document.querySelector('.root').classList.remove('blurred');
+      document.getElementById('gotoMatch').style.display = 'none';
+      document.getElementById('scanSteps').innerHTML = '';
+      document.getElementById('scanStatus').textContent = 'Preparing search...';
+      cleanupMapAnimations();
+      // ensure map resizes back for mobile
+      setTimeout(()=> map.invalidateSize && map.invalidateSize(), 260);
+    }
+    document.getElementById('closeFocus').addEventListener('click', closeFocus);
+
+    // FIXED gotoMatch handler: stable listener uses data attributes (lat,lng)
+    document.getElementById('gotoMatch').addEventListener('click', (ev) => {
+      const btn = ev.currentTarget;
+      const lat = parseFloat(btn.dataset.lat);
+      const lng = parseFloat(btn.dataset.lng);
+      // hide modal first then pan to map after a short delay
+      closeFocus();
+      if(!isNaN(lat) && !isNaN(lng)){
+        setTimeout(() => {
+          map.setView([lat,lng], 16);
+          const mk = L.circle([lat,lng], { radius:70, color:'#ff6b6b', fillOpacity:0.12 }).addTo(map);
+          setTimeout(()=> { try{ map.removeLayer(mk); }catch(e){} }, 7000);
+        }, 260); // slight delay to ensure modal removed and map receives focus
+      } else {
+        showToast('Match location not available');
+      }
+    });
+
+    // Submit report -> show simulated matches
+    document.getElementById('submitReport').addEventListener('click', () => {
+      const name = document.getElementById('rpName').value.trim();
+      const desc = document.getElementById('rpDesc').value.trim();
+      const loc = document.getElementById('rpLoc').value.trim();
+      if(!name && !desc && !uploadedPhotoData){ alert('Please provide at least a name, description or a photo'); return; }
+      showToast('Report submitted');
+      const report = { name, desc, loc, photo: uploadedPhotoData };
+      const sims = createSimulatedMatches(report);
+      renderMatches(sims);
+      showToast(`Report created — ${name}`);
+      openLivePanel();
+      // ensure map redraws on mobile when live panel opened
+      setTimeout(()=> map.invalidateSize && map.invalidateSize(), 220);
+    });
+
+    // Live panel open/close & volunteer sim
+    function openLivePanel(){ document.getElementById('livePanel').style.display = 'block'; map.invalidateSize && map.invalidateSize(); }
+    function closeLivePanel(){ document.getElementById('livePanel').style.display = 'none'; }
+    document.getElementById('openLiveSearchBtn').addEventListener('click', () => { openLivePanel(); setTimeout(()=> map.invalidateSize && map.invalidateSize(), 120); });
+    document.getElementById('closeLivePanel').addEventListener('click', closeLivePanel);
+
+    function logAssign(txt){ const el=document.getElementById('assignItems'); document.getElementById('assignLog').style.display='block'; const d=document.createElement('div'); d.textContent = `${new Date().toLocaleTimeString()} — ${txt}`; el.insertBefore(d, el.firstChild); }
+    document.getElementById('simulateAssign').addEventListener('click', () => {
+      if(!currentMatches || currentMatches.length === 0){ showToast('No matches to assign'); return; }
+      const chosen = currentMatches[Math.floor(Math.random()*currentMatches.length)];
+      const vlat = chosen.lat + (Math.random()-0.5)*0.002;
+      const vlon = chosen.lon + (Math.random()-0.5)*0.002;
+      if(volunteerMarker) map.removeLayer(volunteerMarker);
+      volunteerMarker = L.marker([vlat, vlon], { title: 'Assigned Volunteer' }).addTo(map).bindPopup(`<strong>Volunteer assigned</strong><div style="font-size:12px;color:var(--muted)">${escapeHtml(chosen.name)}</div>`);
+      logAssign(`Volunteer assigned to ${chosen.name}`);
+      showToast('Volunteer assigned — simulated');
+      // focus map on volunteer for mobile
+      setTimeout(()=> map.setView([vlat,vlon], 15), 220);
+    });
+
+    // ensure map resizes correctly on orientation change / resize
+    window.addEventListener('resize', () => { map.invalidateSize && map.invalidateSize(); });
+    window.addEventListener('orientationchange', () => { setTimeout(()=> map.invalidateSize && map.invalidateSize(), 300); });
+
+    // initial toast
+    // showToast('Demo ready — submit a report or open Live Search');
+  </script>
+</body>
+</html>

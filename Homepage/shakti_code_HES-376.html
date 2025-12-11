@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shakti · Ambulance Dispatch — Demo (Converted)</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap');
+
+  :root{
+    --bg:#fbf9ff;
+    --card:#ffffff;
+    --accent:#7B2FF7; /* primary theme from previous pages */
+    --accent-2:#0b74ff;
+    --muted:#6b7280;
+    --danger:#ff3b30;
+    --ok:#10b981;
+    --radius:12px;
+    --soft-shadow:0 14px 40px rgba(6,12,20,0.06);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#fdfbff,#fbf9ff)}
+  .root{display:flex;gap:16px;height:100vh;padding:18px}
+  .left,.right{background:var(--card);border-radius:var(--radius);box-shadow:var(--soft-shadow);overflow:hidden;display:flex;flex-direction:column}
+  .left{width:460px}
+  .right{flex:1;position:relative}
+
+  .console-top{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #f3f4f6;background:linear-gradient(90deg,rgba(255,255,255,0.6),#f8f6ff)}
+  .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(120deg,var(--accent),#b07CFF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900}
+  .title{font-weight:900;font-size:18px}
+  .subtitle{font-size:12px;color:var(--muted)}
+
+  .left .panel{padding:14px;overflow:auto}
+  .left .panel::-webkit-scrollbar{display:none}
+  .left .panel{-ms-overflow-style:none;scrollbar-width:none}
+
+  label{font-weight:700;margin-top:10px;display:block}
+  input[type=text], select, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #eef2f6}
+  textarea{min-height:90px;resize:vertical}
+  .pill{border:0;padding:10px 14px;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer}
+  .ghost{background:#fff;border:1px solid #eef2f6;padding:8px;border-radius:10px;cursor:pointer}
+  .small{padding:6px 8px;border-radius:8px;border:0;background:#f3f4ff;color:var(--accent)}
+
+  .meta-line{font-size:13px;color:var(--muted);margin-top:6px}
+
+  /* map area */
+  .map-top{flex:1;position:relative}
+  #map{width:100%;height:100%;border-radius:10px}
+
+  /* live overlays */
+  .live-panel{position:absolute;left:16px;bottom:16px;z-index:1800;width:360px;background:rgba(255,255,255,0.98);border-radius:12px;padding:12px;box-shadow:0 18px 50px rgba(6,12,20,0.12);border:1px solid #eef2f6;display:none}
+  .live-panel h4{margin:0 0 6px 0}
+  .matches{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-top:8px}
+
+  .assign-log{position:absolute;right:18px;top:18px;z-index:1800;width:260px;background:#fff;padding:10px;border-radius:10px;border:1px solid #eef2f6;box-shadow:0 12px 40px rgba(6,12,20,0.08);display:none}
+  .assign-log h4{margin:0 0 8px 0}
+  .activity-list{max-height:260px;overflow:auto;font-size:13px;color:var(--muted)}
+
+  .legend{position:absolute;right:18px;bottom:12px;background:#fff;padding:8px;border-radius:8px;border:1px solid #eef2f6;z-index:1600}
+  .legend div{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:13px}
+
+  .signal-row{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .dot{width:12px;height:12px;border-radius:50%;background:#cbd5e1;border:1px solid rgba(0,0,0,0.06)}
+  .dot.red{background:#ef4444}
+  .dot.yellow{background:#f59e0b}
+  .dot.green{background:var(--ok)}
+
+  .hover-card{position:absolute;left:12px;top:12px;background:rgba(255,255,255,0.98);padding:12px;border-radius:10px;border:1px solid #eef2f6;z-index:1600;box-shadow:0 10px 30px rgba(0,0,0,0.06)}
+  .hover-card h4{margin:0 0 6px 0}
+
+  .controls-row{display:flex;gap:8px;margin-top:10px}
+
+  /* small responsiveness */
+  @media (max-width:1000px){
+    .left{width:360px}
+    .live-panel{width:300px}
+  }
+  .backBtn { position: fixed; top: 16px; right: 22px; background: #ffffff; color: #1a01ff; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.12); z-index: 20000; cursor: pointer; transition: 0.2s ease; }
+  .backBtn:hover { background: #5c059f; color: white; }
+</style>
+</head>
+<body>
+    <!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+  <div class="root">
+    <!-- LEFT: Console -->
+    <div class="left">
+      <div class="console-top">
+        <div class="logo">SI</div>
+        <div>
+          <div class="title">Shakti — Ambulance Dispatch</div>
+          <div class="subtitle">Ambulance routing · live ETA · traffic control (demo)</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:11px;color:var(--muted)">Mode</div>
+          <div id="modeText" style="font-weight:800;color:var(--muted)">Demo</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:800">Dispatch Console — Apollo Demo</div>
+        <div class="meta-line">Apollo Hospital preselected. Use Start field to override; otherwise default demo start will be used.</div>
+
+        <label>Victim photo (optional)</label>
+        <input id="photoInput" type="file" accept="image/*" />
+
+        <label>Start (lat,lng or address)</label>
+        <input id="startInput" placeholder="e.g. 17.43990,78.39120 or address" />
+
+        <label>Destination</label>
+        <select id="destSelect">
+          <option value="17.4479,78.3941">Apollo Hospital — 17.4479,78.3941</option>
+          <option value="17.4518,78.4012">City Care Hospital — 17.4518,78.4012</option>
+          <option value="17.4412,78.3898">Metro Medical Center — 17.4412,78.3898</option>
+        </select>
+
+        <div class="controls-row">
+          <button id="computeRoute" class="pill" style="flex:1">Compute Route</button>
+          <button id="dispatch" class="pill" style="flex:1;background:var(--danger)">Dispatch</button>
+        </div>
+
+        <div class="controls-row" style="margin-top:8px">
+          <button id="stop" class="ghost" style="flex:1">Stop</button>
+          <button id="placeCrowd" class="ghost" style="flex:1">Place crowd</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div><strong>ETA:</strong> <span id="eta">—</span></div>
+          <div style="margin-top:6px"><strong>Distance:</strong> <span id="distance">—</span></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:800">Recent Activity</div>
+          <div id="activity" style="margin-top:8px;max-height:220px;overflow:auto;font-size:13px;color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Map + overlays -->
+    <div class="right">
+      <div class="map-top">
+        <div id="map"></div>
+
+        <div class="live-panel" id="livePanel" style="display:none">
+          <h4 id="liveTitle">Dispatch Live</h4>
+          <div id="liveSub" style="font-size:13px;color:var(--muted)">Route & traffic signals</div>
+          <div style="margin-top:8px" id="signalsList"></div>
+        </div>
+
+        <div class="assign-log" id="assignLog" style="display:none">
+          <h4>Activity</h4>
+          <div class="activity-list" id="assignItems"></div>
+        </div>
+
+        <div class="hover-card" id="hoverCard" style="display:none">
+          <h4>Dispatch Status</h4>
+          <div id="hoverStatus" style="font-size:13px;color:var(--muted)">Idle</div>
+        </div>
+
+        <div class="legend">
+          <div style="font-weight:700">Legend</div>
+          <div><div style="width:12px;height:12px;background:var(--accent-2);border-radius:4px"></div><div>Route</div></div>
+          <div><div style="width:12px;height:12px;background:var(--danger);border-radius:50%"></div><div>Ambulance</div></div>
+          <div><div style="width:12px;height:12px;background:#4b5563;border-radius:50%"></div><div>Crowd</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Focused scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <script>
+  /*
+    Converted ambulance demo into Shakti "Option A" layout.
+    - Uses OSRM route (router.project-osrm.org)
+    - Animates ambulance slowly along the sampled route (realistic speed)
+    - Deploys simulated traffic signals & crowd; signals turn green as ambulance approaches
+    - Activity log + small hover/status panels
+  */
+
+  // ---------- data & state ----------
+  const defaultStart = [17.43990,78.39120];   // demo start lat,lng
+  const defaultDest = [17.4479,78.3941];      // Apollo
+  let routeCoords = [];      // raw polyline coords [ [lat,lng], ... ]
+  let sampledPoints = [];    // dense points for animation
+  let ambulanceMarker = null;
+  let ambulanceIndex = 0;
+  let ambulanceMoving = false;
+  let animTimer = null;
+  let crowd = [];
+  let signals = []; // { idx, marker, state, id }
+  let uploadedPhotoData = null;
+
+  // DOM
+  const activityEl = document.getElementById('activity');
+  const assignLog = document.getElementById('assignLog');
+  const assignItems = document.getElementById('assignItems');
+  const hoverCard = document.getElementById('hoverCard');
+  const hoverStatus = document.getElementById('hoverStatus');
+  const signalsList = document.getElementById('signalsList');
+  const livePanel = document.getElementById('livePanel');
+  const etaSpan = document.getElementById('eta');
+  const distSpan = document.getElementById('distance');
+
+  // ---------- map ----------
+  const map = L.map('map').setView(defaultStart, 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+  // helper: log activity
+  function log(msg){
+    const d = document.createElement('div');
+    d.textContent = `${new Date().toLocaleTimeString()} — ${msg}`;
+    activityEl.insertBefore(d, activityEl.firstChild);
+    // also show in assign log
+    assignLog.style.display = 'block';
+    const d2 = d.cloneNode(true);
+    assignItems.insertBefore(d2, assignItems.firstChild);
+  }
+
+  // ---------- file input ----------
+  document.getElementById('photoInput').addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f){ uploadedPhotoData = null; return; }
+    const r = new FileReader();
+    r.onload = (ev)=> { uploadedPhotoData = ev.target.result; showToast('Photo attached'); };
+    r.readAsDataURL(f);
+  });
+
+  // ---------- OSRM route fetch ----------
+  async function fetchOSRMRoute(startLatLng, destLatLng){
+    // OSRM expects lng,lat pairs
+    const s = `${startLatLng[1]},${startLatLng[0]}`;
+    const d = `${destLatLng[1]},${destLatLng[0]}`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${s};${d}?overview=full&geometries=geojson&steps=false`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('OSRM request failed');
+    const j = await res.json();
+    if(!j || !j.routes || !j.routes[0]) throw new Error('No route from OSRM');
+    const r = j.routes[0];
+    // r.geometry.coordinates is array of [lng,lat]
+    const coords = (r.geometry && r.geometry.coordinates) ? r.geometry.coordinates.map(c => [c[1], c[0]]) : [];
+    return { coords, distance: r.distance, duration: r.duration };
+  }
+
+  // draw route
+  function drawRoute(coords){
+    if(window.routeLine) map.removeLayer(window.routeLine);
+    window.routeLine = L.polyline(coords, {color: 'var(--accent-2)', weight:6, opacity:0.95}).addTo(map);
+    map.fitBounds(window.routeLine.getBounds(), {padding:[80,80]});
+  }
+
+  // uniform sampling helper - returns [ [lat,lng], ... ]
+  function sampleRoute(coords){
+    // coords input: [ [lat,lng], ... ]
+    const lnglat = coords.map(c => [c[1], c[0]]);
+    const line = turf.lineString(lnglat);
+    const lengthKm = turf.length(line, {units:'kilometers'});
+    const steps = Math.max(120, Math.round(lengthKm * 200)); // dense sampling
+    const pts = [];
+    for(let i=0;i<=steps;i++){
+      const d = lengthKm * i / steps;
+      const p = turf.along(line, d, {units:'kilometers'});
+      pts.push([p.geometry.coordinates[1], p.geometry.coordinates[0]]);
+    }
+    return pts;
+  }
+
+  // create ambulance marker (SVG)
+  function createAmbulanceMarker(latlng){
+    const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'><rect x='1' y='4' width='14' height='10' rx='2' fill='${getComputedStyle(document.documentElement).getPropertyValue('--danger').trim() || '#ff3b30'}'/><rect x='1' y='7' width='8' height='6' rx='1' fill='#fff'/><rect x='15' y='6' width='6' height='4' rx='1' fill='#07f'/><circle cx='6' cy='17' r='1.6' fill='#111'/><circle cx='13' cy='17' r='1.6' fill='#111'/></svg>`);
+    const icon = L.icon({ iconUrl:`data:image/svg+xml;utf8,${svg}`, iconSize:[40,40], iconAnchor:[20,20]});
+    if(ambulanceMarker) map.removeLayer(ambulanceMarker);
+    ambulanceMarker = L.marker(latlng, {icon}).addTo(map);
+  }
+
+  // deploy traffic signals along route
+  function deploySignals(points){
+    // clear prior
+    signals.forEach(s => map.removeLayer(s.marker));
+    signals = [];
+    const count = Math.min(6, Math.max(3, Math.floor(points.length / 120)));
+    const step = Math.floor(points.length / (count + 1));
+    for(let i=1;i<=count;i++){
+      const idx = Math.min(points.length-1, i * step);
+      const pos = points[idx];
+      const icon = L.divIcon({className:'', html:`<div style="width:26px;height:26px;border-radius:6px;background:#fff;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:12px">${i}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+      const marker = L.marker(pos, {icon}).addTo(map);
+      signals.push({ idx, marker, state:'red', id:i-1 });
+    }
+    renderSignalsUI();
+  }
+
+  // render the signals list UI
+  function renderSignalsUI(){
+    signalsList.innerHTML = '';
+    signals.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'signal-row';
+      const dot = document.createElement('div');
+      dot.className = 'dot red';
+      dot.id = `sigdot_${s.id}`;
+      const label = document.createElement('div');
+      label.textContent = `Signal ${i+1}`;
+      const state = document.createElement('div');
+      state.textContent = 'RED';
+      state.style.marginLeft = 'auto';
+      state.id = `sigtxt_${s.id}`;
+      row.appendChild(dot); row.appendChild(label); row.appendChild(state);
+      signalsList.appendChild(row);
+    });
+  }
+
+  function setSignalState(id, state){
+    const s = signals[id];
+    if(!s) return;
+    s.state = state;
+    const dot = document.getElementById(`sigdot_${id}`);
+    if(dot){
+      dot.className = 'dot ' + (state === 'red' ? 'red' : state === 'yellow' ? 'yellow' : 'green');
+    }
+    const st = document.getElementById(`sigtxt_${id}`);
+    if(st) st.textContent = state.toUpperCase();
+    log(`Signal ${id+1} → ${state.toUpperCase()}`);
+  }
+
+  // place crowd points near route
+  function placeCrowd(points){
+    clearCrowd();
+    if(!points || points.length === 0) return;
+    const count = 14;
+    for(let i=0;i<count;i++){
+      const idx = Math.floor(Math.random() * Math.floor(points.length * 0.8));
+      const base = points[idx];
+      const lat = base[0] + (Math.random()-0.5) * 0.0009;
+      const lng = base[1] + (Math.random()-0.5) * 0.0012;
+      const icon = L.divIcon({html:`<div style="width:12px;height:12px;border-radius:50%;background:#4b5563"></div>`, className:'', iconSize:[12,12], iconAnchor:[6,6]});
+      const m = L.marker([lat,lng], {icon}).addTo(map);
+      m._orig = [lat,lng];
+      crowd.push(m);
+    }
+    log('Crowd placed near route');
+  }
+  function clearCrowd(){
+    crowd.forEach(c => map.removeLayer(c));
+    crowd = [];
+    log('Crowd cleared');
+  }
+
+  // check proximity to signals & crowd when ambulance moves
+  function checkProximity(index){
+    const pos = sampledPoints[index];
+    signals.forEach((s)=>{
+      const distIdx = Math.abs(index - s.idx);
+      if(distIdx < 22 && s.state === 'red'){
+        setSignalState(s.id, 'yellow');
+        setTimeout(()=> setSignalState(s.id, 'green'), 900 + Math.random()*600);
+      }
+    });
+    // crowd move aside if within X meters
+    crowd.forEach(m=>{
+      const d = map.distance(m.getLatLng(), pos);
+      if(d < 140){
+        const orig = m._orig;
+        const awayLat = orig[0] + (Math.random()-0.5)*0.002;
+        const awayLng = orig[1] + (Math.random()-0.5)*0.002;
+        m.setLatLng([awayLat, awayLng]);
+      }
+    });
+  }
+
+  // update ETA & remaining distance
+  function updateETAandDistance(index){
+    if(!sampledPoints || sampledPoints.length===0) return;
+    let rem = 0;
+    for(let i=index;i<sampledPoints.length-1;i++){
+      rem += map.distance(sampledPoints[i], sampledPoints[i+1]);
+    }
+    const km = (rem/1000);
+    const mins = Math.max(1, Math.round((km / 35) * 60)); // slower average speed for demo
+    etaSpan.textContent = `${mins} min`;
+    distSpan.textContent = `${km.toFixed(2)} km`;
+  }
+
+  // set all signals green (on arrival)
+  function setAllSignalsGreen(){
+    signals.forEach((s) => setSignalState(s.id, 'green'));
+  }
+
+  // ---------- animation: step-based + time control ----------
+  // we use setInterval which allows better control for demo speed; step size decides speed
+  const FRAME_MS = 450; // larger = slower, feels realistic
+  let motionInterval = null;
+
+  function startMotion(){
+    if(!sampledPoints || sampledPoints.length < 2){ showToast('No route sampled'); return; }
+    if(!ambulanceMarker) createAmbulanceMarker(sampledPoints[0]);
+    ambulanceMoving = true;
+    hoverCard.style.display = 'block';
+    hoverStatus.textContent = 'Ambulance en route';
+    log('Ambulance dispatched');
+    // ensure index starts at 0 if at start
+    if(ambulanceIndex >= sampledPoints.length - 1) ambulanceIndex = 0;
+    if(motionInterval) clearInterval(motionInterval);
+    motionInterval = setInterval(()=> {
+      if(!ambulanceMoving) return;
+      ambulanceIndex++;
+      if(ambulanceIndex >= sampledPoints.length){
+        ambulanceIndex = sampledPoints.length - 1;
+        stopMotion();
+        log('Ambulance arrived at destination');
+        hoverStatus.textContent = 'Arrived';
+        setAllSignalsGreen();
+        return;
+      }
+      const p = sampledPoints[ambulanceIndex];
+      ambulanceMarker.setLatLng(p);
+      // pan but keep map stable (small animation)
+      map.panTo(p, {animate:true, duration:0.35});
+      checkProximity(ambulanceIndex);
+      updateETAandDistance(ambulanceIndex);
+    }, FRAME_MS);
+  }
+
+  function stopMotion(){
+    ambulanceMoving = false;
+    if(motionInterval){ clearInterval(motionInterval); motionInterval = null; }
+    hoverStatus.textContent = 'Stopped';
+    log('Ambulance stopped');
+  }
+
+  // ---------- UI handlers ----------
+  document.getElementById('computeRoute').addEventListener('click', async ()=>{
+    try{
+      const startVal = document.getElementById('startInput').value.trim();
+      let start = null;
+      if(!startVal) start = defaultStart;
+      else if(/^[\d\.\-]+\s*,\s*[\d\.\-]+$/.test(startVal)){
+        const [a,b] = startVal.split(',').map(s=>parseFloat(s.trim()));
+        start = [a,b];
+      } else {
+        const g = await geocode(startVal);
+        if(!g){ alert('Start address not found'); return; }
+        start = [g.lat, g.lon];
+      }
+      const destParts = (document.getElementById('destSelect').value||'').split(',').map(s=>parseFloat(s));
+      if(destParts.length < 2) { alert('Invalid destination'); return; }
+      const res = await fetchOSRMRoute(start, destParts);
+      routeCoords = res.coords;
+      if(!routeCoords || routeCoords.length < 2) { alert('No route returned'); return; }
+      drawRoute(routeCoords);
+      sampledPoints = sampleRoute(routeCoords);
+      ambulanceIndex = 0;
+      createAmbulanceMarker(sampledPoints[0]);
+      deploySignals(sampledPoints);
+      updateETAandDistance(0);
+      livePanel.style.display = 'block';
+      hoverCard.style.display = 'block';
+      hoverStatus.textContent = 'Route ready';
+      log('Route computed / ready');
+    } catch(e){
+      console.error(e);
+      alert('Failed to compute route: ' + (e.message || e));
+    }
+  });
+
+  document.getElementById('dispatch').addEventListener('click', async ()=>{
+    if(!sampledPoints || sampledPoints.length < 2){
+      // compute default route from defaultStart to selected dest
+      try{
+        const destParts = (document.getElementById('destSelect').value||'').split(',').map(s=>parseFloat(s));
+        const res = await fetchOSRMRoute(defaultStart, destParts);
+        routeCoords = res.coords;
+        drawRoute(routeCoords);
+        sampledPoints = sampleRoute(routeCoords);
+        ambulanceIndex = 0;
+        createAmbulanceMarker(sampledPoints[0]);
+        deploySignals(sampledPoints);
+        livePanel.style.display = 'block';
+        hoverCard.style.display = 'block';
+      }catch(err){
+        alert('Failed to compute route: ' + (err.message || err));
+        return;
+      }
+    }
+    startMotion();
+  });
+
+  document.getElementById('stop').addEventListener('click', ()=>{ stopMotion(); });
+
+  document.getElementById('placeCrowd').addEventListener('click', ()=> {
+    if(!sampledPoints || sampledPoints.length===0){ showToast('Compute route first'); return; }
+    placeCrowd(sampledPoints);
+  });
+
+  // ---------- geocode helper ----------
+  async function geocode(q){
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
+      const arr = await res.json();
+      if(!arr || !arr[0]) return null;
+      return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon) };
+    } catch(e){ console.error('geocode', e); return null; }
+  }
+
+  // ---------- small UI helpers ----------
+  function showToast(txt, important=false){
+    const t = document.createElement('div');
+    t.style.position='fixed'; t.style.right='18px'; t.style.top='18px'; t.style.background='#fff'; t.style.padding='10px'; t.style.borderRadius='10px';
+    t.style.boxShadow='0 12px 40px rgba(6,12,20,0.08)'; t.style.border='1px solid #eef6ff'; t.style.zIndex=4000;
+    t.innerHTML = `<strong>${txt}</strong>`;
+    document.body.appendChild(t);
+    setTimeout(()=> t.remove(), 3500);
+  }
+
+  // ---------- init demo route on load ----------
+  (async function init(){
+    try{
+      const res = await fetchOSRMRoute(defaultStart, defaultDest);
+      routeCoords = res.coords;
+      drawRoute(routeCoords);
+      sampledPoints = sampleRoute(routeCoords);
+      ambulanceIndex = 0;
+      createAmbulanceMarker(sampledPoints[0]);
+      deploySignals(sampledPoints);
+      livePanel.style.display = 'block';
+      hoverCard.style.display = 'block';
+      hoverStatus.textContent = 'Ready — press Dispatch';
+      updateETAandDistance(0);
+      log('Demo ready — press Dispatch to run the simulation');
+    }catch(e){
+      console.error('init error', e);
+      log('Demo initialization failed (network?)');
+    }
+  })();
+
+  </script>
+</body>
+</html>

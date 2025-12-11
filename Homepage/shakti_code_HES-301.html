@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HES-301 · Medical Emergency Response — Demo</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  :root{
+    --bg:#fff8f8;
+    --card:#fff;
+    --accent:#e53935;      /* emergency red */
+    --accent-2:#1976d2;    /* ambulance blue */
+    --muted:#5b6368;
+    --radius:12px;
+    --soft-shadow:0 12px 36px rgba(6,12,20,0.06);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#fff,#fff7f7);color:#041017}
+  .wrap{display:flex;height:100vh;gap:14px;padding:14px;box-sizing:border-box}
+  .left,.right{background:var(--card);border-radius:var(--radius);box-shadow:var(--soft-shadow);overflow:hidden}
+  .left{flex:0 0 420px;display:flex;flex-direction:column}
+  .right{flex:1;display:flex;flex-direction:column}
+  header{padding:16px;border-bottom:1px solid #fff0f0;display:flex;gap:12px;align-items:center}
+  .brand{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent-2),#0b66b2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+  .panel{padding:14px;overflow:auto}
+  .panel{ -ms-overflow-style: none; scrollbar-width: none; }
+  .panel::-webkit-scrollbar { display: none; }
+  .h{font-weight:900}
+  .muted{color:var(--muted);font-size:13px}
+  .field{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+  input[type="text"], textarea, select {padding:10px;border-radius:10px;border:1px solid #f0f0f0;font-size:14px}
+  textarea{min-height:84px;resize:vertical}
+  .row{display:flex;gap:8px;align-items:center}
+  .pill{border:0;padding:12px 14px;border-radius:12px;background:linear-gradient(90deg,var(--accent),#ff6b6b);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(229,57,53,0.12)}
+  .ghost{background:#fff;border:1px solid #f2f2f2;padding:10px;border-radius:10px;cursor:pointer;color:var(--muted)}
+  .status-box{padding:10px;border-radius:10px;border:1px solid #fff0f0;background:#fff9f9}
+  .small{font-size:13px;color:var(--muted)}
+  footer{padding:10px 14px;border-top:1px solid #fff0f0;display:flex;justify-content:space-between;align-items:center}
+  .map-wrap{height:100%;position:relative}
+  #map{height:100%;width:100%}
+  .live-panel{position:absolute;left:12px;top:12px;z-index:1600;background:rgba(255,255,255,0.96);padding:10px;border-radius:10px;border:1px solid #fff4f4;box-shadow:0 12px 30px rgba(6,12,20,0.06)}
+  .toasts{position:fixed;right:16px;top:16px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast{background:#fff;padding:10px;border-radius:10px;border-left:6px solid var(--accent-2);box-shadow:0 10px 30px rgba(0,0,0,0.08);min-width:220px}
+  .danger-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(229,57,53,0.06),rgba(255,255,255,0));pointer-events:none;display:none;z-index:1400;border-radius:12px}
+  .danger-overlay.show{display:block}
+  .firstaid-modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2200}
+  .modal-card{background:#fff;padding:16px;width:560px;border-radius:12px;box-shadow:0 18px 60px rgba(6,12,20,0.18)}
+  .vitals{display:flex;gap:8px;flex-wrap:wrap}
+  .vcard{padding:8px;border-radius:8px;border:1px solid #f2f2f2;background:#fff;min-width:120px}
+  .progress-pill{display:inline-block;padding:6px 8px;border-radius:999px;background:#fff;border:1px solid #f6eaea;color:var(--accent);font-weight:800}
+  .backBtn { position: fixed; top: 16px; right: 22px; background: #ffffff; color: #ff6b00; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.12); z-index: 20000; cursor: pointer; transition: 0.2s ease; }
+  .backBtn:hover { background: #1976d2; color: white; }
+  @media (max-width:980px){ .left{flex:0 0 360px} .modal-card{width:92%} }
+</style>
+</head>
+<body>
+
+<!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+
+<div class="wrap">
+  <div class="left">
+    <header>
+      <div class="brand">SI</div>
+      <div>
+        <div style="font-weight:900">Shakti HES-301</div>
+        <div class="muted">Medical Emergency Response | One-tap ambulance request • First-aid guidance • Demo</div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="field">
+        <label class="h">Patient location</label>
+        <div class="row">
+          <input id="locInput" type="text" placeholder="Click map to set, or type address/coords" style="flex:1"/>
+          <button id="useMapBtn" class="ghost">Use map</button>
+        </div>
+        <div class="small">Click on right-side map to pick exact location. If not set, center of map will be used.</div>
+      </div>
+
+      <div class="field">
+        <label class="h">Patient condition</label>
+        <select id="condition">
+          <option value="unconscious">Unconscious / not breathing</option>
+          <option value="severe_bleed">Severe bleeding</option>
+          <option value="chest_pain">Chest pain / heart attack</option>
+          <option value="minor_injury">Minor injury</option>
+          <option value="other">Other / unknown</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="h">Auto-share vitals (demo)</label>
+        <div class="vitals">
+          <div class="vcard"><label class="small">Heart Rate</label><div><input id="hr" type="number" value="88" style="width:90px;padding:6px;border-radius:8px;border:1px solid #eee"/></div></div>
+          <div class="vcard"><label class="small">SpO₂ (%)</label><div><input id="spo2" type="number" value="96" style="width:90px;padding:6px;border-radius:8px;border:1px solid #eee"/></div></div>
+          <div class="vcard"><label class="small">BP (sys/dia)</label><div><input id="bp" type="text" value="120/78" style="width:120px;padding:6px;border-radius:8px;border:1px solid #eee"/></div></div>
+        </div>
+        <div style="margin-top:8px" class="small">Toggle values and they will be included with the alert (consent simulated).</div>
+      </div>
+
+      <div class="field">
+        <label class="h">Contacts / services to notify</label>
+        <div id="recipsPanel" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button id="activateBtn" class="pill" style="flex:1">ACTIVATE — Request Ambulance</button>
+        <button id="firstAidBtn" class="ghost" style="flex:1">First-Aid Guide</button>
+      </div>
+
+      <div style="margin-top:12px" class="status-box">
+        <div style="font-weight:800">Current report</div>
+        <div id="reportBox" class="small" style="margin-top:8px">No active request</div>
+        <div style="margin-top:8px">
+          <span class="progress-pill" id="statusPill">Idle</span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="small">Demo mode — simulated ambulance & notifications</div>
+      <div><span class="small">HES-301</span></div>
+    </footer>
+  </div>
+
+  <div class="right">
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="live-panel" id="livePanel">
+        <div style="font-weight:800">Ambulance Nearby</div>
+        <div id="nearAmbs" class="small" style="margin-top:6px">Loading…</div>
+        <div style="margin-top:10px"><button id="centerBtn" class="ghost">Center map</button></div>
+      </div>
+      <div id="dangerOverlay" class="danger-overlay"></div>
+    </div>
+  </div>
+</div>
+
+<!-- first-aid modal -->
+<div id="firstAidModal" class="firstaid-modal">
+  <div class="modal-card">
+    <h3 style="margin:0 0 8px 0">First-Aid Guidance — Quick Steps</h3>
+    <div class="small" style="margin-bottom:12px">Follow steps while help is on the way. This is demo guidance — use professional protocols where available.</div>
+
+    <div id="firstAidContent" style="display:flex;flex-direction:column;gap:10px">
+      <!-- example dynamic content -->
+      <div>
+        <div style="font-weight:800">Unconscious / Not breathing</div>
+        <ol class="small">
+          <li>Shake and shout — check responsiveness.</li>
+          <li>Call for help and activate ambulance (top-right).</li>
+          <li>Open airway, check breathing. If absent, start CPR: 30 compressions / 2 breaths.</li>
+          <li>If available, use AED as instructed.</li>
+        </ol>
+      </div>
+      <div>
+        <div style="font-weight:800">Severe bleeding</div>
+        <ol class="small">
+          <li>Apply direct pressure with clean cloth.</li>
+          <li>Elevate limb if no fracture suspected.</li>
+          <li>Keep person warm and call for ambulance.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+      <button id="closeAid" class="ghost">Close</button>
+      <button id="copyAid" class="pill">Copy Steps</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* HES-301 Medical Emergency Response — Demo page
+   - One-tap activation: finds nearest ambulance, assigns, animates approach
+   - First-aid modal with steps
+   - Auto-share vitals (demo values)
+   - Simulated notifications (toasts)
+*/
+
+// ---------- demo data: ambulances & services ----------
+const AMBULANCES = [
+  { id:'amb1', name:'Ambulance A1', phone:'+91 90001 00001', lat:17.4470, lon:78.3925 },
+  { id:'amb2', name:'Ambulance A2', phone:'+91 90001 00002', lat:17.4395, lon:78.3952 },
+  { id:'amb3', name:'Ambulance A3', phone:'+91 90001 00003', lat:17.4440, lon:78.3850 }
+];
+const SERVICES = [
+  { id:'svc1', name:'City Ambulance', phone:'+91 102', type:'Service' },
+  { id:'svc2', name:'Hospital ER', phone:'+91 103', type:'Hospital' },
+  { id:'svc3', name:'First Responders', phone:'+91 104', type:'Volunteer' }
+];
+
+// ---------- state ----------
+let userMarker = null;
+let assignedMarker = null;
+let ambMarkers = {};
+let activeRequest = null;
+let progressTimers = [];
+
+// ---------- map init ----------
+const map = L.map('map', { zoomControl:true }).setView([17.4446,78.3927],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+// icons
+function makeIcon(text, color='#e53935'){
+  const html = `<div style="background:${color};color:white;padding:6px 8px;border-radius:8px;font-weight:900;box-shadow:0 6px 18px rgba(0,0,0,0.12)}">${text}</div>`;
+  return L.divIcon({html, className:'', iconSize:[90,30], iconAnchor:[45,15], popupAnchor:[0,-18]});
+}
+
+// plot ambulances
+function plotAmbulances(){
+  Object.values(ambMarkers).forEach(m=> map.removeLayer(m));
+  ambMarkers = {};
+  AMBULANCES.forEach(a=>{
+    const m = L.marker([a.lat, a.lon], { icon: makeIcon('AMB', '#1976d2') }).addTo(map);
+    m.bindPopup(`<strong>${a.name}</strong><div class="small">${a.phone}</div>`);
+    ambMarkers[a.id] = m;
+  });
+  // fill nearAmbs UI
+  const near = document.getElementById('nearAmbs');
+  near.innerHTML = AMBULANCES.map(a=>`${a.name} • ${a.phone}`).join('<br/>');
+}
+plotAmbulances();
+
+// set user marker by map click
+map.on('click', (ev) => {
+  const lat = ev.latlng.lat, lon = ev.latlng.lng;
+  setUserMarker(lat, lon, true);
+});
+
+// set user marker helper
+function setUserMarker(lat, lon, focus=false){
+  if(!userMarker){
+    userMarker = L.marker([lat, lon], { icon: makeIcon('YOU','#ff7043') }).addTo(map);
+    userMarker.bindPopup('<strong>Patient location</strong>');
+  } else {
+    userMarker.setLatLng([lat, lon]);
+  }
+  document.getElementById('locInput').value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  if(focus) map.panTo([lat, lon]);
+}
+
+// use map button
+document.getElementById('useMapBtn').addEventListener('click', ()=>{
+  if(!userMarker) return alert('Click map to choose location first.');
+  const p = userMarker.getLatLng();
+  document.getElementById('locInput').value = `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`;
+});
+
+// contacts panel (choose which services to notify)
+(function populateContacts(){
+  const panel = document.getElementById('recipsPanel');
+  SERVICES.forEach(s=>{
+    const div = document.createElement('div');
+    div.style.display='flex'; div.style.alignItems='center'; div.style.justifyContent='space-between'; div.style.padding='8px'; div.style.border='1px solid #fff5f5'; div.style.borderRadius='8px';
+    div.innerHTML = `<div><div style="font-weight:800">${s.name}</div><div class="small">${s.type} • ${s.phone}</div></div><div><input type="checkbox" data-id="${s.id}" checked></div>`;
+    panel.appendChild(div);
+  });
+})();
+
+// collect recipients
+function collectRecipients(){
+  const boxes = Array.from(document.querySelectorAll('#recipsPanel input[type="checkbox"]'));
+  return boxes.filter(b=>b.checked).map(b=>b.dataset.id);
+}
+
+// ---------- activation flow ----------
+document.getElementById('activateBtn').addEventListener('click', async ()=>{
+  // determine location
+  let lat, lon;
+  const locText = document.getElementById('locInput').value.trim();
+  if(userMarker){
+    const p = userMarker.getLatLng();
+    lat = p.lat; lon = p.lng;
+  } else if(locText){
+    const m = locText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if(m){ lat = parseFloat(m[1]); lon = parseFloat(m[2]); }
+    else {
+      const g = await geocode(locText);
+      if(!g) return alert('Location not found — click map or enter coordinates.');
+      lat = g.lat; lon = g.lon;
+    }
+    setUserMarker(lat, lon);
+  } else {
+    // fallback: map center
+    const c = map.getCenter(); lat = c.lat; lon = c.lng;
+    setUserMarker(lat, lon);
+  }
+
+  // read vitals
+  const hr = document.getElementById('hr').value;
+  const spo2 = document.getElementById('spo2').value;
+  const bp = document.getElementById('bp').value;
+  const condition = document.getElementById('condition').value;
+  const recipients = collectRecipients();
+
+  // create request object
+  const id = 'HES-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  activeRequest = { id, lat, lon, hr, spo2, bp, condition, recipients, status:'created', assigned:null };
+  updateReportBox(`Request ${id} created — finding nearest ambulance...`);
+  showToast(`Emergency request created: ${id}`, true);
+
+  // choose nearest ambulance
+  const amb = chooseNearestAmbulance(lat, lon);
+  if(!amb) { updateReportBox('No ambulances available'); showToast('No ambulances found', true); return; }
+
+  activeRequest.assigned = { id: amb.id, name: amb.name, phone: amb.phone, lat: amb.lat, lon: amb.lon, status:'dispatched' };
+  // place assigned marker at ambulance location
+  if(assignedMarker) { map.removeLayer(assignedMarker); assignedMarker = null; }
+  assignedMarker = L.marker([amb.lat, amb.lon], { icon: makeIcon('AMB','#1976d2') }).addTo(map);
+  assignedMarker.bindPopup(`<strong>${amb.name}</strong><div class="small">${amb.phone}</div><div style="margin-top:6px">Status: dispatched</div>`);
+  map.panTo([amb.lat, amb.lon]);
+
+  updateReportBox(`Assigned ${amb.name} — dispatched`);
+  document.getElementById('statusPill').textContent = 'Dispatched';
+
+  // simulate progression with animation
+  simulateAmbulanceProgress(activeRequest, assignedMarker);
+
+  // notify recipients (toasts)
+  activeRequest.recipients.forEach(rid => {
+    const s = SERVICES.find(x=>x.id===rid);
+    if(s) showToast(`Notified ${s.name}: request ${id}`, false);
+  });
+});
+
+// helper: update report UI
+function updateReportBox(txt){
+  document.getElementById('reportBox').textContent = txt;
+}
+
+// choose nearest ambulance
+function chooseNearestAmbulance(lat, lon){
+  let best=null, bd=Infinity;
+  AMBULANCES.forEach(a=>{
+    const d = distanceKm(lat, lon, a.lat, a.lon);
+    if(d < bd){ bd = d; best = a; }
+  });
+  return best;
+}
+function distanceKm(aLat, aLon, bLat, bLon){
+  const R = 6371;
+  const dLat = (bLat-aLat)*Math.PI/180;
+  const dLon = (bLon-aLon)*Math.PI/180;
+  const A = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  const C = 2 * Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
+  return R * C;
+}
+
+// simulate ambulance moving to patient
+function simulateAmbulanceProgress(request, marker){
+  // clear old timers
+  progressTimers.forEach(t=>clearTimeout(t));
+  progressTimers = [];
+
+  const start = marker.getLatLng();
+  const end = L.latLng(request.lat, request.lon);
+  const totalMs = 12000; // total travel time to simulate
+  animateMarker(marker, start, end, totalMs);
+
+  // en route after 4s
+  progressTimers.push(setTimeout(()=>{
+    request.assigned.status = 'en_route';
+    updateAssignedPopup(marker, request.assigned);
+    updateReportBox(`${request.assigned.name} en route — ETA approx ${(totalMs/1000/60).toFixed(1)} min`);
+    document.getElementById('statusPill').textContent = 'En route';
+    showToast(`${request.assigned.name} en route`, false);
+  }, 4000));
+
+  // on-scene after totalMs
+  progressTimers.push(setTimeout(()=>{
+    request.assigned.status = 'on_scene';
+    updateAssignedPopup(marker, request.assigned);
+    updateReportBox(`${request.assigned.name} on scene — providing care`);
+    document.getElementById('statusPill').textContent = 'On scene';
+    showToast(`${request.assigned.name} on scene`, false);
+    // danger overlay for serious conditions
+    if(request.condition === 'unconscious' || request.condition === 'severe_bleed') document.getElementById('dangerOverlay').classList.add('show');
+  }, totalMs + 2000));
+
+  // resolved after more time
+  progressTimers.push(setTimeout(()=>{
+    request.assigned.status = 'resolved';
+    updateAssignedPopup(marker, request.assigned);
+    updateReportBox(`Request ${request.id} resolved — patient care ongoing`);
+    document.getElementById('statusPill').textContent = 'Resolved';
+    showToast(`Ambulance ${request.assigned.name} marked resolved`, false);
+    document.getElementById('dangerOverlay').classList.remove('show');
+  }, totalMs + 9000));
+}
+
+// animate marker from start to end over duration ms
+function animateMarker(marker, start, end, duration){
+  if(!marker) return;
+  const steps = Math.max(20, Math.round(duration / 200));
+  let i=0;
+  const latStep = (end.lat - start.lat) / steps;
+  const lonStep = (end.lng - start.lng) / steps;
+  const interval = setInterval(()=>{
+    i++;
+    const nlat = start.lat + latStep * i;
+    const nlng = start.lng + lonStep * i;
+    marker.setLatLng([nlat, nlng]);
+    if(i>=steps) clearInterval(interval);
+  }, duration/steps);
+}
+
+// update assigned marker popup content
+function updateAssignedPopup(marker, assigned){
+  if(marker) marker.bindPopup(`<strong>${assigned.name}</strong><div class="small">${assigned.phone}</div><div style="margin-top:6px">Status: ${assigned.status}</div>`);
+}
+
+// ------ geocode (nominatim simple)
+async function geocode(q){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`);
+    const arr = await res.json();
+    if(!arr || arr.length===0) return null;
+    return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), name: arr[0].display_name };
+  }catch(e){ return null; }
+}
+
+// ---------- first-aid modal ----------
+document.getElementById('firstAidBtn').addEventListener('click', ()=>{
+  document.getElementById('firstAidModal').style.display = 'flex';
+});
+document.getElementById('closeAid').addEventListener('click', ()=> document.getElementById('firstAidModal').style.display='none');
+document.getElementById('copyAid').addEventListener('click', ()=>{
+  const text = `First-aid steps: Check airway, breathing, circulation. If severe bleeding, apply pressure. Call ambulance.`;
+  navigator.clipboard?.writeText(text).then(()=> showToast('Steps copied'), ()=> showToast('Copy failed', true));
+});
+
+// center button
+document.getElementById('centerBtn').addEventListener('click', ()=>{
+  if(userMarker) map.panTo(userMarker.getLatLng());
+  else map.setView([17.4446,78.3927],14);
+});
+
+// toasts helper
+function showToast(text, important=false){
+  const c = document.getElementById('toasts');
+  const n = document.createElement('div'); n.className='toast';
+  n.style.borderLeftColor = important ? 'var(--accent)' : 'var(--accent-2)';
+  n.innerHTML = `<div style="font-weight:800">${text}</div>`;
+  c.appendChild(n);
+  setTimeout(()=> { n.style.opacity='0'; setTimeout(()=> n.remove(), 400); }, 4500);
+}
+
+// ---------- bootstrap ----------
+(function init(){
+  // place user at center
+  setUserMarker(17.4446,78.3927,false);
+  plotAmbulances();
+  showToast('HES-301 ready — click map to set patient location or type coords/address');
+})();
+</script>
+
+</body>
+</html>

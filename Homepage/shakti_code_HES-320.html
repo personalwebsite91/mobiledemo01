@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HES-320 · Disaster Management — Demo</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  :root{
+    --bg:#f8fbfa;
+    --card:#fff;
+    --accent:#0b74ff;    /* primary */
+    --accent-2:#16a34a;  /* green */
+    --danger:#e03b3b;
+    --muted:#5b6368;
+    --radius:12px;
+    --soft-shadow:0 12px 36px rgba(6,12,20,0.06);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#ffffff,#f3faf7);color:#07121a}
+  .wrap{display:flex;height:100vh;gap:14px;padding:14px;box-sizing:border-box}
+  .left,.right{background:var(--card);border-radius:var(--radius);box-shadow:var(--soft-shadow);overflow:hidden}
+  .left{flex:0 0 420px;display:flex;flex-direction:column}
+  .right{flex:1;display:flex;flex-direction:column}
+  header{padding:16px;border-bottom:1px solid #eef6f3;display:flex;gap:12px;align-items:center}
+  .brand{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent-2),#10a74a);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+  .panel{padding:14px;overflow:auto}
+/* hide left scrollbar visually but keep scrolling functional */
+  .panel{ -ms-overflow-style: none; scrollbar-width: none; }
+  .panel::-webkit-scrollbar { display: none; }
+  .h{font-weight:900}
+  .muted{color:var(--muted);font-size:13px}
+  .field{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+  input[type="text"], textarea, select {padding:10px;border-radius:10px;border:1px solid #eef6f4;font-size:14px}
+  textarea{min-height:84px;resize:vertical}
+  .row{display:flex;gap:8px;align-items:center}
+  .pill{border:0;padding:12px 14px;border-radius:12px;background:linear-gradient(90deg,var(--accent),#4da1ff);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(11,116,255,0.12)}
+  .ghost{background:#fff;border:1px solid #eef6f4;padding:10px;border-radius:10px;cursor:pointer;color:var(--muted)}
+  .status-box{padding:10px;border-radius:10px;border:1px solid #f1fbf5;background:#f8fffb}
+  .map-wrap{height:100%;position:relative}
+  #map{height:100%;width:100%}
+  .overlay-panel{position:absolute;left:12px;top:12px;z-index:1600;background:rgba(255,255,255,0.98);padding:10px;border-radius:10px;border:1px solid #eef6f4;box-shadow:0 12px 30px rgba(6,12,20,0.06)}
+  .toast-wrap{position:fixed;right:16px;top:16px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast{background:#fff;padding:10px;border-radius:10px;border-left:6px solid var(--accent-2);box-shadow:0 10px 30px rgba(0,0,0,0.08);min-width:220px}
+  .danger-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(224,59,59,0.06),rgba(255,255,255,0));pointer-events:none;display:none;z-index:1400;border-radius:12px}
+  .danger-overlay.show{display:block}
+  .report-card{border-radius:10px;border:1px solid #f1fbf5;padding:10px;background:#fff;display:flex;gap:8px;align-items:center}
+  .thumb{width:86px;height:64px;border-radius:8px;background:#f6f8f7;border:1px solid #eef6f4;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .msg-panel{border-top:1px solid #eef6f4;padding:10px;overflow:auto}
+  .chat{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto}
+  .bubble{max-width:80%;padding:8px 10px;border-radius:10px}
+  .bubble.me{align-self:flex-end;background:#e6f0ff;color:#043a7a}
+  .bubble.other{align-self:flex-start;background:#f3fff4;color:#0a6a2b}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2200}
+  .modal-card{background:#fff;padding:16px;width:620px;border-radius:12px;box-shadow:0 18px 60px rgba(6,12,20,0.18)}
+  .backBtn { position: fixed; top: 16px; right: 22px; background: #ffffff; color: #ff6b00; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.12); z-index: 20000; cursor: pointer; transition: 0.2s ease; }
+  .backBtn:hover { background: #16a34a; color: white; }
+  @media (max-width:980px){ .left{flex:0 0 360px} .modal-card{width:92%} }
+</style>
+</head>
+<body>
+
+<!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+
+<div class="wrap">
+  <div class="left">
+    <header>
+      <div class="brand">SI</div>
+      <div>
+        <div style="font-weight:900">Shakti HES-320</div>
+        <div class="muted">Disaster Management | Damage reports • Shelter mapping • Volunteer coordination</div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="field">
+        <label class="h">Report title</label>
+        <input id="title" type="text" placeholder="e.g. Collapsed roof / Flooded street"/>
+      </div>
+
+      <div class="field">
+        <label class="h">Details / notes</label>
+        <textarea id="details" placeholder="Describe damage, injuries, hazards..."></textarea>
+      </div>
+
+      <div class="field">
+        <label class="h">Severity</label>
+        <select id="severity">
+          <option value="low">Low — minor damage</option>
+          <option value="medium">Medium — structural damage</option>
+          <option value="high">High — life-threatening / collapsed</option>
+          <option value="critical">Critical — multiple casualties or fire</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="h">Photo (optional)</label>
+        <input id="photo" type="file" accept="image/*"/>
+        <div id="preview" style="margin-top:8px"></div>
+      </div>
+
+      <div class="field">
+        <label class="h">Location</label>
+        <div class="row">
+          <input id="loc" type="text" placeholder="Click map to set or type address" style="flex:1"/>
+          <button id="useMap" class="ghost">Use map</button>
+        </div>
+        <div class="small muted">Click on the map (right) to place report location quickly.</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="submitReport" class="pill" style="flex:1">Submit Report</button>
+        <button id="clearForm" class="ghost" style="flex:1">Clear</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="status-box">
+          <div style="font-weight:800">Active reports</div>
+          <div id="reportsList" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:800">Volunteer pool</div>
+        <div id="volList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="overlay-panel">
+        <div style="font-weight:800">Shelters & Live Monitor</div>
+        <div id="shelterInfo" class="muted small" style="margin-top:6px">Click a shelter marker for details.</div>
+      </div>
+      <div id="dangerOverlay" class="danger-overlay"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Report detail modal -->
+<div id="reportModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:900" id="modalTitle">Report</div>
+      <div><button id="closeModal" class="ghost">Close</button></div>
+    </div>
+
+    <div style="margin-top:8px" id="modalBody"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <button id="assignVolunteer" class="pill">Assign Volunteer</button>
+      <button id="openChat" class="ghost">Open Messaging</button>
+    </div>
+
+    <div style="margin-top:12px" id="assignInfo"></div>
+  </div>
+</div>
+
+<!-- messaging modal -->
+<div id="chatModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:900">Report Messaging</div>
+      <div><button id="closeChat" class="ghost">Close</button></div>
+    </div>
+
+    <div class="msg-panel" style="margin-top:10px">
+      <div id="chatWindow" class="chat"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="chatInput" type="text" placeholder="Type a message..." style="flex:1"/>
+        <button id="sendChat" class="pill">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* HES-320 Demo: Damage reports + photo upload + shelters + volunteer assignment + messaging
+   - No backend; demo simulates flows in-browser.
+*/
+
+// ---------- sample shelters & volunteers ----------
+const SHELTERS = [
+  { id:'s1', name:'Community Hall A', lat:17.4474, lon:78.3944, cap:120 },
+  { id:'s2', name:'School Gym B', lat:17.4410, lon:78.3900, cap:200 },
+  { id:'s3', name:'Temple Courtyard', lat:17.4390, lon:78.3990, cap:80 }
+];
+const VOLUNTEERS = [
+  { id:'v1', name:'Maya', phone:'+91 90001', lat:17.4455, lon:78.3910, status:'available'},
+  { id:'v2', name:'Raju', phone:'+91 90002', lat:17.4435, lon:78.3980, status:'available'},
+  { id:'v3', name:'Zara', phone:'+91 90003', lat:17.4405, lon:78.3890, status:'available'}
+];
+
+// ---------- state ----------
+let reports = {}; // id -> report object
+let reportMarkers = {}; // id -> marker
+let volunteerMarkers = {}; // id -> marker
+let shelterMarkers = {}; // id -> marker
+let activeModalReportId = null;
+let chatContextReportId = null;
+let messageHistory = {}; // reportId -> [{from,txt,ts}]
+
+// ---------- map ----------
+const map = L.map('map', { zoomControl:true }).setView([17.4446,78.3927],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+// helper icon creators
+function makeDivIcon(txt, bg='#16a34a'){
+  const html = `<div style="background:${bg};color:#fff;padding:6px 8px;border-radius:8px;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,0.08)">${txt}</div>`;
+  return L.divIcon({ html, className:'', iconSize:[90,30], iconAnchor:[45,15], popupAnchor:[0,-18] });
+}
+
+// plot shelters
+function plotShelters(){
+  SHELTERS.forEach(s=>{
+    const m = L.marker([s.lat,s.lon], { icon: makeDivIcon('SHELTER','#ffb020') }).addTo(map);
+    m.bindPopup(`<strong>${s.name}</strong><div class="muted">Capacity: ${s.cap}</div><div style="margin-top:6px"><button onclick="focusShelter('${s.id}')">Show nearby reports</button></div>`);
+    shelterMarkers[s.id] = m;
+  });
+}
+plotShelters();
+
+// plot volunteers
+function plotVolunteers(){
+  VOLUNTEERS.forEach(v=>{
+    const m = L.marker([v.lat,v.lon], { icon: makeDivIcon('VOL','#0b74ff') }).addTo(map);
+    m.bindPopup(`<strong>${v.name}</strong><div class="muted">${v.phone} • ${v.status}</div>`);
+    volunteerMarkers[v.id] = m;
+    addVolunteerListItem(v);
+  });
+}
+plotVolunteers();
+
+// add volunteer list UI
+function addVolunteerListItem(v){
+  const panel = document.getElementById('volList');
+  const el = document.createElement('div');
+  el.className = 'report-card';
+  el.innerHTML = `<div style="flex:1"><div style="font-weight:800">${v.name}</div><div class="muted">${v.status} • ${v.phone}</div></div><div><button class="ghost" onclick="pingVolunteer('${v.id}')">Ping</button></div>`;
+  panel.appendChild(el);
+}
+
+// ping volunteer (simulated)
+function pingVolunteer(id){
+  const v = VOLUNTEERS.find(x=>x.id===id);
+  if(!v) return;
+  showToast(`Ping sent to ${v.name}`, false);
+  // simulate reply
+  setTimeout(()=> showToast(`${v.name}: "On my way"`, false), 2000);
+}
+
+// map click sets loc input coordinates
+map.on('click', (e)=>{
+  document.getElementById('loc').value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+});
+
+// use map button
+document.getElementById('useMap').addEventListener('click', ()=>{
+  const center = map.getCenter();
+  document.getElementById('loc').value = `${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}`;
+});
+
+// file preview
+document.getElementById('photo').addEventListener('change', (ev)=>{
+  const file = ev.target.files[0];
+  const preview = document.getElementById('preview');
+  preview.innerHTML = '';
+  if(!file) return;
+  const img = document.createElement('img');
+  img.style.maxWidth='100%'; img.style.maxHeight='180px'; img.style.borderRadius='8px';
+  const reader = new FileReader();
+  reader.onload = (e)=> { img.src = e.target.result; preview.appendChild(img); };
+  reader.readAsDataURL(file);
+});
+
+// submit report
+document.getElementById('submitReport').addEventListener('click', async ()=>{
+  const title = document.getElementById('title').value.trim() || 'Untitled';
+  const details = document.getElementById('details').value.trim() || '';
+  const severity = document.getElementById('severity').value;
+  const locText = document.getElementById('loc').value.trim();
+  let lat, lon;
+  if(locText){
+    const m = locText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if(m){ lat = parseFloat(m[1]); lon = parseFloat(m[2]); }
+    else {
+      const g = await geocode(locText);
+      if(!g) return alert('Location not found');
+      lat = g.lat; lon = g.lon;
+    }
+  } else { // fallback center
+    const c = map.getCenter(); lat = c.lat; lon = c.lng;
+  }
+
+  // read photo
+  const file = document.getElementById('photo').files[0];
+  let photoData = null;
+  if(file){
+    photoData = await fileToDataURL(file);
+  }
+
+  // create report
+  const id = 'R-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  const r = { id, title, details, severity, lat, lon, photoData, created: new Date().toISOString(), assignedVolunteer: null, status:'reported' };
+  reports[id] = r;
+  messageHistory[id] = [];
+  addReportToUI(r);
+  addReportMarker(r);
+  showToast(`Report ${id} created`, true);
+
+  // clear form (keep preview until cleared)
+  // keep form content optional; user can clear manually
+});
+
+// clear form
+document.getElementById('clearForm').addEventListener('click', ()=>{
+  document.getElementById('title').value='';
+  document.getElementById('details').value='';
+  document.getElementById('severity').selectedIndex=0;
+  document.getElementById('photo').value='';
+  document.getElementById('preview').innerHTML='';
+  document.getElementById('loc').value='';
+});
+
+// add report UI list
+function addReportToUI(r){
+  const container = document.getElementById('reportsList');
+  const card = document.createElement('div');
+  card.className='report-card';
+  const thumbHtml = r.photoData ? `<div class="thumb"><img src="${r.photoData}"/></div>` : `<div class="thumb"><div class="muted" style="padding:6px">No photo</div></div>`;
+  card.innerHTML = `${thumbHtml}<div style="flex:1"><div style="font-weight:800">${r.title}</div><div class="muted">${r.severity} • ${new Date(r.created).toLocaleString()}</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="ghost" style="width:110px" onclick="openReport('${r.id}')">Open</button>
+      <button class="pill" style="width:110px" onclick="zoomToReport('${r.id}')">Go to map</button>
+    </div>`;
+  container.prepend(card);
+}
+
+// add map marker for report
+function addReportMarker(r){
+  const iconColor = (r.severity === 'critical' || r.severity === 'high') ? '#e03b3b' : '#ff9b2f';
+  const m = L.marker([r.lat,r.lon], { icon: makeDivIcon('REPORT', iconColor) }).addTo(map);
+  const popupHtml = `<div style="font-weight:800">${escapeHtml(r.title)}</div><div class="muted">${r.severity}</div>
+    <div style="margin-top:6px">${escapeHtml(r.details.slice(0,160))}</div>
+    ${r.photoData ? `<div style="margin-top:8px"><img src="${r.photoData}" style="width:220px;border-radius:8px"/></div>` : '' }
+    <div style="margin-top:8px"><button onclick="openReport('${r.id}')">Open report</button></div>`;
+  m.bindPopup(popupHtml);
+  reportMarkers[r.id] = m;
+}
+
+// open report modal
+function openReport(id){
+  const r = reports[id];
+  if(!r) return;
+  activeModalReportId = id;
+  document.getElementById('modalTitle').textContent = `${r.title} — ${r.id}`;
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div style="display:flex;gap:12px">
+      ${r.photoData ? `<div style="width:220px"><img src="${r.photoData}" style="width:100%;border-radius:8px"/></div>` : `<div style="width:220px" class="thumb"><div class="muted" style="padding:8px">No photo</div></div>`}
+      <div style="flex:1">
+        <div style="font-weight:800">${r.severity}</div>
+        <div class="muted" style="margin-top:6px">${r.details || 'No details provided'}</div>
+        <div style="margin-top:8px" class="muted">Reported at ${new Date(r.created).toLocaleString()}</div>
+        <div id="modalShelters" style="margin-top:8px"></div>
+      </div>
+    </div>
+  `;
+  // fill shelters near report
+  const near = findNearbyShelters(r.lat, r.lon, 2.5); // 2.5 km
+  const ms = document.getElementById('modalShelters');
+  ms.innerHTML = `<div style="font-weight:800;margin-top:6px">Nearby shelters</div>`;
+  if(near.length===0) ms.innerHTML += `<div class="muted small">No shelters within 2.5 km</div>`;
+  else near.forEach(s => {
+    ms.innerHTML += `<div style="margin-top:6px" class="report-card"><div style="flex:1"><div style="font-weight:800">${s.name}</div><div class="muted">Capacity: ${s.cap}</div></div><div><button class="ghost" onclick="focusShelter('${s.id}')">Focus</button></div></div>`;
+  });
+
+  // assignment info
+  const assignInfo = document.getElementById('assignInfo');
+  if(r.assignedVolunteer) assignInfo.innerHTML = `<div style="font-weight:800">Assigned: ${r.assignedVolunteer.name} • ${r.assignedVolunteer.status}</div>`;
+  else assignInfo.innerHTML = `<div class="muted">No volunteer assigned yet</div>`;
+
+  document.getElementById('reportModal').style.display='flex';
+}
+
+// close modal
+document.getElementById('closeModal').addEventListener('click', ()=> { document.getElementById('reportModal').style.display='none'; activeModalReportId = null;});
+
+// find nearby shelters
+function findNearbyShelters(lat, lon, km){
+  const res = SHELTERS.map(s => {
+    const d = distanceKm(lat, lon, s.lat, s.lon);
+    return Object.assign({}, s, {dist: d});
+  }).filter(x=>x.dist <= km).sort((a,b)=>a.dist - b.dist);
+  return res;
+}
+function distanceKm(aLat, aLon, bLat, bLon){
+  const R = 6371;
+  const dLat = (bLat-aLat)*Math.PI/180;
+  const dLon = (bLon-aLon)*Math.PI/180;
+  const A = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  const C = 2 * Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
+  return R * C;
+}
+
+// assign volunteer to active modal report
+document.getElementById('assignVolunteer').addEventListener('click', ()=>{
+  const id = activeModalReportId;
+  if(!id) return;
+  const r = reports[id];
+  if(!r) return;
+
+  // choose nearest available volunteer
+  const avail = VOLUNTEERS.filter(v => v.status === 'available');
+  if(avail.length === 0){ showToast('No volunteers available', true); return; }
+  let best = null; let bd = Infinity;
+  avail.forEach(v=>{
+    const d = distanceKm(r.lat, r.lon, v.lat, v.lon);
+    if(d < bd){ bd = d; best = v; }
+  });
+
+  // mark assigned
+  best.status = 'assigned';
+  r.assignedVolunteer = { id: best.id, name: best.name, phone: best.phone, status:'assigned', lat:best.lat, lon:best.lon };
+  updateVolunteerUI();
+  document.getElementById('assignInfo').innerHTML = `<div style="font-weight:800">Assigned: ${best.name}</div>`;
+  showToast(`${best.name} assigned to report ${r.id}`, false);
+
+  // animate volunteer marker towards report
+  const vmarker = volunteerMarkers[best.id];
+  if(vmarker) animateMarkerTo(vmarker, [r.lat, r.lon], 9000, ()=> {
+    // arrive callback
+    r.assignedVolunteer.status = 'on_scene';
+    showToast(`${best.name} arrived on scene for ${r.id}`, false);
+    // open chat automatically
+    openChatForReport(id);
+  });
+});
+
+// animate marker move
+function animateMarkerTo(marker, destLatLng, durationMs=8000, cb){
+  const from = marker.getLatLng();
+  const to = L.latLng(destLatLng[0], destLatLng[1]);
+  const steps = Math.max(20, Math.round(durationMs / 200));
+  let i=0;
+  const latStep = (to.lat - from.lat)/steps;
+  const lngStep = (to.lng - from.lng)/steps;
+  const tm = setInterval(()=>{
+    i++;
+    const nl = L.latLng(from.lat + latStep*i, from.lng + lngStep*i);
+    marker.setLatLng(nl);
+    if(i>=steps){ clearInterval(tm); if(cb) cb(); }
+  }, durationMs/steps);
+}
+
+// open chat modal for active report
+document.getElementById('openChat').addEventListener('click', ()=>{
+  if(!activeModalReportId) return;
+  openChatForReport(activeModalReportId);
+});
+
+// chat window controllers
+function openChatForReport(reportId){
+  chatContextReportId = reportId;
+  document.getElementById('chatWindow').innerHTML = '';
+  const history = messageHistory[reportId] || [];
+  history.forEach(m => renderChatBubble(m));
+  document.getElementById('chatModal').style.display='flex';
+}
+document.getElementById('closeChat').addEventListener('click', ()=> { document.getElementById('chatModal').style.display='none'; chatContextReportId=null;});
+document.getElementById('sendChat').addEventListener('click', ()=> {
+  const txt = document.getElementById('chatInput').value.trim();
+  if(!txt || !chatContextReportId) return;
+  const msg = { from:'me', txt, ts:new Date().toISOString() };
+  messageHistory[chatContextReportId].push(msg);
+  renderChatBubble(msg);
+  document.getElementById('chatInput').value='';
+  // simulate volunteer reply
+  setTimeout(()=> {
+    const reply = { from:'vol', txt: 'Roger — on it', ts:new Date().toISOString() };
+    messageHistory[chatContextReportId].push(reply);
+    renderChatBubble(reply);
+  }, 1200);
+});
+
+// render chat bubble
+function renderChatBubble(m){
+  const w = document.getElementById('chatWindow');
+  const b = document.createElement('div');
+  b.className = 'bubble ' + (m.from === 'me' ? 'me' : 'other');
+  b.textContent = m.txt + '  · ' + new Date(m.ts).toLocaleTimeString();
+  w.appendChild(b);
+  w.scrollTop = w.scrollHeight;
+}
+
+// utilities
+function fileToDataURL(file){
+  return new Promise(res=>{
+    const r = new FileReader();
+    r.onload = e=> res(e.target.result);
+    r.readAsDataURL(file);
+  });
+}
+function showToast(txt, important=false){
+  const t = document.createElement('div'); t.className='toast';
+  t.style.borderLeftColor = important ? 'var(--danger)' : 'var(--accent-2)';
+  t.innerHTML = `<div style="font-weight:800">${txt}</div>`;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=> { t.style.opacity=0; setTimeout(()=> t.remove(), 400); }, 4200);
+}
+function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+// geocode helper (simple)
+async function geocode(q){
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`;
+    const r = await fetch(url);
+    const arr = await r.json();
+    if(!arr || arr.length===0) return null;
+    return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), name: arr[0].display_name };
+  }catch(e){ return null; }
+}
+
+// zoom to report
+function zoomToReport(id){
+  const r = reports[id];
+  if(!r) return;
+  map.panTo([r.lat, r.lon]);
+  if(reportMarkers[id]) reportMarkers[id].openPopup();
+}
+
+// focus shelter (called from popup)
+window.focusShelter = function(id){
+  const s = SHELTERS.find(x=>x.id===id);
+  if(!s) return;
+  map.panTo([s.lat, s.lon]);
+  if(shelterMarkers[id]) shelterMarkers[id].openPopup();
+};
+
+// initial UI: add shelter markers and show instructions
+(function init(){
+  // privacy: map center marker
+  SHELTERS.forEach(s => {
+    // already added above in plotShelters
+  });
+  showToast('HES-320 Demo ready. Click map to set report location or type address.', false);
+})();
+
+</script>
+</body>
+</html>

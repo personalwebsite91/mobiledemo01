@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ANS-201 — Street Animal Protection (assignment demo)</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  :root{
+    --bg: #fbfbf7;
+    --card: #ffffff;
+    --accent: #2f7a3e;
+    --accent-2: #8bbf6a;
+    --muted: #6b7280;
+    --danger: #c3362a;
+    --glass: rgba(255,255,255,0.85);
+    --soft-shadow: 0 14px 40px rgba(6,12,20,0.06);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#fffdf8,var(--bg))}
+  a.backBtn{position:fixed; top:16px; right:22px; z-index:20000; background:var(--card); color:var(--accent); padding:8px 14px; border-radius:8px; font-weight:700; text-decoration:none; box-shadow:0 4px 10px rgba(0,0,0,0.12)}
+  a.backBtn:hover{ background:var(--accent); color:#fff; transform:translateY(-1px); transition:0.15s; }
+
+  .root{display:flex;gap:20px;height:100vh;padding:18px}
+  .left, .right{background:var(--card); border-radius:var(--radius); box-shadow:var(--soft-shadow); overflow:hidden}
+  .left{flex:0 0 420px; display:flex; flex-direction:column}
+  .right{flex:1; display:flex; flex-direction:column}
+
+  .console-top{display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid #eef2ea;background:linear-gradient(90deg, rgba(255,255,255,0.6), rgba(241,250,238,0.7))}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(120deg,var(--accent-2),#6aa76a);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px;box-shadow:0 12px 30px rgba(47,122,62,0.12)}
+  .title{font-weight:900;font-size:16px}
+  .subtitle{font-size:12px;color:var(--muted)}
+
+  .panel{padding:16px;overflow:auto;flex:1}
+  .section-title{font-weight:800;margin-bottom:8px}
+  .hint{font-size:13px;color:var(--muted);margin-bottom:12px}
+
+  .row{display:flex;gap:8px;align-items:center}
+  input[type="text"], input[type="number"], textarea, select{
+    width:100%; padding:10px; border-radius:10px; border:1px solid #eef6ef; font-size:14px;
+    background: linear-gradient(180deg,#ffffff,#fbfff9);
+  }
+  textarea{min-height:84px; resize:vertical}
+  button.pill{
+    padding:10px 14px; border-radius:12px; border:0; background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    color:#fff; font-weight:800; cursor:pointer; box-shadow:0 8px 26px rgba(6,12,20,0.04);
+  }
+  button.ghost{padding:8px 10px;border-radius:10px;border:1px solid #eef6ef;background:var(--card);cursor:pointer;color:var(--muted)}
+  .contacts{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .contact{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;border:1px solid #f3f6f3;background:linear-gradient(180deg,#fff,#fbfff9)}
+  .avatar{width:44px;height:44;border-radius:8px;background:#f2faf0;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800}
+
+  .feed{margin-top:14px}
+  .report-card{border-radius:12px;border:1px solid #f3f6f3;padding:10px;background:linear-gradient(180deg,#fff,#fff);margin-bottom:12px}
+  .small{font-size:13px;color:var(--muted)}
+  .status-assigned{background:#fff7ed;color:#b45309;padding:6px;border-radius:8px;font-weight:700}
+  .status-rescued{background:#ecfdf5;color:#166534;padding:6px;border-radius:8px;font-weight:700}
+
+  .map-top{flex:1;padding:10px;position:relative}
+  #map{width:100%;height:100%;border-radius:10px}
+  .live-overlay{position:absolute; left:12px; bottom:12px; z-index:1600; background:var(--glass); padding:10px; border-radius:10px; border:1px solid rgba(10,80,30,0.04); box-shadow:0 12px 40px rgba(6,12,20,0.06); display:none; min-width:220px}
+  .live-overlay.show{display:block}
+  .toast{position:fixed;right:18px;top:18px;background:var(--card);padding:10px;border-radius:10px;border:1px solid #eef6ef;box-shadow:0 12px 40px rgba(6,12,20,0.08);z-index:3000}
+  .status-bar{padding:10px 12px;border-top:1px solid #eef6f0;display:flex;gap:10px;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#fff,#fff)}
+
+  .ngo-list{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .ngo{display:flex;gap:8px;align-items:center;padding:8px;border-radius:10px;border:1px solid #eef6ef;background:#fff}
+
+  @media (max-width:980px){ .left{flex:0 0 360px} }
+  /* hide scrollbar but keep scrolling */
+.left .panel {
+  -ms-overflow-style: none;  /* IE + Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.left .panel::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+</style>
+</head>
+<body>
+<!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+
+<div class="root">
+  <div class="left">
+    <div class="console-top">
+      <div class="logo">SI</div>
+      <div>
+        <div class="title"> Shakti - ANS-201</div>
+        <div class="subtitle">Street Animal Protection • Report • Assign • Track</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:11px;color:var(--muted)">Mode</div>
+        <div id="modeText" style="font-weight:800;color:var(--muted)">Demo</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Quick Report</div>
+      <div class="hint">Attach a photo (optional), set severity & notes. Tap the map to set location or use current location.</div>
+
+      <label>Photo</label>
+      <input id="photoInput" type="file" accept="image/*" />
+
+      <label style="margin-top:10px">Severity</label>
+      <select id="severity">
+        <option value="low">Low — monitor</option>
+        <option value="medium">Medium — needs help soon</option>
+        <option value="high">High — urgent</option>
+      </select>
+
+      <label style="margin-top:10px">Notes</label>
+      <textarea id="notes" placeholder="Describe situation (injury, number, behaviour)"></textarea>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="latInput" type="text" placeholder="lat (tap map)" />
+        <input id="lngInput" type="text" placeholder="lng (tap map)" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="useLocationBtn" class="ghost">Use my location</button>
+        <button id="submitBtn" class="pill">Submit Report</button>
+        <button id="clearBtn" class="ghost">Clear</button>
+      </div>
+
+      <div style="margin-top:16px" class="section-title">Contacts & NGOs</div>
+      <div class="contacts" id="contactsList"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="showNgosBtn" class="ghost">Show Nearby NGOs</button>
+        <button id="toggleLiveBtn" class="ghost">Enable Live Location</button>
+      </div>
+
+      <div class="ngo-list" id="ngoList"></div>
+
+      <div class="feed">
+        <div class="section-title">Rescue Feed</div>
+        <div id="reportsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="map-top">
+      <div id="map"></div>
+
+      <div id="liveOverlay" class="live-overlay">
+        <div style="font-weight:800">Live Monitor</div>
+        <div style="margin-top:6px" id="liveText">No active operations</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="centerBtn" class="ghost">Center to me</button>
+          <button id="stopLiveBtn" class="ghost" style="display:none">Stop Live</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="small">Map · OpenStreetMap</div>
+      <div><button id="closeBtn" class="ghost">Close</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer" style="position:fixed;right:18px;top:18px;z-index:4000"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+<script>
+/* Assignment flow + volunteer animation added
+   - after submit: choose nearest NGO or create one near report if none
+   - create a volunteer (name/title) and animate to report using turf line
+*/
+
+// --- demo contacts & state
+const contacts = [
+  { id:'c1', name:'Anita Rao', phone:'+91 90000 00001' },
+  { id:'c2', name:'R. Kumar', phone:'+91 90000 00002' },
+  { id:'c3', name:'S. Mehta', phone:'+91 90000 00003' }
+];
+
+const STORAGE_KEY = 'ans201_reports_v1';
+let markers = {};         // report id -> marker
+let ngoMarkers = [];      // NGO markers
+let volunteerMarkers = {}; // volunteer id -> marker & animation state
+let liveWatcher = null, liveMarker = null;
+
+// --- DOM helpers
+const el = id => document.getElementById(id);
+function uid(prefix='r'){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function readReports(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ return []; } }
+function saveReports(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+function showToast(txt, important=false){
+  const t = document.createElement('div'); t.className='toast'; t.style.borderColor = important ? '#ffd6d6' : '#e6f0ef';
+  t.innerHTML = `<div style="font-weight:800">${txt}</div>`; document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=> t.remove(), 4500);
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// --- map init
+const map = L.map('map').setView([17.4446,78.3927], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+// --- UI init
+function initContactsUI(){
+  const cList = el('contactsList'); cList.innerHTML = '';
+  contacts.forEach(c => {
+    const d = document.createElement('div'); d.className='contact';
+    d.innerHTML = `<div class="avatar">${c.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
+                   <div style="flex:1"><div style="font-weight:800">${c.name}</div><div class="small">${c.phone}</div></div>`;
+    cList.appendChild(d);
+  });
+}
+initContactsUI();
+
+// --- image helpers (resize)
+function resizeImageDataUrl(file, maxWidth = 1200) {
+  return new Promise((resolve, reject) => {
+    try {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => { img.src = e.target.result; };
+      reader.onerror = (e) => reject(e);
+      img.onload = () => {
+        const ratio = img.width > maxWidth ? (maxWidth / img.width) : 1;
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        if(reader.result) resolve(reader.result);
+        else reject(new Error('Image load failed'));
+      };
+      reader.readAsDataURL(file);
+    } catch (err) { reject(err); }
+  });
+}
+async function fileToResizedDataUrl(file){
+  try{
+    if(!file) return null;
+    if(file.size < 200 * 1024){
+      return await new Promise((res,rej)=>{
+        const fr = new FileReader(); fr.onload = e=>res(e.target.result); fr.onerror=rej; fr.readAsDataURL(file);
+      });
+    }
+    return await resizeImageDataUrl(file, 1200);
+  }catch(e){
+    try{
+      return await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload = e=>res(e.target.result); fr.onerror=rej; fr.readAsDataURL(file); });
+    }catch(err){ return null; }
+  }
+}
+
+// --- popup html for reports
+function renderPopupHtml(r){ 
+  return `
+    <div style="min-width:220px">
+      <div style="font-weight:800">${r.severity.toUpperCase()} • ${new Date(r.createdAt).toLocaleString()}</div>
+      ${r.photo ? `<div style="margin-top:8px"><img src="${r.photo}" style="max-width:100%;border-radius:8px"/></div>` : ''}
+      <div style="margin-top:8px">${escapeHtml(r.notes||'—')}</div>
+      <div style="margin-top:8px" class="small">Status: <strong>${r.status}</strong></div>
+      ${r.assigned ? `<div style="margin-top:6px" class="small">Assigned to: <strong>${escapeHtml(r.assigned.name)}</strong></div>` : ''}
+    </div>
+  `;
+}
+
+// --- marker management
+function addMarkerForReport(r){
+  try {
+    if(markers[r.id]) {
+      markers[r.id].bindPopup(renderPopupHtml(r));
+      return;
+    }
+    const color = r.status === 'rescued' ? '#16a34a' : (r.severity === 'high' ? '#c3362a' : '#2f7a3e');
+    const iconHtml = `<div style="background:${color};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800">${r.status === 'assigned' ? 'ASG' : 'REP'}</div>`;
+    const icon = L.divIcon({ html: iconHtml, className:'', iconSize:[80,34], iconAnchor:[40,17] });
+    const m = L.marker([r.lat,r.lng], { icon }).addTo(map);
+    m.bindPopup(renderPopupHtml(r));
+    markers[r.id] = m;
+  } catch(e) { console.error('addMarkerForReport error', e); }
+}
+
+// --- render feed & sync markers
+function renderReports(){
+  const arr = readReports().slice();
+  const list = arr.slice().reverse();
+  const reportsList = el('reportsList'); reportsList.innerHTML = '';
+
+  // remove markers that no longer exist
+  const present = new Set(arr.map(a=>a.id));
+  Object.keys(markers).forEach(k=>{
+    if(!present.has(k)){ try{ map.removeLayer(markers[k]); }catch(e){} delete markers[k]; }
+  });
+
+  list.forEach(r=>{
+    const card = document.createElement('div'); card.className='report-card';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800">${r.severity.toUpperCase()}</div>
+          <div class="small">${new Date(r.createdAt).toLocaleString()}</div>
+        </div>
+        <div>${r.status === 'rescued' ? '<span class="status-rescued">Rescued</span>' : (r.status === 'assigned' ? '<span class="status-assigned">Assigned</span>' : '<span class="badge">Reported</span>')}</div>
+      </div>
+      ${r.photo ? `<div style="margin-top:8px"><img src="${r.photo}" style="width:100%;border-radius:8px"/></div>` : ''}
+      <div class="small" style="margin-top:8px">${escapeHtml(r.notes||'—')}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        ${r.status === 'reported' ? `<button data-id="${r.id}" class="ghost assign-btn">Force Assign</button>` : ''}
+        ${r.status !== 'rescued' ? `<button data-rescue="${r.id}" class="ghost">Mark Rescued</button>` : ''}
+        <button data-open="${r.id}" class="ghost">View on map</button>
+      </div>
+    `;
+    reportsList.appendChild(card);
+    addMarkerForReport(r);
+  });
+
+  // handlers
+  document.querySelectorAll('.assign-btn').forEach(b=>{
+    b.onclick = ()=> assignVolunteer(b.getAttribute('data-id'));
+  });
+  document.querySelectorAll('button[data-rescue]').forEach(b=>{
+    b.onclick = ()=> markRescued(b.getAttribute('data-rescue'));
+  });
+  document.querySelectorAll('button[data-open]').forEach(b=>{
+    b.onclick = ()=>{
+      const id = b.getAttribute('data-open');
+      const r = readReports().find(x=>x.id===id);
+      if(r && markers[id]) { map.setView([r.lat,r.lng], 16); markers[id].openPopup(); }
+    };
+  });
+}
+
+// --- action functions
+function markRescued(reportId){
+  let arr = readReports();
+  const i = arr.findIndex(x=>x.id === reportId);
+  if(i === -1) return showToast('Report not found', true);
+  arr[i].status = 'rescued';
+  arr[i].rescuedAt = Date.now();
+  saveReports(arr);
+  renderReports();
+  showToast('Marked rescued — thank you!');
+  if(markers[reportId]) markers[reportId].bindPopup(renderPopupHtml(arr[i])).openPopup();
+}
+
+// assign volunteer manually (UI)
+function assignVolunteer(reportId){
+  // pick nearest NGO (or fallback contact)
+  const arr = readReports();
+  const i = arr.findIndex(x=>x.id === reportId);
+  if(i === -1) return showToast('Report not found', true);
+  const report = arr[i];
+  let nearest = findNearestNgo(report.lat, report.lng);
+  if(!nearest){
+    // create a temporary NGO slightly offset to ensure assignment
+    nearest = { id: uid('ngo'), name: 'Govt Responder', lat: report.lat + 0.004, lng: report.lng - 0.003 };
+  }
+  // create volunteer
+  const volunteer = { id: uid('vol'), name: `Volunteer ${Math.floor(Math.random()*900)+100}`, phone: '+91-90000'+Math.floor(Math.random()*9000) };
+  arr[i].status = 'assigned';
+  arr[i].assigned = volunteer;
+  arr[i].assignedFrom = nearest;
+  arr[i].assignedAt = Date.now();
+  saveReports(arr);
+  renderReports();
+  showToast(`Assigned ${volunteer.name} from ${nearest.name || 'NGO'}`);
+  // animate volunteer to report
+  animateVolunteerToReport(volunteer, nearest, report);
+}
+
+// helper: nearest NGO from ngoMarkers; ngoMarkers store underlying data on marker.options.__ngo (we set when creating)
+function findNearestNgo(lat, lng){
+  if(!ngoMarkers || ngoMarkers.length === 0) return null;
+  let best=null, bestDist=1e12;
+  ngoMarkers.forEach(m => {
+    const nd = m.__ngo;
+    if(!nd) return;
+    const d = map.distance([lat,lng],[nd.lat,nd.lng]);
+    if(d < bestDist){ bestDist = d; best = nd; }
+  });
+  return best;
+}
+
+// --- volunteer animation
+function createVolunteerMarker(vol){
+  const html = `<div style="background:#ff8a3d;color:#fff;padding:6px 8px;border-radius:8px;font-weight:800">V</div>`;
+  const icon = L.divIcon({ html, className:'', iconSize:[44,28], iconAnchor:[22,14] });
+  const m = L.marker([0,0], { icon }).addTo(map);
+  return m;
+}
+
+// animate volunteer from source (ngo) to report along turf-sampled line
+function animateVolunteerToReport(volunteer, source, report){
+  const start = [source.lng, source.lat];
+  const end = [report.lng, report.lat];
+  const line = turf.lineString([start, end]);
+  const lengthKm = turf.length(line, { units:'kilometers' });
+  const steps = Math.max(30, Math.round(lengthKm * 100)); // more steps for longer trips
+  const coords = [];
+  for(let i=0;i<=steps;i++){
+    const p = turf.along(line, lengthKm * (i/steps), { units:'kilometers' });
+    coords.push([p.geometry.coordinates[1], p.geometry.coordinates[0]]); // [lat,lng]
+  }
+
+  // create marker & store animation state
+  const mid = volunteer.id;
+  if(volunteerMarkers[mid] && volunteerMarkers[mid].marker) {
+    try{ map.removeLayer(volunteerMarkers[mid].marker); }catch(e){}
+    delete volunteerMarkers[mid];
+  }
+  const marker = createVolunteerMarker(volunteer);
+  volunteerMarkers[mid] = { marker, coords, idx:0, timer:null };
+
+  // position at start
+  marker.setLatLng(coords[0]);
+  marker.bindPopup(`<div style="min-width:140px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">En route</div></div>`);
+
+  // step interval depends on distance; base ms
+  const baseMs = 400; // faster = smaller
+  const ms = Math.max(80, Math.round(baseMs * (1 / Math.max(0.5, Math.min(3, 1 + lengthKm/2)) ))); // scale with length
+  volunteerMarkers[mid].timer = setInterval(()=> {
+    const s = volunteerMarkers[mid];
+    s.idx++;
+    if(s.idx >= s.coords.length){
+      // arrived
+      clearInterval(s.timer);
+      marker.setLatLng(s.coords[s.coords.length-1]);
+      marker.bindPopup(`<div style="min-width:160px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">Arrived — taking action</div></div>`).openPopup();
+      // update the report -> rescued after short delay
+      setTimeout(()=> {
+        // mark report rescued & cleanup volunteer
+        let arr = readReports();
+        const j = arr.findIndex(x=> x.lat === report.lat && x.lng === report.lng && x.createdAt === report.createdAt);
+        if(j >= 0){
+          arr[j].status = 'rescued';
+          arr[j].rescuedAt = Date.now();
+          saveReports(arr);
+          renderReports();
+        }
+        try{ map.removeLayer(s.marker); }catch(e){}
+        delete volunteerMarkers[mid];
+        showToast(`${volunteer.name} completed rescue for report.`);
+      }, 2200);
+      return;
+    }
+    const next = s.coords[s.idx];
+    marker.setLatLng(next);
+    // occasionally open popup
+    if(s.idx % Math.max(1, Math.round(s.coords.length/6)) === 0){
+      marker.bindPopup(`<div style="min-width:140px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">En route — ${Math.round((s.idx/s.coords.length)*100)}%</div></div>`);
+    }
+  }, ms);
+}
+
+// --- Nearby NGOs creation & UI (same approach as before) ---
+function clearNgos(){
+  ngoMarkers.forEach(m=>{ try{ map.removeLayer(m); }catch(e){} });
+  ngoMarkers = [];
+  el('ngoList').innerHTML = '';
+}
+function generateNgosAround(lat, lng, count = 6){
+  const list = [];
+  for(let i=0;i<count;i++){
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 0.2 + Math.random() * 1.8; // km
+    const dLat = (dist / 111) * Math.cos(angle);
+    const dLng = (dist / (111 * Math.cos(lat * Math.PI / 180))) * Math.sin(angle);
+    list.push({
+      id: 'ngo_' + i,
+      name: ['Street Pals','Urban Rescue','Animal Aid','City Shelter','Care4Pets','Rescue Squad'][i % 6],
+      phone: '+91 90000 000' + (10 + i),
+      lat: lat + dLat,
+      lng: lng + dLng,
+      distanceKm: dist.toFixed(2)
+    });
+  }
+  return list;
+}
+function showNearbyNgos(){
+  clearNgos();
+  if(!navigator.geolocation){ showToast('Geolocation not available', true); return; }
+  el('showNgosBtn').disabled = true; el('showNgosBtn').textContent = 'Locating...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    const ngos = generateNgosAround(lat, lng, 6);
+    ngos.forEach(ngo=>{
+      const iconHtml = `<div style="background:#fff;padding:6px;border-radius:8px;border:1px solid #eef6ef;font-weight:800;color:${'#2f7a3e'}">${ngo.name.split(' ')[0]}</div>`;
+      const icon = L.divIcon({ html: iconHtml, className:'', iconSize:[110,36], iconAnchor:[55,18] });
+      const m = L.marker([ngo.lat, ngo.lng], { icon }).addTo(map);
+      m.bindPopup(`<div style="min-width:180px"><div style="font-weight:800">${escapeHtml(ngo.name)}</div><div class="small">${ngo.phone}</div><div style="margin-top:6px" class="small">~ ${ngo.distanceKm} km</div></div>`);
+      m.__ngo = ngo; // stash
+      ngoMarkers.push(m);
+    });
+    const node = el('ngoList'); node.innerHTML = '';
+    ngos.forEach(ngo => {
+      const d = document.createElement('div'); d.className = 'ngo';
+      d.innerHTML = `<div style="width:40px;height:40;border-radius:8px;background:#f0fbf0;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800">${ngo.name.split(' ')[0].slice(0,2)}</div>
+                     <div style="flex:1"><div style="font-weight:800">${ngo.name}</div><div class="small">${ngo.phone} • ${ngo.distanceKm} km</div></div>
+                     <div><button class="ghost" data-lat="${ngo.lat}" data-lng="${ngo.lng}" data-id="${ngo.id}">View</button></div>`;
+      node.appendChild(d);
+    });
+    node.querySelectorAll('button[data-lat]').forEach(b=>{
+      b.onclick = ()=> { map.setView([parseFloat(b.dataset.lat), parseFloat(b.dataset.lng)], 15); };
+    });
+    map.setView([lat, lng], 13);
+    showToast('Nearby NGOs shown (demo)');
+    el('showNgosBtn').disabled = false; el('showNgosBtn').textContent = 'Show Nearby NGOs';
+  }, err => {
+    showToast('Unable to fetch location: ' + (err && err.message || ''), true);
+    el('showNgosBtn').disabled = false; el('showNgosBtn').textContent = 'Show Nearby NGOs';
+  }, { enableHighAccuracy:true });
+}
+
+// --- map click & form interactions
+map.on('click', e => { el('latInput').value = e.latlng.lat.toFixed(6); el('lngInput').value = e.latlng.lng.toFixed(6); });
+el('useLocationBtn').onclick = ()=> {
+  if(!navigator.geolocation) return showToast('Geolocation not available', true);
+  navigator.geolocation.getCurrentPosition(pos=>{
+    el('latInput').value = pos.coords.latitude.toFixed(6);
+    el('lngInput').value = pos.coords.longitude.toFixed(6);
+    map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+  }, err => showToast('Unable to fetch location: ' + (err && err.message || ''), true), {enableHighAccuracy:true});
+};
+
+// --- submit with auto-assign flow
+el('submitBtn').addEventListener('click', async function onSubmit(e){
+  const submitBtn = el('submitBtn'); submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+  try{
+    const lat = parseFloat(el('latInput').value), lng = parseFloat(el('lngInput').value);
+    if(!(lat && lng) && !(lat===0 || lng===0)) {
+      showToast('Set location by tapping map or using your location', true);
+      return;
+    }
+    const severity = el('severity').value;
+    const notes = el('notes').value.trim();
+    let photo = null;
+    const f = el('photoInput').files && el('photoInput').files[0];
+    if(f){ try{ photo = await fileToResizedDataUrl(f); }catch(err){ photo = null; showToast('Image processing failed — continuing without photo', true); } }
+    const r = { id: uid('r'), lat, lng, severity, notes, photo, createdAt: Date.now(), status:'reported' };
+    const arr = readReports(); arr.push(r); saveReports(arr);
+    renderReports();
+    map.setView([lat,lng], 15);
+    showToast('Report submitted — assigning responder');
+
+    // schedule automatic assignment after a short delay (demo)
+    setTimeout(()=> {
+      autoAssignResponder(r);
+    }, 1500 + Math.round(Math.random()*1200)); // 1.5-2.7s
+    // clear form photo & notes
+    el('photoInput').value = ''; el('notes').value = '';
+  }catch(err){
+    console.error('submit error', err);
+    showToast('Failed to submit report', true);
+  }finally{
+    submitBtn.disabled = false; submitBtn.textContent = 'Submit Report';
+  }
+});
+
+// --- auto assign flow
+function autoAssignResponder(report){
+  // find nearest NGO, or create temporary one near map center if none
+  let ngos = ngoMarkers.map(m => m.__ngo).filter(Boolean);
+  if(ngos.length === 0){
+    // fallback: create one slightly away from report
+    ngos = [{ id: uid('ngo'), name:'Govt Responder', lat: report.lat + 0.004, lng: report.lng - 0.003 }];
+  }
+  // pick nearest by map distance
+  let best = null, bestDist = 1e12;
+  ngos.forEach(n => {
+    const d = map.distance([report.lat, report.lng], [n.lat, n.lng]);
+    if(d < bestDist){ bestDist = d; best = n; }
+  });
+  const chosenNgo = best;
+  // prepare volunteer (simulate NGO / govt staff)
+  const volunteer = { id: uid('vol'), name: (chosenNgo && chosenNgo.name ? chosenNgo.name.split(' ')[0] + ' Responder' : 'Responder') + ' #' + Math.floor(100 + Math.random()*800) };
+  // update report to assigned
+  let arr = readReports();
+  const idx = arr.findIndex(x=> x.id === report.id);
+  if(idx === -1) return;
+  arr[idx].status = 'assigned';
+  arr[idx].assigned = volunteer;
+  arr[idx].assignedFrom = chosenNgo;
+  arr[idx].assignedAt = Date.now();
+  saveReports(arr);
+  renderReports();
+  showToast(`${volunteer.name} assigned — en route`);
+  // animate volunteer marker moving to report
+  animateVolunteerToReport(volunteer, chosenNgo, arr[idx]);
+}
+
+// --- volunteer animation (function is defined earlier; ensure available)
+function createVolunteerMarker(vol){
+  const html = `<div style="background:#ff8a3d;color:#fff;padding:6px 8px;border-radius:8px;font-weight:800">V</div>`;
+  const icon = L.divIcon({ html, className:'', iconSize:[44,28], iconAnchor:[22,14] });
+  const m = L.marker([0,0], { icon }).addTo(map);
+  return m;
+}
+function animateVolunteerToReport(volunteer, source, report){
+  const start = [source.lng, source.lat];
+  const end = [report.lng, report.lat];
+  const line = turf.lineString([start, end]);
+  const lengthKm = turf.length(line, { units:'kilometers' });
+  const steps = Math.max(30, Math.round(lengthKm * 100));
+  const coords = [];
+  for(let i=0;i<=steps;i++){
+    const p = turf.along(line, lengthKm * (i/steps), { units:'kilometers' });
+    coords.push([p.geometry.coordinates[1], p.geometry.coordinates[0]]);
+  }
+  const mid = volunteer.id;
+  if(volunteerMarkers[mid] && volunteerMarkers[mid].marker){
+    try{ map.removeLayer(volunteerMarkers[mid].marker); }catch(e){}
+    delete volunteerMarkers[mid];
+  }
+  const marker = createVolunteerMarker(volunteer);
+  volunteerMarkers[mid] = { marker, coords, idx:0, timer:null };
+  marker.setLatLng(coords[0]);
+  marker.bindPopup(`<div style="min-width:140px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">En route</div></div>`);
+  const baseMs = 400;
+  const ms = Math.max(80, Math.round(baseMs * (1 / Math.max(0.5, Math.min(3, 1 + lengthKm/2)) )));
+  volunteerMarkers[mid].timer = setInterval(()=> {
+    const s = volunteerMarkers[mid];
+    s.idx++;
+    if(s.idx >= s.coords.length){
+      clearInterval(s.timer);
+      try{ s.marker.setLatLng(s.coords[s.coords.length-1]); }catch(e){}
+      s.marker.bindPopup(`<div style="min-width:160px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">Arrived — acting</div></div>`).openPopup();
+      setTimeout(()=> {
+        // mark the report rescued
+        let arr = readReports();
+        const j = arr.findIndex(x => x.id === report.id);
+        if(j >= 0){
+          arr[j].status = 'rescued';
+          arr[j].rescuedAt = Date.now();
+          saveReports(arr);
+          renderReports();
+        }
+        try{ map.removeLayer(s.marker); }catch(e){}
+        delete volunteerMarkers[mid];
+        showToast(`${volunteer.name} completed rescue for report.`);
+      }, 2200);
+      return;
+    }
+    const next = s.coords[s.idx];
+    try{ s.marker.setLatLng(next); }catch(e){}
+    if(s.idx % Math.max(1, Math.round(s.coords.length/6)) === 0){
+      s.marker.bindPopup(`<div style="min-width:140px"><div style="font-weight:800">${escapeHtml(volunteer.name)}</div><div class="small">En route — ${Math.round((s.idx/s.coords.length)*100)}%</div></div>`);
+    }
+  }, ms);
+}
+
+// --- Nearby NGO + UI wiring (same as before)
+function clearNgos(){ ngoMarkers.forEach(m=>{ try{ map.removeLayer(m); }catch(e){} }); ngoMarkers = []; el('ngoList').innerHTML = ''; }
+function generateNgosAround(lat, lng, count = 6){
+  const list = [];
+  for(let i=0;i<count;i++){
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 0.2 + Math.random() * 1.8;
+    const dLat = (dist / 111) * Math.cos(angle);
+    const dLng = (dist / (111 * Math.cos(lat * Math.PI / 180))) * Math.sin(angle);
+    list.push({
+      id: 'ngo_' + i,
+      name: ['Street Pals','Urban Rescue','Animal Aid','City Shelter','Care4Pets','Rescue Squad'][i % 6],
+      phone: '+91 90000 000' + (10 + i),
+      lat: lat + dLat,
+      lng: lng + dLng,
+      distanceKm: dist.toFixed(2)
+    });
+  }
+  return list;
+}
+function showNearbyNgos(){
+  clearNgos();
+  if(!navigator.geolocation){ showToast('Geolocation not available', true); return; }
+  el('showNgosBtn').disabled = true; el('showNgosBtn').textContent = 'Locating...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    const ngos = generateNgosAround(lat, lng, 6);
+    ngos.forEach(ngo=>{
+      const iconHtml = `<div style="background:#fff;padding:6px;border-radius:8px;border:1px solid #eef6ef;font-weight:800;color:${'#2f7a3e'}">${ngo.name.split(' ')[0]}</div>`;
+      const icon = L.divIcon({ html: iconHtml, className:'', iconSize:[110,36], iconAnchor:[55,18] });
+      const m = L.marker([ngo.lat, ngo.lng], { icon }).addTo(map);
+      m.bindPopup(`<div style="min-width:180px"><div style="font-weight:800">${escapeHtml(ngo.name)}</div><div class="small">${ngo.phone}</div><div style="margin-top:6px" class="small">~ ${ngo.distanceKm} km</div></div>`);
+      m.__ngo = ngo;
+      ngoMarkers.push(m);
+    });
+    const node = el('ngoList'); node.innerHTML = '';
+    ngos.forEach(ngo => {
+      const d = document.createElement('div'); d.className = 'ngo';
+      d.innerHTML = `<div style="width:40px;height:40;border-radius:8px;background:#f0fbf0;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800">${ngo.name.split(' ')[0].slice(0,2)}</div>
+                     <div style="flex:1"><div style="font-weight:800">${ngo.name}</div><div class="small">${ngo.phone} • ${ngo.distanceKm} km</div></div>
+                     <div><button class="ghost" data-lat="${ngo.lat}" data-lng="${ngo.lng}" data-id="${ngo.id}">View</button></div>`;
+      node.appendChild(d);
+    });
+    node.querySelectorAll('button[data-lat]').forEach(b=>{ b.onclick = ()=> { map.setView([parseFloat(b.dataset.lat), parseFloat(b.dataset.lng)], 15); }; });
+    map.setView([lat, lng], 13);
+    showToast('Nearby NGOs shown (demo)');
+    el('showNgosBtn').disabled = false; el('showNgosBtn').textContent = 'Show Nearby NGOs';
+  }, err => {
+    showToast('Unable to fetch location: ' + (err && err.message || ''), true);
+    el('showNgosBtn').disabled = false; el('showNgosBtn').textContent = 'Show Nearby NGOs';
+  }, { enableHighAccuracy:true });
+}
+
+// --- live position (simple)
+function startLive(){
+  if(!navigator.geolocation) { showToast('Geolocation not available', true); return; }
+  if(liveWatcher) return showToast('Live already enabled');
+  el('toggleLiveBtn').textContent = 'Live: On'; el('liveOverlay').classList.add('show'); el('stopLiveBtn').style.display = 'inline-block';
+  liveWatcher = navigator.geolocation.watchPosition(pos => {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy;
+    el('liveText').textContent = `You: ${lat.toFixed(5)}, ${lng.toFixed(5)} • acc ${Math.round(acc)} m`;
+    if(!liveMarker){
+      const icon = L.divIcon({ html: `<div style="background:#0b74ff;color:#fff;padding:6px 8px;border-radius:8px;font-weight:800">YOU</div>`, className:'', iconSize:[60,32], iconAnchor:[30,16] });
+      liveMarker = L.marker([lat, lng], { icon }).addTo(map);
+    } else liveMarker.setLatLng([lat, lng]);
+  }, err => showToast('Live pos error: ' + (err && err.message || ''), true), { enableHighAccuracy:true, maximumAge:1000, timeout:8000 });
+}
+function stopLive(){ if(liveWatcher) navigator.geolocation.clearWatch(liveWatcher); liveWatcher=null; if(liveMarker){ try{ map.removeLayer(liveMarker);}catch(e){} liveMarker=null; } el('toggleLiveBtn').textContent = 'Enable Live Location'; el('liveOverlay').classList.remove('show'); el('stopLiveBtn').style.display = 'none'; }
+
+// --- UI wiring & bootstrap
+el('showNgosBtn').onclick = showNearbyNgos;
+el('toggleLiveBtn').onclick = ()=> { if(liveWatcher) stopLive(); else startLive(); };
+el('stopLiveBtn').onclick = stopLive;
+el('centerBtn').onclick = ()=> { if(!navigator.geolocation) return showToast('Geolocation not available', true); navigator.geolocation.getCurrentPosition(pos => map.setView([pos.coords.latitude,pos.coords.longitude],15)); };
+el('clearBtn').onclick = ()=> { el('photoInput').value=''; el('notes').value=''; el('latInput').value=''; el('lngInput').value=''; };
+el('closeBtn').onclick = ()=> showToast('Close pressed');
+
+(function seedIfEmpty(){
+  const arr = readReports();
+  if(arr.length === 0){
+    const now = Date.now();
+    const seed = [
+      { id: uid('r'), lat:17.4446,lng:78.3927,severity:'high',notes:'Dog hit by vehicle, bleeding',photo:null,createdAt:now-1000*60*40,status:'reported' },
+      { id: uid('r'), lat:17.4310,lng:78.3955,severity:'medium',notes:'Cow stuck near drainage',photo:null,createdAt:now-1000*60*120,status:'assigned',assigned:{name:'Rescue Team 1'},assignedAt:now-1000*60*110 }
+    ];
+    saveReports(seed);
+  }
+  renderReports();
+})();
+
+</script>
+</body>
+</html>

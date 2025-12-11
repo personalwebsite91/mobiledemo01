@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ANS-260 · Waterbody Pollution Report</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  :root{
+    --bg: #f6fbf9;
+    --card: #ffffff;
+    --accent: #0f9d58;      /* water/green */
+    --accent-2: #1fb2d9;    /* water-blue */
+    --muted: #6b7280;
+    --radius: 12px;
+    --soft-shadow: 0 12px 36px rgba(8,16,30,0.06);
+    --danger: #d43f3f;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#072022;background:linear-gradient(180deg,#fff,#f3fbf7);}
+  .wrap{display:flex;height:100vh;gap:14px;padding:14px;box-sizing:border-box}
+  .left,.right{background:var(--card);border-radius:var(--radius);box-shadow:var(--soft-shadow);overflow:hidden}
+  .left{flex:0 0 420px;display:flex;flex-direction:column}
+  .right{flex:1;display:flex;flex-direction:column}
+  header{padding:16px;border-bottom:1px solid #eef6f2;display:flex;gap:12px;align-items:center}
+  .brand{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent-2),#06a4d1);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+  .panel{padding:14px;overflow:auto}
+  .controls{display:flex;flex-direction:column;gap:12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .h{font-weight:800}
+  .muted{color:var(--muted);font-size:13px}
+  .pill{border:0;padding:10px 12px;border-radius:10px;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+  .ghost{background:#fff;border:1px solid #e6f3ef;color:var(--muted);padding:8px;border-radius:10px;cursor:pointer}
+  .field{display:flex;flex-direction:column;gap:6px}
+  input[type="text"], textarea, select, input[type="number"]{padding:10px;border-radius:10px;border:1px solid #e9f2ef;font-size:14px}
+  textarea{min-height:90px;resize:vertical}
+  .contacts{display:flex;flex-direction:column;gap:8px}
+  .contact-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;border:1px solid #eef7f3;background:#f7fffc}
+  .contact-avatar{width:40px;height:40px;border-radius:8px;background:linear-gradient(180deg,#87e0c9,#0f9d58);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+  .map-wrap{height:100%;position:relative}
+  #map{height:100%;width:100%}
+  .live-status{position:absolute;left:12px;top:12px;z-index:1500;background:rgba(255,255,255,0.96);padding:8px;border-radius:8px;border:1px solid #e9f7f4;box-shadow:0 8px 24px rgba(3,40,34,0.06)}
+  .toasts{position:fixed;right:16px;top:16px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast{background:#fff;padding:10px;border-radius:10px;border-left:6px solid var(--accent-2);box-shadow:0 10px 30px rgba(0,0,0,0.08);min-width:200px}
+  .danger-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(212,63,63,0.06),rgba(255,255,255,0));pointer-events:none;display:none;z-index:1400;border-radius:12px}
+  .danger-overlay.show{display:block}
+
+  /* image upload area */
+  .dropzone{border:2px dashed #e3f3ef;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;background:#fbfffd}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap}
+  .thumb{width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid #e8f6f1;position:relative;background:#fff}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .remove{position:absolute;right:4px;top:4px;background:rgba(0,0,0,0.5);color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px}
+
+  /* hide scrollbar for left panel but keep scrolling */
+  .panel{ -ms-overflow-style: none; scrollbar-width: none; }
+  .panel::-webkit-scrollbar { display: none; width:0; height:0; }
+
+  .status-box{padding:10px;border-radius:10px;border:1px solid #e9f7f4;background:#f7fffb}
+  .small{font-size:13px;color:var(--muted)}
+  .status-pill{padding:6px 8px;border-radius:8px;background:#fff;border:1px solid #e9f7f4;font-weight:700;color:var(--accent)}
+  footer{padding:10px 14px;border-top:1px solid #eef7f3;display:flex;justify-content:space-between;align-items:center}
+
+  @media (max-width:980px){ .left{flex:0 0 360px} }
+         .backBtn {
+    position: fixed;
+    top: 16px;
+    right: 22px;
+    background: #ffffff;
+    color:#0f9d58;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 20000;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  .backBtn:hover {
+    background: #0f9d58;
+    color: white;
+  }
+</style>
+</head>
+<body>
+<!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+<div class="wrap">
+  <div class="left">
+    <header>
+      <div class="brand">SI</div>
+      <div>
+        <div style="font-weight:900">Shakti ANS-260</div>
+        <div class="muted"> Waterbody Pollution | Report pollution — attach photos | notify NGOs & authorities</div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="controls">
+
+        <div class="field">
+          <label class="h">Location (tap on map or search)</label>
+          <div class="row">
+            <input id="locText" type="text" placeholder="Enter location or marker from map" style="flex:1" />
+            <button id="locUseBtn" class="ghost">Use map marker</button>
+          </div>
+          <div class="small">Click on the map to choose exact report location (marker will be created).</div>
+        </div>
+
+        <div class="field">
+          <label class="h">Severity</label>
+          <select id="severity">
+            <option value="low">Low — discolouration / small waste</option>
+            <option value="medium">Medium — significant waste/oil / visible foam</option>
+            <option value="high">High — heavy contamination / smoke / dead fish</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="h">Description</label>
+          <textarea id="desc" placeholder="Describe what you see, recent timeline, and possible sources (optional)"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="h">Photos (optional — drag & drop or click)</label>
+          <div id="dropzone" class="dropzone" title="Drag & drop photos here or click to select">
+            <div style="text-align:center">
+              <div style="font-weight:800">Attach photos</div>
+              <div class="small">You can attach multiple images — or submit without photos</div>
+            </div>
+            <input id="fileInput" type="file" accept="image/*" multiple style="display:none" />
+            <div id="thumbs" class="thumbs" aria-live="polite"></div>
+            <div class="small">Max 6 images. Images are previewed locally (no upload in demo).</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="h">Notify (select recipients)</label>
+          <div id="recips" class="contacts"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button id="submitBtn" class="pill" style="flex:1">Report Pollution</button>
+          <button id="clearBtn" class="ghost" style="flex:1">Clear</button>
+        </div>
+
+        <div style="margin-top:12px" class="status-box">
+          <div style="font-weight:800">Live report status</div>
+          <div id="reportStatus" class="small" style="margin-top:6px">No active report</div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      <div class="small">Demo mode • Local-only simulation</div>
+      <div><span class="status-pill">NGO / Govt Flow</span></div>
+    </footer>
+  </div>
+
+  <div class="right">
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="live-status" id="liveInfo">
+        <div style="font-weight:800">Nearby NGOs & Authorities</div>
+        <div id="nearList" class="small" style="margin-top:6px">Loading…</div>
+      </div>
+      <div id="dangerOverlay" class="danger-overlay"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* Waterbody Pollution Report — single-file demo
+   - Attach photos or report without photos
+   - Choose recipients (NGO / Authorities)
+   - Simulates assignment & status updates with map markers
+*/
+
+// ---------- demo data: nearby NGOs (dummy) ----------
+const NGOs = [
+  { id:'ngo1', name:'BlueRiver Rescue', phone:'+91 90000 10001', lat:17.4472, lon:78.3920, type:'NGO' },
+  { id:'ngo2', name:'EnviroWatch', phone:'+91 90000 10002', lat:17.4400, lon:78.3985, type:'NGO' },
+  { id:'gov1', name:'Water Authority', phone:'+91 90000 10003', lat:17.4355, lon:78.3899, type:'Authority' },
+  { id:'vol1', name:'City Volunteers', phone:'+91 90000 10004', lat:17.4490, lon:78.4050, type:'Volunteer' }
+];
+
+// ---------- state ----------
+let selectedRecipients = new Set();
+let selectedImages = []; // File objects
+let activeReport = null; // { id, loc, severity, desc, recipients, images, status, assigned }
+let userMarker = null;
+let ngoMarkers = {};
+let assignedMarker = null;
+let assignmentTimer = null;
+let progressTimers = [];
+
+// ---------- map init ----------
+const map = L.map('map', { zoomControl:true }).setView([17.4446,78.3927],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+// marker icons
+function makeIcon(color='#0f9d58', label='') {
+  const html = `<div style="background:${color};border-radius:8px;padding:6px 8px;color:white;font-weight:800;box-shadow:0 6px 16px rgba(3,40,34,0.12);">${label}</div>`;
+  return L.divIcon({ html, className:'', iconSize:[80,28], iconAnchor:[40,14], popupAnchor:[0,-18] });
+}
+function makeImageThumbIcon(imgUrl){
+  return L.icon({ iconUrl: imgUrl, iconSize:[70,70], iconAnchor:[35,35], popupAnchor:[0,-30] });
+}
+
+// add NGO markers
+function plotNGOs(){
+  const list = document.getElementById('nearList');
+  list.innerHTML = '';
+  NGOs.forEach(n => {
+    const marker = L.marker([n.lat, n.lon], { icon: makeIcon('#06a4d1', n.name.split(' ')[0]) }).addTo(map);
+    marker.bindPopup(`<strong>${n.name}</strong><div class="small">${n.type} • ${n.phone}</div>`);
+    ngoMarkers[n.id] = marker;
+
+    const row = document.createElement('div');
+    row.className = 'contact-row';
+    row.innerHTML = `<div class="contact-avatar">${n.name.split(' ').map(x=>x[0]).slice(0,2).join('')}</div>
+                     <div style="flex:1"><div style="font-weight:800">${n.name}</div><div class="small">${n.type} • ${n.phone}</div></div>
+                     <div><input type="checkbox" data-id="${n.id}" ${selectedRecipients.has(n.id) ? 'checked' : ''}></div>`;
+    list.appendChild(row);
+  });
+
+  // fill recipients panel (checkboxes)
+  const recips = document.getElementById('recips');
+  recips.innerHTML = '';
+  NGOs.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'contact-row';
+    div.innerHTML = `<div class="contact-avatar">${n.name.split(' ').map(x=>x[0]).slice(0,2).join('')}</div>
+                     <div style="flex:1"><div style="font-weight:800">${n.name}</div><div class="small">${n.type} • ${n.phone}</div></div>
+                     <div><input type="checkbox" data-rec="${n.id}"></div>`;
+    recips.appendChild(div);
+  });
+}
+plotNGOs();
+
+// wire recipients checkboxes
+document.getElementById('recips').addEventListener('change', (e) => {
+  const chk = e.target;
+  if(!chk || chk.tagName !== 'INPUT') return;
+  const id = chk.dataset.rec;
+  if(!id) return;
+  if(chk.checked) selectedRecipients.add(id); else selectedRecipients.delete(id);
+});
+
+// also allow using the small list (map-side) to check recipients visually
+document.getElementById('nearList').addEventListener('change', (e) => {
+  const chk = e.target;
+  if(!chk || chk.tagName !== 'INPUT') return;
+  const row = chk.closest('.contact-row');
+  const idtxt = row && row.querySelector('.small') && row.querySelector('.small').textContent;
+  // easier: find by index of row
+  const idx = Array.from(row.parentNode.children).indexOf(row);
+  const id = NGOs[idx] && NGOs[idx].id;
+  if(id){
+    if(chk.checked){
+      selectedRecipients.add(id);
+      const panelChk = document.querySelector(`#recips input[data-rec="${id}"]`);
+      if(panelChk) panelChk.checked = true;
+    } else {
+      selectedRecipients.delete(id);
+      const panelChk = document.querySelector(`#recips input[data-rec="${id}"]`);
+      if(panelChk) panelChk.checked = false;
+    }
+  }
+});
+
+// ---------- drag & drop / file input ----------
+const drop = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const thumbs = document.getElementById('thumbs');
+
+drop.addEventListener('click', ()=> fileInput.click());
+drop.addEventListener('dragover', (e)=> { e.preventDefault(); drop.style.borderColor = '#bdeee6'; });
+drop.addEventListener('dragleave', ()=> { drop.style.borderColor = '#e3f3ef'; });
+drop.addEventListener('drop', (e)=> {
+  e.preventDefault(); drop.style.borderColor = '#e3f3ef';
+  const files = Array.from(e.dataTransfer.files || []);
+  handleFiles(files);
+});
+fileInput.addEventListener('change', (e)=> handleFiles(Array.from(e.target.files || [])));
+
+function handleFiles(files){
+  const images = files.filter(f => f.type && f.type.startsWith('image/')).slice(0,6 - selectedImages.length);
+  images.forEach(f => {
+    selectedImages.push(f);
+    const url = URL.createObjectURL(f);
+    const t = document.createElement('div'); t.className='thumb';
+    t.innerHTML = `<img src="${url}" alt="img"><div class="remove">✕</div>`;
+    t.querySelector('.remove').addEventListener('click', ()=> {
+      // remove from selectedImages by object reference (best-effort)
+      selectedImages = selectedImages.filter(x => x !== f);
+      t.remove();
+    });
+    thumbs.appendChild(t);
+  });
+}
+
+// ---------- map click to set user marker ----------
+map.on('click', (ev) => {
+  const lat = ev.latlng.lat, lon = ev.latlng.lng;
+  setUserLocation(lat, lon, true);
+});
+
+// helper to set user marker
+function setUserLocation(lat, lon, focus=false){
+  if(!userMarker){
+    userMarker = L.marker([lat, lon], { icon: makeIcon('#0f9d58','You') }).addTo(map);
+    userMarker.bindPopup(`<strong>Report location</strong>`);
+  } else {
+    userMarker.setLatLng([lat, lon]);
+  }
+  document.getElementById('locText').value = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  if(focus) map.panTo([lat, lon]);
+}
+
+// 'use map marker' button: if marker exists, copy coordinates to location box
+document.getElementById('locUseBtn').addEventListener('click', ()=>{
+  if(!userMarker) return alert('Place a marker on the map first by clicking the location.');
+  const p = userMarker.getLatLng();
+  document.getElementById('locText').value = `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`;
+});
+
+// ---------- submission flow ----------
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  // read inputs
+  const locText = document.getElementById('locText').value.trim();
+  if(!locText && !userMarker) return alert('Please pick a location on the map or type one in.');
+  let lat, lon;
+  if(userMarker){
+    const p = userMarker.getLatLng();
+    lat = p.lat; lon = p.lng;
+  } else {
+    // try parse lat,lon from text
+    const m = locText.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if(m){ lat = parseFloat(m[1]); lon = parseFloat(m[2]); }
+    else {
+      // fallback: geocode via nominatim (simple)
+      const geo = await geocodeSafe(locText);
+      if(!geo) return alert('Location not found — try clicking map or provide an address.');
+      lat = geo.lat; lon = geo.lon;
+    }
+  }
+
+  const severity = document.getElementById('severity').value;
+  const desc = document.getElementById('desc').value.trim();
+  const recipients = Array.from(selectedRecipients);
+  if(recipients.length === 0) {
+    if(!confirm('No recipients selected. Submit anyway?')) return;
+  }
+
+  // create report object (local-sim)
+  const id = 'REP-' + Math.random().toString(36).slice(2,9).toUpperCase();
+  activeReport = {
+    id, lat, lon, severity, desc, recipients, images: [...selectedImages], status: 'created', assigned: null
+  };
+  document.getElementById('reportStatus').textContent = `Report ${id} created — awaiting assignment`;
+  showToast(`Report created: ${id}`);
+
+  // place a user location marker with photo thumbnails (if any)
+  if(activeReport.images && activeReport.images.length>0){
+    // create a single combined popup showing thumbnails
+    const thumbsHtml = await buildThumbsHtml(activeReport.images);
+    if(userMarker){
+      userMarker.bindPopup(`<strong>${id}</strong><div class="small">${severity} severity</div><div style="margin-top:8px">${thumbsHtml}</div>`).openPopup();
+    } else {
+      userMarker = L.marker([lat, lon], { icon: makeIcon('#0f9d58','Report') }).addTo(map);
+      userMarker.bindPopup(`<strong>${id}</strong><div class="small">${severity} severity</div><div style="margin-top:8px">${thumbsHtml}</div>`).openPopup();
+    }
+  } else {
+    // simple popup
+    if(userMarker) userMarker.bindPopup(`<strong>${id}</strong><div class="small">${severity} severity</div><div style="margin-top:6px">${desc || ''}</div>`).openPopup();
+    else {
+      userMarker = L.marker([lat, lon], { icon: makeIcon('#0f9d58','Report') }).addTo(map);
+      userMarker.bindPopup(`<strong>${id}</strong><div class="small">${severity} severity</div><div style="margin-top:6px">${desc || ''}</div>`).openPopup();
+    }
+  }
+
+  // simulate assignment: pick nearest NGO from the dummy list (by haversine)
+  const assigned = chooseNearestNGO(lat, lon, recipients);
+  if(!assigned){
+    document.getElementById('reportStatus').textContent = `Report ${id} created — no recipient available`;
+    showToast('No recipient assigned automatically (none selected)', true);
+    // still keep report active but no assignment
+    return;
+  }
+
+  // update status and simulate progression
+  activeReport.assigned = { id: assigned.id, name: assigned.name, phone: assigned.phone, loc: {lat: assigned.lat, lon: assigned.lon}, status:'dispatched' };
+  updateStatusUI('dispatched', `Assigned to ${assigned.name} — dispatched`);
+  showToast(`Assigned to ${assigned.name} — notifying recipient`);
+
+  // create assigned marker at NGO location (if not exists)
+  if(assignedMarker) { map.removeLayer(assignedMarker); assignedMarker = null; }
+  assignedMarker = L.marker([assigned.lat, assigned.lon], { icon: makeIcon('#ffb400', assigned.name.split(' ')[0]) }).addTo(map);
+  assignedMarker.bindPopup(`<strong>${assigned.name}</strong><div class="small">${assigned.phone}</div><div style="margin-top:6px">Status: dispatched</div>`);
+
+  // simulate en-route → on-scene → resolved progression
+  scheduleProgression(activeReport, assigned);
+
+  // notify selected recipients (toasts)
+  (assigned.recipients || recipients).forEach(rid => {
+    const t = NGOs.find(x=>x.id===rid);
+    if(t) showToast(`Notified ${t.name}: report ${id}`, false);
+  });
+
+  // finalize local UI and clear input form (keeping report visible)
+  clearFormAfterSubmit();
+});
+
+// helper: geocode via nominatim
+async function geocodeSafe(q){
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`;
+    const res = await fetch(url);
+    const arr = await res.json();
+    if(!arr || arr.length===0) return null;
+    return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), name: arr[0].display_name };
+  }catch(e){ return null; }
+}
+
+// choose nearest NGO among recipients (or all if none selected)
+function chooseNearestNGO(lat, lon, recipients){
+  const pool = (recipients && recipients.length>0) ? NGOs.filter(n => recipients.includes(n.id)) : NGOs;
+  if(pool.length === 0) return null;
+  let best = null; let bd = Infinity;
+  pool.forEach(p => {
+    const d = haversine(lat, lon, p.lat, p.lon);
+    if(d < bd){ bd = d; best = p; }
+  });
+  return best;
+}
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI/180;
+  const dLon = (lon2 - lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// build small thumb html for popup (data URLs)
+async function buildThumbsHtml(files){
+  const limited = files.slice(0,6);
+  const parts = await Promise.all(limited.map(f => fileToDataURL(f)));
+  const html = parts.map(u => `<img src="${u}" style="width:70px;height:70px;object-fit:cover;margin-right:6px;border-radius:6px">`).join('');
+  return `<div style="display:flex;gap:6px">${html}</div>`;
+}
+function fileToDataURL(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = ()=> res(fr.result);
+    fr.onerror = ()=> rej('err');
+    fr.readAsDataURL(file);
+  });
+}
+
+// schedule simulated progression
+function scheduleProgression(report, assigned){
+  // clear previous timers
+  progressTimers.forEach(t => clearTimeout(t));
+  progressTimers = [];
+
+  // dispatched -> en route (after 6s)
+  progressTimers.push(setTimeout(()=> {
+    report.assigned.status = 'en_route';
+    updateAssignedMarkerPopup('en_route');
+    updateStatusUI('en_route', `Assigned ${assigned.name} en route`);
+    showToast(`${assigned.name} is en route`, false);
+    // animate assigned marker moving towards location over time
+    animateAssignedToReport(assignedMarker, [report.lat, report.lon], 8000);
+  }, 6000));
+
+  // en_route -> on-scene (after 14s)
+  progressTimers.push(setTimeout(()=> {
+    report.assigned.status = 'on_scene';
+    updateAssignedMarkerPopup('on_scene');
+    updateStatusUI('on_scene', `${assigned.name} on scene`);
+    showToast(`${assigned.name} on scene — assessing`, false);
+    // show danger overlay if severity high
+    if(report.severity === 'high') document.getElementById('dangerOverlay').classList.add('show');
+  }, 14000));
+
+  // on_scene -> resolved (after 26s)
+  progressTimers.push(setTimeout(()=> {
+    report.assigned.status = 'resolved';
+    updateAssignedMarkerPopup('resolved');
+    updateStatusUI('resolved', `Report resolved — ${assigned.name}`);
+    showToast(`Report ${report.id} resolved by ${assigned.name}`, false);
+    document.getElementById('dangerOverlay').classList.remove('show');
+  }, 26000));
+}
+
+function updateAssignedMarkerPopup(status){
+  if(!activeReport || !activeReport.assigned) return;
+  const a = activeReport.assigned;
+  if(assignedMarker){
+    assignedMarker.bindPopup(`<strong>${a.name}</strong><div class="small">${a.phone}</div><div style="margin-top:6px">Status: ${a.status}</div>`);
+  }
+  document.getElementById('reportStatus').textContent = `Report ${activeReport.id} — ${a.status}`;
+}
+function updateStatusUI(status, text){
+  if(activeReport) activeReport.status = status;
+  document.getElementById('reportStatus').textContent = text;
+}
+
+// animate assigned marker to target latlng smoothly
+function animateAssignedToReport(marker, targetLatLng, duration=6000){
+  if(!marker) return;
+  const start = marker.getLatLng();
+  const end = L.latLng(targetLatLng[0], targetLatLng[1]);
+  const steps = Math.max(12, Math.round(duration/200));
+  let i=0;
+  const latStep = (end.lat - start.lat) / steps;
+  const lngStep = (end.lng - start.lng) / steps;
+  const tInt = setInterval(()=> {
+    i++;
+    const nlat = start.lat + latStep * i;
+    const nlng = start.lng + lngStep * i;
+    marker.setLatLng([nlat, nlng]);
+    if(i >= steps) clearInterval(tInt);
+  }, duration/steps);
+}
+
+// ---------- clear inputs after submit ----------
+function clearFormAfterSubmit(){
+  document.getElementById('desc').value = '';
+  selectedImages = [];
+  thumbs.innerHTML = '';
+  // deselect recipients in UI but keep the selection in memory for demo
+  //document.querySelectorAll('#recips input').forEach(x=>x.checked=false);
+}
+
+// ---------- helper: choose recipient programmatically (nearest from all if user selected none) ----------
+document.getElementById('clearBtn').addEventListener('click', ()=> {
+  document.getElementById('desc').value = '';
+  document.getElementById('locText').value = '';
+  selectedImages = [];
+  thumbs.innerHTML = '';
+  selectedRecipients.clear();
+  document.querySelectorAll('#recips input').forEach(x=>x.checked=false);
+  showToast('Form cleared');
+});
+
+// ---------- tiny toast helper ----------
+function showToast(txt, important=false){
+  const n = document.createElement('div'); n.className='toast';
+  n.style.borderLeftColor = important ? 'var(--danger)' : 'var(--accent-2)';
+  n.innerHTML = `<div style="font-weight:800">${txt}</div>`;
+  const container = document.getElementById('toasts');
+  container.appendChild(n);
+  setTimeout(()=> { n.style.opacity = '0'; setTimeout(()=> n.remove(), 400); }, 4200);
+}
+
+// ---------- helper: click on NGO marker to auto-select recipient ----------
+Object.keys(ngoMarkers).forEach(id => {
+  const m = ngoMarkers[id];
+  if(!m) return;
+  m.on('click', ()=> {
+    const ng = NGOs.find(x=>x.name.split(' ')[0] === m.getPopup().getContent().split('<')[0].trim());
+    // not reliable; keep separate listener through DOM list instead
+  });
+});
+
+// ---------- bootstrap: show available NGOs in recipient panel (pre-check) ----------
+(function init(){
+  // pre-check nearest two by distance to center
+  const center = map.getCenter();
+  const sorted = NGOs.slice().sort((a,b)=> haversine(center.lat, center.lng, a.lat, a.lon) - haversine(center.lat, center.lng, b.lat, b.lon));
+  selectedRecipients.add(sorted[0].id);
+  selectedRecipients.add(sorted[1].id);
+  // mark checkboxes visually
+  document.querySelectorAll('#recips input').forEach(ch => {
+    const id = ch.dataset.rec;
+    if(selectedRecipients.has(id)) ch.checked = true;
+  });
+
+  // show small list checkboxes matching above
+  const nearRows = document.querySelectorAll('#nearList .contact-row');
+  nearRows.forEach((r, idx) => {
+    const chk = r.querySelector('input[type="checkbox"]');
+    const nid = NGOs[idx] && NGOs[idx].id;
+    if(nid && selectedRecipients.has(nid)) chk.checked = true;
+  });
+
+  // map fit to NGO cluster
+  const group = Object.values(ngoMarkers);
+  if(group.length>0){
+    const g = L.featureGroup(group.map(m => m));
+    map.fitBounds(g.getBounds().pad(0.3));
+  }
+})();
+
+</script>
+
+</body>
+</html>
