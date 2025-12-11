@@ -1,0 +1,803 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ARAH — Anti Ragging Console</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    /* ---------- Theme & fonts ---------- */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap');
+
+    :root{
+      --bg: #fbf9ff;
+      --card: #ffffff;
+      --accent: #7B2FF7;    /* violet for ARAH */
+      --accent-2: #16a34a;  /* fresh green */
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.8);
+      --soft-shadow: 0 14px 40px rgba(6,12,20,0.08);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: linear-gradient(180deg,#fdfbff 0%,var(--bg) 100%);
+      color:#08121a; -webkit-font-smoothing:antialiased;
+      overflow:hidden;  /* only inner panels scroll */
+    }
+
+    /* ---------- Layout: two halves ---------- */
+    .root { display:flex; height:100vh; gap:20px; padding:18px; }
+    .left, .right { background:var(--card); border-radius:var(--radius); box-shadow:var(--soft-shadow); overflow:hidden; }
+    .left { flex:1; min-width:480px; display:flex; flex-direction:column; }
+    .right { flex:1; min-width:420px; display:flex; flex-direction:column; }
+
+    /* ---------- Left console header ---------- */
+    .console-top {
+      display:flex; align-items:center; gap:16px; padding:18px 20px; border-bottom:1px solid #f2f3f5;
+      background:linear-gradient(90deg, rgba(255,255,255,0.6), rgba(244,240,255,0.9));
+    }
+    .logo {
+      width:68px; height:68px; border-radius:12px;
+      background:linear-gradient(120deg,var(--accent),#b07CFF);
+      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:20px;
+      box-shadow:0 12px 30px rgba(123,47,247,0.25);
+    }
+    .title { font-weight:900; font-size:20px; letter-spacing:0.4px; }
+    .subtitle { margin-top:4px; font-size:12px; color:var(--muted); }
+
+    /* ---------- Controls row ---------- */
+    .controls { display:flex; gap:12px; padding:14px 20px; align-items:center; border-bottom:1px solid #f3f4f6; }
+    .pill {
+      border-radius:999px; padding:10px 16px; border:0; cursor:pointer; font-weight:800; font-size:14px;
+      transition: transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 8px 26px rgba(6,12,20,0.06);
+    }
+    .pill.primary { background: linear-gradient(90deg,var(--accent),#b07CFF); color:#fff; }
+    .pill.secondary { background:#fff; border:1px solid #f0f1f3; color:var(--accent); }
+    .pill.danger { background: linear-gradient(90deg,#ff6b6b,#e74c3c); color:#fff; }
+
+    .controls .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    /* ---------- Left content: evidence list ---------- */
+    .left-body { padding:16px; overflow:auto; display:flex; gap:18px; flex-direction:column; }
+    .filter-row { display:flex; gap:8px; align-items:center; }
+    .chip { padding:8px 12px; border-radius:999px; background:#fff; border:1px solid #f1f2f4; color:var(--muted); cursor:pointer; font-weight:700; font-size:12px;}
+    .chip.active { color:var(--accent); background: linear-gradient(90deg, #f7f1ff, #f3e8ff); box-shadow:0 8px 20px rgba(123,47,247,0.12); border-color:transparent; }
+
+    .events { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+    .event-card { border-radius:12px; border:1px solid #f4f6f8; overflow:hidden; background:linear-gradient(180deg,#fff,#fff); scrollbar-width: none;; }
+    .event-head { display:flex; align-items:center; gap:12px; padding:12px 12px; }
+    .badge { width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:16px; background:linear-gradient(120deg,var(--accent),#b07CFF); }
+    .evt-info { min-width:0; }
+    .evt-title { font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .evt-desc { color:var(--muted); font-size:12px; margin-top:6px; }
+
+    .event-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    .body-files { padding:10px 12px 16px; display:flex; flex-direction:column; gap:10px; border-top:1px solid #fbfbfb; }
+    .file-row { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:8px; background: #fff; border-radius:10px; border:1px solid #fbfbfb; }
+    .file-left { min-width:0; max-width:56%; display:flex; flex-direction:column; gap:4px; }
+    .file-name { font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .file-meta { font-size:12px; color:var(--muted); }
+
+    .file-actions { display:flex; align-items:center; gap:10px; }
+
+    audio { width:240px; }
+
+    /* ---------- Right: map top & live console bottom ---------- */
+    .map-top { flex:1; padding:10px; } /* contains #map */
+    #map { width:100%; height:100%; border-radius:10px; }
+
+    /* Blood-danger styling when active ARAH event */
+    .map-danger {
+      filter: hue-rotate(-40deg) saturate(2) brightness(0.7);
+      animation: bloodpulse 1.6s infinite ease-in-out;
+    }
+    @keyframes bloodpulse {
+      0% { filter: hue-rotate(-40deg) saturate(1.8) brightness(0.9); }
+      50% { filter: hue-rotate(-40deg) saturate(2.6) brightness(0.6); }
+      100% { filter: hue-rotate(-40deg) saturate(1.8) brightness(0.9); }
+    }
+
+    .live-console { height:42%; border-top:1px solid #f2f3f5; background:linear-gradient(180deg,#fff,#fff); display:flex; flex-direction:column; }
+    .live-header { padding:12px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #f6f7f8; }
+    .live-list { padding:12px; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+
+    .live-item { display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:10px; background:#fff; border:1px solid #fbfbfb; }
+    .live-dot { width:12px; height:12px; border-radius:50%; background:var(--accent-2); box-shadow:0 6px 16px rgba(14,164,74,0.12); margin-top:6px; }
+    .live-body { font-size:13px; color:#0b1720; }
+    .live-meta { color:var(--muted); font-size:12px; margin-top:6px; }
+
+    /* ---------- Pulsing marker ---------- */
+    .pulse-marker { width:22px; height:22px; border-radius:50%; position:relative; transform:translate(-50%,-50%); }
+    .pulse-marker .dot { width:10px; height:10px; border-radius:50%; background:var(--accent-2); box-shadow:0 6px 18px rgba(14,164,74,0.18); border:2px solid #fff; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+    .pulse-marker .halo { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:22px; height:22px; border-radius:50%; background: rgba(14,164,74,0.14); animation: pulse 1.6s infinite ease-out; }
+    @keyframes pulse { 0%{ transform:translate(-50%,-50%) scale(.95); opacity:.95 } 70%{ transform:translate(-50%,-50%) scale(2.6); opacity:0 } 100%{ opacity:0 } }
+
+    /* ---------- small responsive ---------- */
+    @media (max-width:1100px){
+      .left { min-width:360px; }
+      .right { min-width:300px; }
+      audio { width:180px; }
+    }
+    @media (max-width:820px){
+      .root { flex-direction:column; padding:10px; }
+      .left, .right { min-width:unset; height:50vh; }
+      .live-console { height:40%; }
+    }
+
+    /* Police div-icon tweaks (ensures visible on map) */
+    .police-marker {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: linear-gradient(180deg,#0b74ff,#064f9e);
+      box-shadow: 0 6px 18px rgba(3,64,155,0.18);
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:700; font-size:11px;
+      border: 2px solid rgba(255,255,255,0.95);
+    }
+    .police-siren {
+      width:20px; height:10px; border-radius:2px;
+      background: linear-gradient(90deg,#ef4444,#06b6d4);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+      margin-bottom:3px;
+    }
+     .backBtn {
+    position: fixed;
+    top: 16px;
+    right: 22px;
+    background: #ffffff;
+    color: #ff6b00;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 20000;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  .backBtn:hover {
+    background: #7B2FF7;
+    color: white;
+  }
+  /* hide scrollbar but keep scrolling */
+.left .panel {
+  -ms-overflow-style: none;  /* IE + Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.left .panel::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+  </style>
+</head>
+<body>
+  <div class="root">
+    <!-- LEFT: full console (evidence and control) -->
+     <!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+    <div class="left">
+      <div class="console-top">
+        <div class="logo">SI</div>
+        <div>
+          <div class="title">Shakti-ARAH Console</div>
+          <div class="subtitle">Anti-Ragging & Anti-Harassment — evidence, activation & FIR</div>
+        </div>
+
+        <div style="margin-left:auto; text-align:right;">
+          <div style="font-size:11px; color:var(--muted);">Status</div>
+          <div id="statusText" style="font-weight:800; color:var(--muted);">disarmed</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <button id="armBtn" class="pill primary">ARM (Voice ARAH)</button>
+          <button id="disarmBtn" class="pill secondary" style="display:none;">DISARM</button>
+        </div>
+
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button id="physActivate" class="pill">Physical ARAH</button>
+          <button id="physDeactivate" class="pill danger">Physical Deactivate</button>
+        </div>
+      </div>
+
+      <div class="left-body">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-weight:800">ARAH Events & Evidence</div>
+          <div style="font-size:12px; color:var(--muted)">Folders prefixed with evidenceNN-arah / shakti-code</div>
+        </div>
+
+        <div class="filter-row">
+          <div class="chip active" id="chipAll" data-filter="all">All</div>
+          <div class="chip" id="chipARAH" data-filter="arah">ARAH</div>
+          <div class="chip" id="chipVoice" data-filter="voice">Shakti Voice</div>
+          <div class="chip" id="chipPhys" data-filter="physical">Physical</div>
+          <div style="margin-left:auto; font-size:12px; color:var(--muted)">Tip: Say “ARAH / anti ragging / stop ragging”</div>
+        </div>
+
+        <div class="events" id="eventsContainer">
+          <div style="color:var(--muted)">Loading events…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: map (top) + live console (bottom) -->
+    <div class="right">
+      <div class="map-top" id="mapTop">
+        <div id="map" style="height:100%;"></div>
+      </div>
+
+      <div class="live-console">
+        <div class="live-header">
+          <div style="font-weight:800">Live Console</div>
+          <div style="margin-left:auto; font-size:13px; color:var(--muted)">Realtime ARAH activations & officers</div>
+        </div>
+        <div class="live-list" id="liveList">
+          <div style="color:var(--muted)">No live events yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+  // ---------- constants ----------
+  const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+  const EVIDENCE_URL = '/evidence_full';
+  const DOWNLOAD_BASE = (folder, file) => `/download/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
+
+  let socket = null;
+  let armed = false;
+  let eventsIndex = {};
+
+  // ---------- map init ----------
+  const map = L.map('map', { zoomControl: true }).setView([17.44, 78.4], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  const markers = {};       // event pulse markers (folder -> marker)
+  window.officerMarkers = window.officerMarkers || {}; // event -> officer marker
+
+  function makePulseIcon() {
+    const html = `<div class="pulse-marker"><div class="halo"></div><div class="dot"></div></div>`;
+    return L.divIcon({ html, className: '', iconSize: [28,28], popupAnchor: [0,-18] });
+  }
+
+  function addMarker(folder, lat=17.44, lon=78.4, label='') {
+    if(markers[folder]) { markers[folder].setLatLng([lat,lon]); return; }
+    const m = L.marker([lat,lon], { icon: makePulseIcon(), riseOnHover:true }).addTo(map);
+    if(label) m.bindPopup(`<strong>${label}</strong>`);
+    markers[folder] = m;
+  }
+
+  function setMapDanger(on){
+    const el = document.getElementById('map');
+    if(on) el.classList.add('map-danger');
+    else el.classList.remove('map-danger');
+  }
+
+  // ---------- Marker removal helpers ----------
+  function removeMarkersForEvent(event_id){
+    if(!event_id){
+      removeAllMarkers();
+      return;
+    }
+    // remove pulse marker
+    try{
+      if(markers[event_id]){
+        map.removeLayer(markers[event_id]);
+        delete markers[event_id];
+      }
+    }catch(e){ console.warn('remove pulse marker failed', e); }
+    // remove officer marker
+    try{
+      if(window.officerMarkers && window.officerMarkers[event_id]){
+        map.removeLayer(window.officerMarkers[event_id]);
+        delete window.officerMarkers[event_id];
+      }
+    }catch(e){ console.warn('remove officer marker failed', e); }
+  }
+
+  function removeAllMarkers(){
+    try{
+      Object.keys(markers).forEach(k=>{
+        try{ map.removeLayer(markers[k]); }catch(e){}
+      });
+      Object.keys(window.officerMarkers || {}).forEach(k=>{
+        try{ map.removeLayer(window.officerMarkers[k]); }catch(e){}
+      });
+      // clear dictionaries
+      for(const k in markers) delete markers[k];
+      for(const k in (window.officerMarkers||{})) delete window.officerMarkers[k];
+    }catch(e){ console.warn('removeAllMarkers failed', e); }
+  }
+
+  // ---------- WebSocket ----------
+  async function ensureSocket(){
+    if(socket && socket.readyState === WebSocket.OPEN) return;
+    socket = new WebSocket(WS_URL);
+    socket.binaryType = 'arraybuffer';
+    socket.onopen = ()=> console.log('ws open');
+    socket.onmessage = (ev)=> {
+      try {
+        const d = JSON.parse(ev.data);
+        handleWsMessage(d);
+        // officer handlers integrated
+        try { handleWsMessageForOfficers(d); } catch(e){ console.warn('officer handler error', e); }
+      } catch(e){
+        // ignore non-json
+      }
+    };
+    socket.onclose = ()=> { socket = null; console.log('ws closed'); };
+  }
+
+  function handleWsMessage(d){
+    if(!d) return;
+    if(d.type === 'hello'){ console.log('conn', d.conn_id); }
+    if(d.type === 'armed'){ armed = true; updateUI(); addLive(`Client armed`); return; }
+    if(d.type === 'disarmed'){ armed = false; updateUI(); addLive(`Client disarmed`); removeAllMarkers(); setMapDanger(false); return; }
+
+    if(d.type === 'activated'){
+      const src = d.meta && d.meta.arah_flag ? 'ARAH' : 'Voice';
+      addLive(`Event activated (${src}): ${d.event_id}`);
+      loadEvents();
+      if(d.event_id) {
+        addMarker(d.event_id, 17.44, 78.4, d.event_id);
+        if(src === 'ARAH') setMapDanger(true);
+      }
+    }
+    if(d.type === 'event_cancelled' || d.type === 'arah_deactivated' || d.type === 'physical_deactivate'){
+      addLive(`Event deactivated/cancelled: ${d.event_id || '(all)'}`);
+      // if backend gave event_id remove only that; otherwise remove all markers
+      if(d.event_id) removeMarkersForEvent(d.event_id);
+      else removeAllMarkers();
+      loadEvents();
+      setMapDanger(false);
+    }
+    if(d.type === 'chunk_saved'){
+      addLive(`Chunk saved: ${d.event_id} #${d.chunk}`);
+      loadEvents();
+    }
+    if(d.type === 'event_finished'){
+      addLive(`Event finished: ${d.event_id}`);
+      // finalization — remove waiting danger styling but keep record markers if you prefer
+      setMapDanger(false);
+      // Remove markers only if backend marks finished as deactivated — try to remove if event has cancelled flag
+      if(d.event_id && d.cancelled) removeMarkersForEvent(d.event_id);
+      loadEvents();
+    }
+    if(d.type === 'fir_created'){
+      addLive(`FIR generated: ${d.event_id}`);
+      loadEvents();
+    }
+  }
+
+  // ---------- UI bindings ----------
+  document.getElementById('armBtn').onclick = async () => {
+    await ensureSocket();
+    socket.send(JSON.stringify({cmd:'arm'}));
+    armed = true; updateUI(); startCapture();
+    addLive('ARM (ARAH) pressed');
+  };
+  document.getElementById('disarmBtn').onclick = async () => {
+    if(socket) socket.send(JSON.stringify({cmd:'disarm'}));
+    armed = false; updateUI(); stopCapture();
+    addLive('DISARM pressed');
+    setMapDanger(false);
+    removeAllMarkers();
+  };
+
+  document.getElementById('physActivate').onclick = async () => {
+    try{
+      const res = await fetch('/physical/activate', {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body: JSON.stringify({note:'arah-ui', arah:true})
+      });
+      const j = await res.json();
+      if(j.status === 'ok'){
+        addLive(`Physical ARAH activate: ${j.event_id || j.folder || ''}`);
+        await loadEvents();
+        addMarker(j.folder || j.event_id, 17.44, 78.4, j.folder || j.event_id);
+        setMapDanger(true);
+      } else alert('Physical activate failed');
+    }catch(e){ alert('Physical activate error'); }
+  };
+
+  document.getElementById('physDeactivate').onclick = async () => {
+    if(!confirm('Confirm physical deactivation?')) return;
+    try{
+      const res = await fetch('/physical/deactivate', {
+        method:'POST',
+        headers:{'x-physical-key':'letmein','content-type':'application/json'},
+        body: JSON.stringify({})
+      });
+      const j = await res.json();
+      if(j.status === 'ok'){
+        addLive(`Physical deactivated: ${j.event_id}`);
+        // remove markers for that event if backend returned it, else remove all
+        if(j.event_id) removeMarkersForEvent(j.event_id); else removeAllMarkers();
+        await loadEvents();
+        setMapDanger(false);
+      } else alert('Deactivate failed');
+    }catch(e){ alert('Physical deactivate failed'); }
+  };
+
+  function updateUI(){
+    document.getElementById('statusText').textContent = armed ? 'armed' : 'disarmed';
+    document.getElementById('armBtn').style.display = armed ? 'none' : 'inline-block';
+    document.getElementById('disarmBtn').style.display = armed ? 'inline-block' : 'none';
+  }
+
+  // ---------- Events / Evidence fetching ----------
+  async function loadEvents(){
+    try{
+      const res = await fetch(EVIDENCE_URL);
+      const arr = await res.json();
+      eventsIndex = {};
+      arr.forEach(e => { eventsIndex[e.folder] = e; });
+      renderEvents();
+    }catch(e){
+      document.getElementById('eventsContainer').innerHTML =
+        `<div style="color:var(--muted)">Failed to load events: ${e.message}</div>`;
+    }
+  }
+
+  function renderEvents(){
+    const container = document.getElementById('eventsContainer');
+    container.innerHTML = '';
+    const filter = document.querySelector('.chip.active').dataset.filter;
+    const list = Object.values(eventsIndex)
+      .sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+
+    const filtered = list.filter(ev => {
+      const src = (ev.source || '').toLowerCase();
+      if(filter === 'arah' && src !== 'arah') return false;
+      if(filter === 'voice' && src !== 'shakti-code' && src !== 'voice') return false;
+      if(filter === 'physical' && src !== 'physical') return false;
+      return true;
+    });
+
+    if(filtered.length === 0){
+      container.innerHTML = '<div style="color:var(--muted)">No events.</div>';
+      return;
+    }
+
+    filtered.forEach(ev => {
+      const card = document.createElement('div'); card.className = 'event-card';
+      const head = document.createElement('div'); head.className = 'event-head';
+      const badge = document.createElement('div'); badge.className = 'badge';
+      badge.textContent = (ev.event_id||ev.folder||'EV').slice(0,4).toUpperCase();
+      const info = document.createElement('div'); info.className = 'evt-info';
+      const title = document.createElement('div'); title.className = 'evt-title';
+      title.textContent = `${ev.event_id || ev.folder}`;
+      const src = (ev.source || '').toLowerCase();
+      const srcLabel =
+        src === 'arah' ? 'ARAH' :
+        src === 'shakti-code' ? 'Shakti Voice' :
+        src === 'physical' ? 'Physical' : (ev.source || 'unknown');
+      const desc = document.createElement('div'); desc.className = 'evt-desc';
+      desc.textContent = `${srcLabel} · ${ev.created || ''}${ev.cancelled ? ' · Cancelled' : ''}`;
+      info.appendChild(title); info.appendChild(desc);
+
+      const actions = document.createElement('div'); actions.className = 'event-actions';
+      const open = document.createElement('button'); open.className='pill secondary'; open.textContent='Open';
+      const body = document.createElement('div'); body.className = 'body-files'; body.style.display = 'none';
+      open.onclick = ()=> {
+        body.style.display = (body.style.display === 'block' ? 'none' : 'block');
+        if(body.style.display === 'block') addMarker(ev.folder || ev.event_id, 17.44, 78.4, ev.folder || ev.event_id);
+      };
+      const dlAll = document.createElement('button'); dlAll.className='pill'; dlAll.textContent='Download all';
+      dlAll.onclick = ()=> {
+        (ev.files||[]).forEach(f => window.open(DOWNLOAD_BASE(ev.folder, f.name), '_blank'));
+      };
+      actions.appendChild(open); actions.appendChild(dlAll);
+
+      head.appendChild(badge); head.appendChild(info); head.appendChild(actions);
+      card.appendChild(head);
+
+      const files = (ev.files||[]).slice().sort((a,b)=> a.name.localeCompare(b.name));
+
+      files.forEach(f => {
+        const row = document.createElement('div'); row.className='file-row';
+        const left = document.createElement('div'); left.className='file-left';
+        const nm = document.createElement('div'); nm.className='file-name'; nm.textContent = f.name; nm.title = f.name;
+        const meta = document.createElement('div'); meta.className='file-meta';
+        if(f.meta && f.meta.first_meta) meta.textContent = (f.meta.first_meta.asr || '').slice(0,160);
+        else if(f.meta && f.meta.asr) meta.textContent = (f.meta.asr || '').slice(0,160);
+        else meta.textContent = f.size ? `${f.size} bytes` : '';
+        left.appendChild(nm); left.appendChild(meta);
+
+        const acts = document.createElement('div'); acts.className='file-actions';
+        if(f.type === 'wav'){
+          const a = document.createElement('audio'); a.controls = true; a.src = DOWNLOAD_BASE(ev.folder, f.name);
+          const dl = document.createElement('a'); dl.href = DOWNLOAD_BASE(ev.folder, f.name); dl.download = f.name; dl.style.marginLeft='8px'; dl.textContent = '⬇️';
+          acts.appendChild(a); acts.appendChild(dl);
+        } else {
+          const o = document.createElement('a'); o.href = DOWNLOAD_BASE(ev.folder, f.name); o.target='_blank'; o.textContent = 'Open';
+          acts.appendChild(o);
+        }
+        row.appendChild(left); row.appendChild(acts);
+        body.appendChild(row);
+      });
+
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  // filter chips
+  ['chipAll','chipARAH','chipVoice','chipPhys'].forEach(id=>{
+    document.getElementById(id).onclick = (ev) => {
+      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      ev.target.classList.add('active');
+      renderEvents();
+    };
+  });
+
+  // ---------- live console helper ----------
+  function addLive(msg){
+    const list = document.getElementById('liveList');
+    const item = document.createElement('div'); item.className='live-item';
+    const dot = document.createElement('div'); dot.className='live-dot';
+    const body = document.createElement('div'); body.className='live-body';
+    const t = document.createElement('div'); t.textContent = msg;
+    const ts = document.createElement('div'); ts.className='live-meta'; ts.textContent = new Date().toLocaleString();
+    body.appendChild(t); body.appendChild(ts);
+    item.appendChild(dot); item.appendChild(body);
+    list.insertBefore(item, list.firstChild);
+    while(list.children.length > 60) list.removeChild(list.lastChild);
+  }
+
+  // ---------- audio capture & streaming (same as SHAKTI) ----------
+  let ac=null, srcNode=null, proc=null, accum = new Float32Array(0);
+  const SAMPLE_RATE = 16000, SEND_SAMPLES = SAMPLE_RATE * 1;
+
+  async function startCapture(){
+    try{
+      if(!socket || socket.readyState !== WebSocket.OPEN) await ensureSocket();
+      if(ac) return;
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      srcNode = ac.createMediaStreamSource(stream);
+      proc = ac.createScriptProcessor(4096,1,1);
+      srcNode.connect(proc); proc.connect(ac.destination);
+      proc.onaudioprocess = (ev) => {
+        const input = ev.inputBuffer.getChannelData(0);
+        const tmp = new Float32Array(accum.length + input.length); tmp.set(accum); tmp.set(input, accum.length);
+        accum = tmp;
+        const inputRate = ac.sampleRate;
+        if(accum.length >= inputRate * 0.12){
+          const down = downsample(accum, inputRate, SAMPLE_RATE);
+          accum = new Float32Array(0);
+          const int16 = floatTo16Bit(down);
+          let offset = 0;
+          while(offset < int16.length){
+            const take = Math.min(SEND_SAMPLES, int16.length - offset);
+            const frame = int16.slice(offset, offset + take);
+            if(socket && socket.readyState === WebSocket.OPEN) socket.send(frame.buffer);
+            offset += take;
+          }
+        }
+      };
+      addLive('Mic capture started for ARAH');
+    }catch(e){
+      console.error('startCapture', e);
+      addLive('Audio capture failed: ' + (e.message||e));
+    }
+  }
+
+  function stopCapture(){
+    try{
+      if(proc){ proc.disconnect(); proc=null; }
+      if(srcNode){ srcNode.disconnect(); srcNode=null; }
+      if(ac){ ac.close(); ac=null; }
+      accum = new Float32Array(0);
+    }catch(e){}
+  }
+
+  function downsample(buffer, inRate, outRate){
+    if(inRate === outRate) return buffer;
+    const ratio = inRate / outRate;
+    const newLen = Math.round(buffer.length / ratio);
+    const out = new Float32Array(newLen);
+    let offsetResult = 0, offsetBuffer = 0;
+    while(offsetResult < out.length){
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+      let accum = 0, count = 0;
+      for(let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++){ accum += buffer[i]; count++; }
+      out[offsetResult] = count ? (accum / count) : 0;
+      offsetResult++; offsetBuffer = nextOffsetBuffer;
+    }
+    return out;
+  }
+
+  function floatTo16Bit(float32Array){
+    const l = float32Array.length;
+    const out = new Int16Array(l);
+    for(let i=0;i<l;i++){
+      let s = Math.max(-1, Math.min(1, float32Array[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return out;
+  }
+
+  // ---------- bootstrap ----------
+  (async function init(){
+    await ensureSocket();
+    await loadEvents();
+    updateUI();
+    addLive('ARAH console ready. ARM and speak wakeword.');
+  })();
+  </script>
+
+  <!-- Officer marker / update logic (integrated) -->
+  <script>
+  // create an L.divIcon police marker (guaranteed visible; high z-index)
+  function makePoliceDivIcon(label = ''){
+    const html = `<div class="police-marker" title="police vehicle">
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                      <div class="police-siren"></div>
+                      <div style="font-size:10px; margin-top:2px;">${label || 'POL'}</div>
+                    </div>
+                  </div>`;
+    return L.divIcon({
+      html,
+      className: '',
+      iconSize: [48,48],
+      iconAnchor: [24,24],
+      popupAnchor: [0,-22]
+    });
+  }
+
+  // Debug printer for officer messages
+  function debugOfficerPayload(d){
+    try{
+      console.groupCollapsed('WS officer message');
+      console.log('type:', d.type);
+      console.log('event_id:', d.event_id);
+      console.log('payload:', d.assigned || d);
+      if(d.assigned){
+        console.log('assigned.location:', d.assigned.location);
+        console.log('assigned.station:', d.assigned.station);
+        console.log('assigned.officer:', d.assigned.officer);
+      } else if(d.location){
+        console.log('location:', d.location);
+      }
+      console.groupEnd();
+    }catch(e){ console.warn('debug failed', e) }
+  }
+
+  // Called when backend notifies an officer assigned
+  function handleOfficerAssigned(payload){
+    debugOfficerPayload(payload);
+    const ev = payload.event_id;
+    const assigned = payload.assigned;
+    if(!assigned){
+      console.warn('handleOfficerAssigned: missing assigned object', payload);
+      return;
+    }
+
+    // prefer explicit assigned.location, else station lat/lon
+    const locRaw = assigned.location || (assigned.station && {lat: assigned.station.lat, lon: assigned.station.lon});
+    const lat = locRaw ? parseFloat(locRaw.lat) : NaN;
+    const lon = locRaw ? parseFloat(locRaw.lon) : NaN;
+    if(Number.isNaN(lat) || Number.isNaN(lon)){
+      console.warn('handleOfficerAssigned: invalid coords', locRaw);
+      return;
+    }
+
+    if(!window.officerMarkers[ev]){
+      const mark = L.marker([lat, lon], { icon: makePoliceDivIcon(assigned.officer && assigned.officer.name ? assigned.officer.name.split(' ')[0] : 'POL') }).addTo(map);
+      const popupHtml = `
+        <div><strong>${assigned.officer.name}</strong> (${assigned.officer.rank || 'Officer'})</div>
+        <div>Station: ${assigned.station.name || assigned.station.id || 'N/A'}</div>
+        <div>Status: <span id="offstatus-${ev}">${assigned.status || 'dispatched'}</span></div>
+        <div>ETA: <span id="offeta-${ev}">${assigned.eta_minutes ?? '—'}</span> min</div>
+      `;
+      mark.bindPopup(popupHtml);
+      if(mark._icon && mark._icon.style){ mark._icon.style.zIndex = 9999; mark._icon.style.pointerEvents = 'auto'; }
+      window.officerMarkers[ev] = mark;
+      if(typeof loadEvents === 'function') loadEvents().catch(()=>{});
+    } else {
+      const mark = window.officerMarkers[ev];
+      mark.setLatLng([lat, lon]);
+      const pop = mark.getPopup();
+      if(pop){
+        const newHtml = `
+          <div><strong>${assigned.officer.name}</strong> (${assigned.officer.rank || 'Officer'})</div>
+          <div>Station: ${assigned.station.name || assigned.station.id || 'N/A'}</div>
+          <div>Status: ${assigned.status || 'dispatched'}</div>
+          <div>ETA: ${assigned.eta_minutes ?? '—'} min</div>
+        `;
+        pop.setContent(newHtml);
+      }
+      if(mark._icon && mark._icon.style) mark._icon.style.zIndex = 9999;
+    }
+  }
+
+  // Called when backend provides officer updates (location/status)
+  function handleOfficerUpdate(payload){
+    debugOfficerPayload(payload);
+    const ev = payload.event_id;
+    const locRaw = payload.location || (payload.assigned && payload.assigned.location) || (payload.assigned && payload.assigned.station);
+    const lat = locRaw ? parseFloat(locRaw.lat) : NaN;
+    const lon = locRaw ? parseFloat(locRaw.lon) : NaN;
+    const status = payload.status || (payload.assigned && payload.assigned.status) || 'enroute';
+    const eta = payload.eta_minutes ?? (payload.assigned && payload.assigned.eta_minutes) ?? null;
+    const officer = payload.officer || (payload.assigned && payload.assigned.officer) || { name: 'Officer' };
+    const station = payload.station || (payload.assigned && payload.assigned.station) || {};
+
+    if(Number.isNaN(lat) || Number.isNaN(lon)){
+      console.warn('handleOfficerUpdate: invalid coords', locRaw);
+      return;
+    }
+
+    if(!window.officerMarkers[ev]){
+      const mark = L.marker([lat, lon], { icon: makePoliceDivIcon(officer.name ? officer.name.split(' ')[0] : 'POL') }).addTo(map);
+      const popupHtml = `
+        <div><strong>${officer.name}</strong> (${officer.rank || 'Officer'})</div>
+        <div>Station: ${station.name || station.id || 'N/A'}</div>
+        <div>Status: ${status}</div>
+        <div>ETA: ${eta} min</div>
+      `;
+      mark.bindPopup(popupHtml);
+      if(mark._icon && mark._icon.style) mark._icon.style.zIndex = 9999;
+      window.officerMarkers[ev] = mark;
+    } else {
+      const mark = window.officerMarkers[ev];
+      const from = mark.getLatLng();
+      const to = L.latLng(lat, lon);
+      const steps = 6;
+      let step = 0;
+      const latStep = (to.lat - from.lat) / steps;
+      const lngStep = (to.lng - from.lng) / steps;
+      const animInterval = 40;
+      const animTimer = setInterval(() => {
+        step++;
+        const nlat = from.lat + latStep * step;
+        const nlng = from.lng + lngStep * step;
+        mark.setLatLng([nlat, nlng]);
+        if(step >= steps) clearInterval(animTimer);
+      }, animInterval);
+
+      const pop = mark.getPopup();
+      if(pop){
+        const newHtml = `
+          <div><strong>${officer.name}</strong> (${officer.rank || 'Officer'})</div>
+          <div>Station: ${station.name || station.id || 'N/A'}</div>
+          <div>Status: ${status}</div>
+          <div>ETA: ${eta} min</div>
+        `;
+        pop.setContent(newHtml);
+      }
+      if(mark._icon && mark._icon.style) mark._icon.style.zIndex = 9999;
+    }
+
+    if(typeof addLive === 'function'){
+      addLive(`Officer ${officer.name}: ${status} — ETA ${eta ?? '—'} min`);
+    }
+  }
+
+  function handleWsMessageForOfficers(d){
+    if(!d) return;
+    if(d.type === 'officer_assigned'){
+      handleOfficerAssigned(d);
+    } else if(d.type === 'officer_update'){
+      handleOfficerUpdate(d);
+    }
+  }
+  </script>
+</body>
+</html>

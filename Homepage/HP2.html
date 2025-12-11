@@ -15,6 +15,7 @@
       --popup-comments-height: 0vh; /* toggled by JS (0 or 36vh) */
       --avatar-bg: #f3f4f6; /* neutral avatar background */
       --avatar-fg: #1f2937; /* avatar text color */
+      --headline-blue: #0047FF; /* NEW: headline / quick category color */
     }
     html,body{height:100%;margin:0;font-family:'Poppins',sans-serif;background:var(--bg);-webkit-text-size-adjust:none;color:#111;}
     .app { min-height:100vh; display:flex; flex-direction:column; align-items:center; box-sizing:border-box; }
@@ -431,8 +432,10 @@
   .safety-card { background:#fff; border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-top:12px; }
   /* Make grid 2x2 fixed tiles (not scrollable) */
   .cat-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-top:12px; }
-  .cat-box { background:#fff; padding:14px; border-radius:12px; cursor:pointer; border:1px solid rgba(0,0,0,0.04); box-shadow:0 6px 14px rgba(0,0,0,0.04); min-height:82px; display:flex; flex-direction:column; justify-content:center; }
-  .cat-box strong { font-size:15px; display:block; }
+  .cat-box { background:#fff; padding:14px; border-radius:12px; cursor:pointer; border:1px solid rgba(0,0,0,0.04); box-shadow:0 6px 14px rgba(0,0,0,0.04); min-height:82px; display:flex; flex-direction:column; justify-content:center; transition: transform 160ms ease, box-shadow 160ms ease; }
+  .cat-box:hover { transform: translateY(-4px); box-shadow:0 10px 26px rgba(0,0,0,0.08); }
+  /* NEW: quick category headline color to blue like page headlines */
+  .cat-box strong { font-size:15px; display:block; color: var(--headline-blue); }
   .cat-box p { margin:6px 0 0; color:var(--muted); font-size:13px; }
   .cat-detail { background:#fafafa; padding:12px; border-radius:10px; margin-top:10px; }
   .back-x { background:#fff; border-radius:8px; padding:6px 10px; border:none; cursor:pointer; font-weight:700; }
@@ -486,6 +489,37 @@
   /* make the Live label small */
   .safety-live-small { font-weight:800; color:#ff2d2d; font-size:13px; margin-right:8px; }
   .safety-live-line { font-size:13px; color:#111; font-weight:700; }
+.safety-code-box {
+  background:#fff;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:12px;
+  border:1px solid rgba(0,0,0,0.06);
+}
+
+.safety-code-box .title {
+  font-weight:700;
+  color:#000;
+  font-size:15px;
+  margin-bottom:4px;
+}
+
+.safety-code-box .desc {
+  color:#555;
+  font-size:13px;
+  margin-bottom:10px;
+}
+
+.safety-code-box .activateBtn {
+  background:linear-gradient(90deg,#007bff,#0056d2);
+  color:#fff;
+  padding:8px 14px;
+  border:none;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(0,123,255,0.2);
+}
 
   </style>
 </head>
@@ -556,6 +590,21 @@
           </div>
           <div class="comment-handle" id="commentHandle"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- SHAKTI CODE POPUP (persistent, global) -->
+    <div id="shaktiPopup"
+         style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 99999;">
+      <div style="width: 92%; max-width:1100px; height: 88%; background: #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.35);">
+        <button id="shaktiPopupClose" aria-label="Close Shakti" style="position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.9); color: #fff; border: none; padding: 6px 10px; font-size: 16px; border-radius: 6px; cursor: pointer;">✕</button>
+       <iframe
+        id="shaktiFrame"
+        src=""
+        allow="microphone; camera; autoplay; encrypted-media"
+        allowfullscreen
+        style="width:100%;height:100%;border:none;"
+    ></iframe>
       </div>
     </div>
 
@@ -1082,6 +1131,7 @@
 
   // -------------------------
   // POPUP LOGIC (full-screen + swipe prev/next)
+  // (kept unchanged)
   // -------------------------
   const popup = $('#postPopup');
   const popupMediaHolder = $('#popupMediaHolder');
@@ -1666,14 +1716,14 @@
         <div class="feed-card" style="border-radius:12px;padding:14px; position:relative;">
           <div style="display:flex;align-items:center;gap:8px">
             <div class="safety-live-small">Live</div>
-            <div class="safety-live-line">Alert acknowledged — you're protected.</div>
+            <div class="safety-live-line" id="liveTicker">Alert acknowledged — you're protected.</div>
           </div>
         </div>
 
         <!-- Map card: map occupies approx half/large portion -->
         <div class="feed-card" style="padding:12px;border-radius:12px; position:relative;">
           <div style="font-weight:700;color:#111;padding:8px;border-radius:8px">
-            <div style="font-weight:800;font-size:18px;text-align:center">Nearby Live Codes</div>
+            <div style="font-weight:800;font-size:18px;text-align:center;color:var(--headline-blue)">Nearby Live Codes</div>
             <div style="text-align:center;opacity:0.85;margin-top:6px;font-size:13px">Showing active codes in your region</div>
 
             <!-- Map (clean, no dark gradient) -->
@@ -1693,7 +1743,7 @@
 
           <!-- card below map that covers till navbar -->
           <div class="safety-card" style="margin-top:12px;">
-            <div style="font-weight:800;font-size:18px">Quick categories</div>
+            <div style="font-weight:800;font-size:18px;color:var(--headline-blue)">Quick categories</div>
             <div style="color:var(--muted);margin-top:8px;font-size:13px">Tap a category to open details</div>
 
             <div class="cat-grid" style="margin-top:12px">
@@ -1713,23 +1763,46 @@
             </div>
           </div>
         </div>
-<!-- SHAKTI CODE POPUP (persistent, global) -->
-<div id="shaktiPopup" 
-     style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 99999;">
-  <div style="width: 92%; max-width:1100px; height: 88%; background: #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.35);">
-    <button id="shaktiPopupClose" aria-label="Close Shakti" style="position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.9); color: #fff; border: none; padding: 6px 10px; font-size: 16px; border-radius: 6px; cursor: pointer;">✕</button>
-   <iframe 
-    id="shaktiFrame"
-    src=""
-    allow="microphone; camera; autoplay; encrypted-media"
-    allowfullscreen
-    style="width:100%;height:100%;border:none;"
-></iframe>
-  </div>
-</div>
-
       </div>
     `;
+  }
+
+  // NEW: openShaktiPopupURL - loads given URL into the big Shakti iframe popup
+  function openShaktiPopupURL(pageUrl) {
+    try {
+      const popup = document.getElementById("shaktiPopup");
+      const frame = document.getElementById("shaktiFrame");
+      if (!popup || !frame) {
+        alert('Shakti console not available');
+        return;
+      }
+
+      // pause feed autoplay if running
+      if (window.__pauseAutoplay) window.__pauseAutoplay();
+
+      // lock scroll
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+
+      // set src and show
+      frame.src = pageUrl;
+      popup.style.display = "flex";
+      popup.setAttribute('aria-hidden','false');
+    } catch (err) {
+      console.warn('openShaktiPopupURL error', err);
+    }
+  }
+
+  // close and clear iframe to stop any playback
+  function closeShaktiPopup() {
+    const popup = document.getElementById('shaktiPopup');
+    const frame = document.getElementById('shaktiFrame');
+    if (!popup || !frame) return;
+    frame.src = '';
+    popup.style.display = 'none';
+    popup.setAttribute('aria-hidden','true');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
   }
 
   // -------------------------
@@ -1742,6 +1815,7 @@
     initSafetyMap();
     wireSafetyCategories();
     initSafetyNotifications();
+    initLiveTicker(); // start live messages ticker
   }
 
   function ensureLeafletLoaded(){
@@ -1784,6 +1858,30 @@
     { id: 'n4', text: 'Volunteer requested near Wilson Garden', time: '1h ago' }
   ];
 
+  // Live messages demo array (from your input)
+  const demoMessages = [
+    "Shakti helped me — a stranger intervened and I reached home safely.",
+    "SOS triggered — community arrived in under 7 minutes.",
+    "Evidence kit made my complaint strong and undeniable.",
+    "Route alert saved me from entering an unsafe zone.",
+    "Voice wakeword detected instantly — support activated.",
+    "Officer rerouted and reached faster due to Shakti AI.",
+    "Live audio captured everything — justice became easier.",
+    "A silent SOS saved me when I couldn’t speak.",
+    "Trusted contacts received my alert even on low signal.",
+    "One alert today prevented a major incident.",
+    "शक्ति ने वक्त पर मदद भेजी — मैं सुरक्षित हूँ।",
+    "आवाज़ से SOS ट्रिगर हुआ — सुरक्षा तुरंत पहुँची।",
+    "சக்தி எச்சரிக்கை அனுப்பியது — நான் பாதுகாப்பாக இருப்பேன்.",
+    "శక్తి అలర్ట్ పంపింది — నేను సేఫ్‌గా ఉన్నాను.",
+    "ಶಕ್ತಿ ಅಲರ್ಟ್ ಕಳುಹಿಸಿದ ಕಾರಣ ನಾನು ಸುರಕ್ಷಿತನಾದೆ.",
+    "ശക്തി സമയം തെറ്റാതെ സഹായം എത്തിച്ചു.",
+    "Shakti on — fear gone.",
+    "Aap akela nahi ho — Shakti with you.",
+    "You are not alone — ever.",
+    "One alert = one life saved."
+  ];
+
   // Keep a global map ref so re-opening safety doesn't double-initialize
   window.__safetyMap = window.__safetyMap || null;
   function initSafetyMap(){
@@ -1803,7 +1901,7 @@
         const html = `<div style="background:#ff4d4d;color:#fff;padding:6px 8px;border-radius:20px;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,0.12)">${c.id}</div>`;
         const icon = L.divIcon({ className: '', html, iconSize:[44,24], iconAnchor:[22,12] });
         const m = L.marker([c.lat, c.lng], { icon }).addTo(map);
-        m.bindPopup(`<strong>${escapeHtml(c.label)}</strong><div style="margin-top:8px"><button onclick="(function(){ alert('Open demo for code ${c.id}'); })()" style="padding:6px 8px;border-radius:8px;border:none;background:#138808;color:#fff;cursor:pointer">View</button></div>`);
+        m.bindPopup(`<strong>${escapeHtml(c.label)}</strong><div style="margin-top:8px"><button onclick="(function(){ openShaktiPopupURL('shakti_code_WMS-${c.id}.html'); })()" style="padding:6px 8px;border-radius:8px;border:none;background:#138808;color:#fff;cursor:pointer">Open</button></div>`);
       });
 
       // simple locate control
@@ -1842,10 +1940,6 @@
       if (!bubble || !mapEl) return;
       // show bubble
       bubble.style.display = 'flex';
-      // ensure bubble sits on top-right of the map area: place it inside same parent and absolute top/right
-      const parentRect = mapEl.getBoundingClientRect();
-      // bubble is already absolutely placed in the card via CSS (top/right)
-      // keep default placement (top-right) — no need to compute pixel-perfect here.
     } catch(e){}
   }
 
@@ -1868,11 +1962,43 @@
     function closeDetail(){ detail.style.display = 'none'; }
 
     if (men) men.onclick = () => openDetail('Men / Women', `<p style="color:#777">Personal safety steps:</p>
-      <ol style="color:#333;margin-top:8px">
-        <li>Move to a safe, public area</li>
-        <li>Call emergency services</li>
-        <li>Share live location with a trusted contact</li>
-      </ol>`);
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  <!-- WMS-101 -->
+  <div class="safety-code-box">
+    <div class="title">WMS-101 — WorkSpace Safety Code</div>
+    <div class="desc">AI-assisted reporting, guided evidence collection and legal help.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-101.html')">Activate</button>
+  </div>
+
+  <!-- WMS-0101 -->
+  <div class="safety-code-box">
+    <div class="title">WMS-0101 — Shakti-Code</div>
+    <div class="desc">Send live location and audio to trusted contacts & authorities.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-0101.html')">Activate</button>
+  </div>
+
+  <!-- WMS-RAG -->
+  <div class="safety-code-box">
+    <div class="title">WMS-RAG — Anti Ragging & Anti Harassment</div>
+    <div class="desc">To eradicate harassment and ragging from roots.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-RAG.html')">Activate</button>
+  </div>
+
+  <!-- WMS-150 -->
+  <div class="safety-code-box">
+    <div class="title">WMS-150 — Travel Safety Protocol</div>
+    <div class="desc">Route monitoring, unsafe-area alerts and companion-tracking.</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-150.html')">Activate</button>
+  </div>
+
+</div>`);
 
     if (animals) animals.onclick = () => openDetail('Animal / Nature', `<p style="color:#777">Wildlife & environment:</p>
       <ul style="color:#333;margin-top:8px">
@@ -1886,9 +2012,7 @@
         <li>Share details and live location</li>
       </ul>`);
 
-    if (shakti) shakti.onclick = () => {
-     if (shakti) shakti.onclick = () => openShaktiPopup();
-    };
+    if (shakti) shakti.onclick = () => { openShaktiPopupURL('shakti_code_WMS-0101.html'); };
 
     if (closeBtn) closeBtn.onclick = closeDetail;
   }
@@ -1948,6 +2072,22 @@
   }
 
   // -------------------------
+  // Live ticker for messages (updates every 2 seconds)
+  // -------------------------
+  let _liveTickerTimer = null;
+  function initLiveTicker(){
+    const el = document.getElementById('liveTicker');
+    if (!el) return;
+    let i = 0;
+    function showNext(){
+      el.innerText = demoMessages[i % demoMessages.length];
+      i++;
+    }
+    showNext();
+    _liveTickerTimer = setInterval(showNext, 2000);
+  }
+
+  // -------------------------
   // swap function: page = 'home' | 'safety' | 'plus' | ...
   // -------------------------
   async function swapMainContent(page){
@@ -2000,6 +2140,11 @@
   document.getElementById('navCommunity').addEventListener('click', ()=> setActiveNavAndSwap('navCommunity'));
   document.getElementById('navProfile').addEventListener('click', ()=> setActiveNavAndSwap('navProfile'));
 
+  // wire the shakti popup close button
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'shaktiPopupClose') closeShaktiPopup();
+  });
+
   // -------------------------
   // Init on load: show ALL (all folders in /pics)
   // -------------------------
@@ -2019,30 +2164,6 @@
   function escapeHtml(text){
     return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
-function openShaktiPopup() {
-  const popup = document.getElementById('shaktiPopup');
-  const frame = document.getElementById('shaktiFrame');
-  if (!popup || !frame) return;
-  // set the url once when opening (so it stops loading when closed)
-  frame.src = "https://environments-videos-respected-panel.trycloudflare.com/index.html";
-  popup.style.display = 'flex';
-  // optionally block body scroll while open
-  document.body.style.overflow = 'hidden';
-}
-
-function closeShaktiPopup() {
-  const popup = document.getElementById('shaktiPopup');
-  const frame = document.getElementById('shaktiFrame');
-  if (!popup || !frame) return;
-  frame.src = ''; // stop/clear iframe
-  popup.style.display = 'none';
-  document.body.style.overflow = '';
-}
-
-// wire the close button
-document.addEventListener('click', function(e){
-  if (e.target && e.target.id === 'shaktiPopupClose') closeShaktiPopup();
-});
 
 </script>
 

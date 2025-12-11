@@ -1,0 +1,591 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SHAKTI-IND — Console</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    /* ---------- Theme & fonts ---------- */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap');
+
+    :root{
+      --bg: #fbf9f7;
+      --card: #ffffff;
+      --accent: #ff6b00;    /* warm orange */
+      --accent-2: #16a34a;  /* fresh green */
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.8);
+      --soft-shadow: 0 14px 40px rgba(6,12,20,0.06);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: linear-gradient(180deg,#fffdfb 0%,var(--bg) 100%);
+      color:#08121a; -webkit-font-smoothing:antialiased;
+    }
+
+    /* ---------- Layout: two halves ---------- */
+    .root { display:flex; height:100vh; gap:20px; padding:18px; }
+    .left, .right { background:var(--card); border-radius:var(--radius); box-shadow:var(--soft-shadow); overflow:hidden; }
+    .left { flex:1; min-width:480px; display:flex; flex-direction:column; }
+    .right { flex:1; min-width:420px; display:flex; flex-direction:column; }
+
+    /* ---------- Left console header ---------- */
+    .console-top {
+      display:flex; align-items:center; gap:16px; padding:18px 20px; border-bottom:1px solid #f2f3f5;
+      background:linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.6));
+    }
+    .logo {
+      width:68px; height:68px; border-radius:12px; background:linear-gradient(90deg,var(--accent),#ff8a3d);
+      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:20px;
+      box-shadow:0 12px 30px rgba(255,107,0,0.08);
+    }
+    .title { font-weight:900; font-size:20px; letter-spacing:0.4px; }
+    .subtitle { margin-top:4px; font-size:12px; color:var(--muted); }
+
+    /* Floating Back FAB (bottom-right) */
+    .back-fab {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      background: linear-gradient(90deg, #fff, #fff);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 12px 30px rgba(6,12,20,0.12);
+      cursor: pointer;
+      z-index: 999;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .back-fab:hover { transform: translateY(-6px); box-shadow: 0 18px 36px rgba(6,12,20,0.16); }
+    .back-fab .icon {
+      width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+      background: linear-gradient(90deg,var(--accent), #ff8a3d); color: #fff; font-weight:900;
+    }
+    .back-fab .label { display:none; font-weight:800; color:var(--accent); font-size:13px; }
+
+    /* ---------- Controls row ---------- */
+    .controls { display:flex; gap:12px; padding:14px 20px; align-items:center; border-bottom:1px solid #f3f4f6; }
+    .pill {
+      border-radius:999px; padding:10px 16px; border:0; cursor:pointer; font-weight:800; font-size:14px;
+      transition: transform .12s ease, box-shadow .12s ease;
+      box-shadow: 0 8px 26px rgba(6,12,20,0.04);
+    }
+    .pill.primary { background: linear-gradient(90deg,var(--accent),#ff8a3d); color:#fff; }
+    .pill.secondary { background:#fff; border:1px solid #f0f1f3; color:var(--accent); }
+    .pill.danger { background: linear-gradient(90deg,#ff6b6b,#e74c3c); color:#fff; }
+
+    .controls .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    /* ---------- Left content: evidence list ---------- */
+    .left-body { padding:16px; overflow:auto; display:flex; gap:18px; flex-direction:column; }
+    .filter-row { display:flex; gap:8px; align-items:center; }
+    .chip { padding:8px 12px; border-radius:999px; background:#fff; border:1px solid #f1f2f4; color:var(--muted); cursor:pointer; font-weight:700; }
+    .chip.active { color:var(--accent); background: linear-gradient(90deg, #fffaf6, #fff8f2); box-shadow:0 8px 20px rgba(255,107,0,0.06); border-color:transparent; }
+
+    .events { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+    .event-card { border-radius:12px; border:1px solid #f4f6f8; overflow:hidden; background:linear-gradient(180deg,#fff,#fff); }
+    .event-head { display:flex; align-items:center; gap:12px; padding:12px 12px; }
+    .badge { width:54px; height:54px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:16px; background:linear-gradient(90deg,var(--accent),#ff8a3d); }
+    .evt-info { min-width:0; }
+    .evt-title { font-weight:800; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .evt-desc { color:var(--muted); font-size:12px; margin-top:6px; }
+
+    .event-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+    .body-files { padding:10px 12px 16px; display:flex; flex-direction:column; gap:10px; border-top:1px solid #fbfbfb; }
+    .file-row { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:8px; background: #fff; border-radius:10px; border:1px solid #fbfbfb; }
+    .file-left { min-width:0; max-width:56%; display:flex; flex-direction:column; gap:4px; }
+    .file-name { font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .file-meta { font-size:12px; color:var(--muted); }
+
+    .file-actions { display:flex; align-items:center; gap:10px; }
+
+    audio { width:240px; }
+
+    /* ---------- Right: map top & live console bottom ---------- */
+    .map-top { flex:1; padding:10px; } /* contains #map */
+    #map { width:100%; height:100%; border-radius:10px; }
+
+    .live-console { height:42%; border-top:1px solid #f2f3f5; background:linear-gradient(180deg,#fff,#fff); display:flex; flex-direction:column; }
+    .live-header { padding:12px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #f6f7f8; }
+    .live-list { padding:12px; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+
+    .live-item { display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:10px; background:#fff; border:1px solid #fbfbfb; }
+    .live-dot { width:12px; height:12px; border-radius:50%; background:var(--accent-2); box-shadow:0 6px 16px rgba(14,164,74,0.12); margin-top:6px; }
+    .live-body { font-size:13px; color:#0b1720; }
+    .live-meta { color:var(--muted); font-size:12px; margin-top:6px; }
+
+    /* ---------- Pulsing marker ---------- */
+    .pulse-marker { width:22px; height:22px; border-radius:50%; position:relative; transform:translate(-50%,-50%); }
+    .pulse-marker .dot { width:10px; height:10px; border-radius:50%; background:var(--accent-2); box-shadow:0 6px 18px rgba(14,164,74,0.18); border:2px solid #fff; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+    .pulse-marker .halo { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:22px; height:22px; border-radius:50%; background: rgba(14,164,74,0.14); animation: pulse 1.6s infinite ease-out; }
+    @keyframes pulse { 0%{ transform:translate(-50%,-50%) scale(.95); opacity:.95 } 70%{ transform:translate(-50%,-50%) scale(2.6); opacity:0 } 100%{ opacity:0 } }
+
+    /* ---------- small responsive ---------- */
+    @media (max-width:1100px){
+      .left { min-width:360px; }
+      .right { min-width:300px; }
+      audio { width:180px; }
+    }
+    @media (max-width:820px){
+      .root { flex-direction:column; padding:10px; }
+      .left, .right { min-width:unset; height:50vh; }
+      .live-console { height:40%; }
+      .back-fab { right:12px; bottom:12px; width:48px; height:48px; }
+      .back-fab .icon { width:32px; height:32px }
+    }
+     .backBtn {
+    position: fixed;
+    top: 16px;
+    right: 22px;
+    background: #ffffff;
+    color: #ff6b00;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 20000;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  .backBtn:hover {
+    background: #ff6b00;
+    color: white;
+  }
+  /* hide scrollbar but keep scrolling */
+.left .panel {
+  -ms-overflow-style: none;  /* IE + Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.left .panel::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+  </style>
+</head>
+<body>
+  <!-- <a id="smartBackBtn" class="backBtn">⟵ Back</a> -->
+  <div class="root">
+    <!-- LEFT: full console (evidence and control) -->
+    <div class="left">
+      <div class="console-top">
+        <div class="logo">SI</div>
+        <div>
+          <div class="title">SHAKTI-IND Console</div>
+          <div class="subtitle">Safety Codes — evidence, activation & FIR</div>
+        </div>
+
+        <div style="margin-left:auto; text-align:right;">
+          <div style="font-size:11px; color:var(--muted);">Status</div>
+          <div id="statusText" style="font-weight:800; color:var(--muted);">disarmed</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <button id="armBtn" class="pill primary">ARM</button>
+          <button id="disarmBtn" class="pill secondary" style="display:none;">DISARM</button>
+        </div>
+
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button id="physActivate" class="pill">Physical Activate</button>
+          <button id="physDeactivate" class="pill danger">Physical Deactivate</button>
+        </div>
+      </div>
+
+      <div class="left-body">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-weight:800">Events & Evidence</div>
+          <div style="font-size:12px; color:var(--muted)">Grouped by Event (folder)</div>
+        </div>
+
+        <div class="filter-row">
+          <div class="chip active" id="chipAll" data-filter="all">All</div>
+          <div class="chip" id="chipVoice" data-filter="voice">Voice</div>
+          <div class="chip" id="chipPhys" data-filter="physical">Physical</div>
+          <div style="margin-left:auto; font-size:12px; color:var(--muted)">Tip: Open an event to reveal recordings</div>
+        </div>
+
+        <div class="events" id="eventsContainer">
+          <div style="color:var(--muted)">Loading events…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: map (top) + live console (bottom) -->
+    <div class="right">
+      <div class="map-top" id="mapTop">
+        <div id="map" style="height:100%;"></div>
+      </div>
+
+      <div class="live-console">
+        <div class="live-header">
+          <div style="font-weight:800">Live Console</div>
+          <div style="margin-left:auto; font-size:13px; color:var(--muted)">Realtime activations and outgoing notices</div>
+        </div>
+        <div class="live-list" id="liveList">
+          <div style="color:var(--muted)">No live events yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const backBtn = document.getElementById("smartBackBtn");
+
+  // Detect where user came from
+  const ref = document.referrer;
+
+  backBtn.onclick = () => {
+    if (ref.includes("Homepage/safetypage.html")) {
+      // Came from safety page → go back to safety page
+      window.location.href = "safetypage.html";
+    }
+    else if (ref.includes("HP2.html")) {
+      // Came from homepage → return to homepage
+      window.location.href = "HP2.html";
+    }
+    else {
+      // Direct open or unknown → default to homepage
+      window.location.href = "HP2.html";
+    }
+  };
+</script>
+  <script>
+  // ---------- constants (same endpoints) ----------
+  const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+  const EVIDENCE_URL = '/evidence_full';
+  const DOWNLOAD_BASE = (folder, file) => `/download/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`;
+
+  // state
+  let socket = null;
+  let armed = false;
+  let eventsIndex = {};
+
+  // ---------- map init ----------
+  const map = L.map('map', { zoomControl: true }).setView([17.44, 78.4], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  const markers = {};
+
+  function makePulseIcon() {
+    const html = `<div class="pulse-marker"><div class="halo"></div><div class="dot"></div></div>`;
+    return L.divIcon({ html, className: '', iconSize: [28,28], popupAnchor: [0,-18] });
+  }
+
+  function addMarker(folder, lat=17.44, lon=78.4, label='') {
+    if(markers[folder]) { markers[folder].setLatLng([lat,lon]); return; }
+    const m = L.marker([lat,lon], { icon: makePulseIcon(), riseOnHover:true }).addTo(map);
+    if(label) m.bindPopup(`<strong>${label}</strong>`);
+    markers[folder] = m;
+  }
+
+  // ---------- WebSocket ----------
+  async function ensureSocket(){
+    if(socket && socket.readyState === WebSocket.OPEN) return;
+    socket = new WebSocket(WS_URL);
+    socket.binaryType = 'arraybuffer';
+    socket.onopen = ()=> console.log('ws open');
+    socket.onmessage = (ev)=> {
+      try {
+        const d = JSON.parse(ev.data);
+        handleWsMessage(d);
+      } catch(e){
+        // non-json
+      }
+    };
+    socket.onclose = ()=> { socket = null; console.log('ws closed'); };
+  }
+
+  function handleWsMessage(d){
+    // types: hello, activated, event_cancelled, chunk_saved, event_finished, armed/disarmed
+    if(d.type === 'hello'){ console.log('conn', d.conn_id); }
+    if(d.type === 'armed'){ armed = true; updateUI(); addLive(`Client armed`); return; }
+    if(d.type === 'disarmed'){ armed = false; updateUI(); addLive(`Client disarmed`); return; }
+
+    if(d.type === 'activated'){
+      addLive(`Event activated: ${d.event_id}`);
+      // mark on map and refresh events
+      loadEvents();
+      if(d.event_id) addMarker(d.event_id, 17.44, 78.4, d.event_id);
+    }
+    if(d.type === 'event_cancelled'){
+      addLive(`Event cancelled: ${d.event_id} — reason: ${d.reason || 'cancel'}`);
+      loadEvents();
+    }
+    if(d.type === 'chunk_saved'){
+      addLive(`Chunk saved: ${d.event_id} #${d.chunk}`);
+      loadEvents();
+    }
+    if(d.type === 'event_finished'){
+      addLive(`Event finished: ${d.event_id}`);
+      loadEvents();
+    }
+  }
+
+  // ---------- UI bindings ----------
+  document.getElementById('armBtn').onclick = async () => {
+    await ensureSocket();
+    socket.send(JSON.stringify({cmd:'arm'}));
+    armed = true; updateUI(); startCapture();
+    addLive('ARM pressed (browser)');
+  };
+  document.getElementById('disarmBtn').onclick = async () => {
+    if(socket) socket.send(JSON.stringify({cmd:'disarm'}));
+    armed = false; updateUI(); stopCapture();
+    addLive('DISARM pressed (browser)');
+  };
+
+  document.getElementById('physActivate').onclick = async () => {
+    try{
+      const res = await fetch('/physical/activate', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({note:'ui_press'})});
+      const j = await res.json();
+      if(j.status === 'ok'){
+        addLive(`Physical activate created: ${j.event_id || j.folder || ''}`);
+        await loadEvents();
+        addMarker(j.folder || j.event_id, 17.44, 78.4, j.folder || j.event_id);
+      } else alert('Physical activate failed');
+    }catch(e){ alert('Physical activate error'); }
+  };
+
+  document.getElementById('physDeactivate').onclick = async () => {
+    if(!confirm('Confirm physical deactivation?')) return;
+    try{
+      const res = await fetch('/physical/deactivate', {method:'POST', headers:{'x-physical-key':'letmein','content-type':'application/json'}, body: JSON.stringify({})});
+      const j = await res.json();
+      if(j.status === 'ok'){ addLive(`Physical deactivated: ${j.event_id}`); await loadEvents(); } else alert('Deactivate failed');
+    }catch(e){ alert('Physical deactivate failed'); }
+  };
+
+  function updateUI(){
+    document.getElementById('statusText').textContent = armed ? 'armed' : 'disarmed';
+    document.getElementById('armBtn').style.display = armed ? 'none' : 'inline-block';
+    document.getElementById('disarmBtn').style.display = armed ? 'inline-block' : 'none';
+  }
+
+  // ---------- Events / Evidence fetching (same as before) ----------
+  async function loadEvents(){
+    try{
+      const res = await fetch(EVIDENCE_URL);
+      const arr = await res.json();
+      // server should return structure: { folder: "<folder>", event_id: "<id>", source: "voice"|"physical", created: "iso", files: [...] }
+      // build index
+      eventsIndex = {};
+      arr.forEach(e => {
+        // if server returned plain file list, we try to group by folder prefix - but ideally backend gives event groups
+        eventsIndex[e.folder] = e;
+      });
+      renderEvents();
+    }catch(e){
+      document.getElementById('eventsContainer').innerHTML = `<div style="color:var(--muted)">Failed to load events: ${e.message}</div>`;
+    }
+  }
+
+  function renderEvents(){
+    const container = document.getElementById('eventsContainer');
+    container.innerHTML = '';
+    const filter = document.querySelector('.chip.active').dataset.filter;
+    const list = Object.values(eventsIndex).sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+    const filtered = list.filter(ev => {
+      if(filter === 'voice' && ev.source !== 'voice') return false;
+      if(filter === 'physical' && ev.source !== 'physical') return false;
+      return true;
+    });
+    if(filtered.length === 0){
+      container.innerHTML = '<div style="color:var(--muted)">No events.</div>';
+      return;
+    }
+
+    filtered.forEach(ev => {
+      const card = document.createElement('div'); card.className = 'event-card';
+      const head = document.createElement('div'); head.className = 'event-head';
+      const badge = document.createElement('div'); badge.className = 'badge'; badge.textContent = (ev.event_id||ev.folder||'EV').slice(0,4).toUpperCase();
+      const info = document.createElement('div'); info.className = 'evt-info';
+      const title = document.createElement('div'); title.className = 'evt-title'; title.textContent = `${ev.event_id || ev.folder}`;
+      const desc = document.createElement('div'); desc.className = 'evt-desc'; desc.textContent = `${ev.source || 'voice'} · ${ev.created || ''}${ev.cancelled ? ' · Cancelled' : ''}`;
+      info.appendChild(title); info.appendChild(desc);
+
+      const actions = document.createElement('div'); actions.className = 'event-actions';
+      const open = document.createElement('button'); open.className='pill secondary'; open.textContent='Open'; open.onclick = ()=> {
+        body.style.display = (body.style.display === 'block' ? 'none' : 'block');
+        if(body.style.display === 'block') addMarker(ev.folder || ev.event_id, 17.44, 78.4, ev.folder || ev.event_id);
+      };
+      const dlAll = document.createElement('button'); dlAll.className='pill'; dlAll.textContent='Download all'; dlAll.onclick = ()=> {
+        (ev.files||[]).forEach(f => window.open(DOWNLOAD_BASE(ev.folder, f.name), '_blank'));
+      };
+      actions.appendChild(open); actions.appendChild(dlAll);
+
+      head.appendChild(badge); head.appendChild(info); head.appendChild(actions);
+      card.appendChild(head);
+
+      const body = document.createElement('div'); body.className = 'body-files'; body.style.display = 'none';
+      const files = (ev.files||[]).slice().sort((a,b)=>{
+        if(a.name.includes('_FIR_') && !b.name.includes('_FIR_')) return -1;
+        if(b.name.includes('_FIR_') && !a.name.includes('_FIR_')) return 1;
+        if(a.name.includes('cancel_window') && !b.name.includes('cancel_window')) return -1;
+        if(b.name.includes('cancel_window') && !a.name.includes('cancel_window')) return 1;
+        const ma = a.name.match(/chunk(\d+)/), mb = b.name.match(/chunk(\d+)/);
+        const ia = ma ? parseInt(ma[1]) : 9999, ib = mb ? parseInt(mb[1]) : 9999;
+        return ia - ib;
+      });
+
+      files.forEach(f => {
+        const row = document.createElement('div'); row.className='file-row';
+        const left = document.createElement('div'); left.className='file-left';
+        const nm = document.createElement('div'); nm.className='file-name'; nm.textContent = f.name; nm.title = f.name;
+        const meta = document.createElement('div'); meta.className='file-meta';
+        if(f.meta && f.meta.first_meta) meta.textContent = (f.meta.first_meta.asr || '').slice(0,160);
+        else if(f.meta && f.meta.asr) meta.textContent = (f.meta.asr || '').slice(0,160);
+        else meta.textContent = f.size ? `${f.size} bytes` : '';
+        left.appendChild(nm); left.appendChild(meta);
+
+        const acts = document.createElement('div'); acts.className='file-actions';
+        if(f.type === 'wav'){
+          const a = document.createElement('audio'); a.controls = true; a.src = DOWNLOAD_BASE(ev.folder, f.name);
+          const dl = document.createElement('a'); dl.href = DOWNLOAD_BASE(ev.folder, f.name); dl.download = f.name; dl.style.marginLeft='8px'; dl.textContent = '⬇️';
+          acts.appendChild(a); acts.appendChild(dl);
+        } else {
+          const o = document.createElement('a'); o.href = DOWNLOAD_BASE(ev.folder, f.name); o.target='_blank'; o.textContent = 'Open';
+          acts.appendChild(o);
+        }
+        row.appendChild(left); row.appendChild(acts);
+        body.appendChild(row);
+      });
+
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  // filter chips
+  ['chipAll','chipVoice','chipPhys'].forEach(id=>{
+    document.getElementById(id).onclick = (ev) => {
+      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      ev.target.classList.add('active');
+      renderEvents();
+    };
+  });
+
+  // ---------- live console helper ----------
+  function addLive(msg){
+    const list = document.getElementById('liveList');
+    const item = document.createElement('div'); item.className='live-item';
+    const dot = document.createElement('div'); dot.className='live-dot';
+    const body = document.createElement('div'); body.className='live-body';
+    const t = document.createElement('div'); t.textContent = msg;
+    const ts = document.createElement('div'); ts.className='live-meta'; ts.textContent = new Date().toLocaleString();
+    body.appendChild(t); body.appendChild(ts);
+    item.appendChild(dot); item.appendChild(body);
+    list.insertBefore(item, list.firstChild);
+    // keep only latest 60
+    while(list.children.length > 60) list.removeChild(list.lastChild);
+  }
+
+  // ---------- audio capture & streaming (browser mic) ----------
+  let ac=null, src=null, proc=null, accum = new Float32Array(0);
+  const SAMPLE_RATE = 16000, SEND_SAMPLES = SAMPLE_RATE * 1;
+  async function startCapture(){
+    try{
+      if(!socket || socket.readyState !== WebSocket.OPEN) await ensureSocket();
+      if(ac) return;
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      src = ac.createMediaStreamSource(stream);
+      proc = ac.createScriptProcessor(4096,1,1);
+      src.connect(proc); proc.connect(ac.destination);
+      proc.onaudioprocess = (ev) => {
+        const input = ev.inputBuffer.getChannelData(0);
+        const tmp = new Float32Array(accum.length + input.length); tmp.set(accum); tmp.set(input, accum.length);
+        accum = tmp;
+        const inputRate = ac.sampleRate;
+        if(accum.length >= inputRate * 0.12){
+          const down = downsample(accum, inputRate, SAMPLE_RATE);
+          accum = new Float32Array(0);
+          const int16 = floatTo16Bit(down);
+          let offset = 0;
+          while(offset < int16.length){
+            const take = Math.min(SEND_SAMPLES, int16.length - offset);
+            const frame = int16.slice(offset, offset + take);
+            if(socket && socket.readyState === WebSocket.OPEN) socket.send(frame.buffer);
+            offset += take;
+          }
+        }
+      };
+    }catch(e){ console.error('startCapture', e); addLive('Audio capture failed: ' + (e.message||e)); }
+  }
+
+  function stopCapture(){
+    try{ if(proc){ proc.disconnect(); proc=null; } if(src){ src.disconnect(); src=null; } if(ac){ ac.close(); ac=null; } accum = new Float32Array(0); }catch(e){}
+  }
+
+  function downsample(buffer, inRate, outRate){
+    if(inRate === outRate) return buffer;
+    const ratio = inRate / outRate;
+    const newLen = Math.round(buffer.length / ratio);
+    const out = new Float32Array(newLen);
+    let offsetResult = 0, offsetBuffer = 0;
+    while(offsetResult < out.length){
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+      let accum = 0, count = 0;
+      for(let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++){ accum += buffer[i]; count++; }
+      out[offsetResult] = count ? (accum / count) : 0;
+      offsetResult++; offsetBuffer = nextOffsetBuffer;
+    }
+    return out;
+  }
+
+  function floatTo16Bit(float32Array){
+    const l = float32Array.length;
+    const out = new Int16Array(l);
+    for(let i=0;i<l;i++){
+      let s = Math.max(-1, Math.min(1, float32Array[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return out;
+  }
+
+  // ---------- bootstrap ----------
+  (async function init(){
+    await ensureSocket();
+    await loadEvents();
+    updateUI();
+    addLive('Console ready');
+    // add initial markers for events if metadata contains location
+    Object.values(eventsIndex).slice(0,6).forEach(ev => {
+      if(ev && ev.files){
+        for(const f of ev.files){
+          if(f.meta && f.meta.location && f.meta.location.lat && f.meta.location.lon){
+            addMarker(ev.folder, f.meta.location.lat, f.meta.location.lon, ev.folder);
+            break;
+          }
+        }
+      }
+    });
+  })();
+
+  // ---------- back FAB handler ----------
+  document.getElementById('backFab').addEventListener('click', function(){
+    window.location.href = 'HP2.html';
+  });
+
+  </script>
+</body>
+</html>

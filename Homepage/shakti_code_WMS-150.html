@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WMS-150 · Travel Safety — Route Popup Demo (fixed)</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<style>
+  :root{--bg:#fbfbfd;--card:#fff;--accent:#0b74ff;--accent-2:#7b2ff7;--muted:#65707a;--radius:12px;--danger:#d43f3f}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  body{background:linear-gradient(180deg,#ffffff,#f6f9fc); color:#0b1720}
+  .wrap{display:flex;height:100vh;gap:14px;padding:14px;box-sizing:border-box}
+  .left,.right{background:var(--card);border-radius:12px;box-shadow:0 12px 40px rgba(8,16,30,0.06);overflow:hidden}
+  .left{flex:0 0 420px;display:flex;flex-direction:column}
+  .right{flex:1;display:flex;flex-direction:column}
+  header{padding:18px;border-bottom:1px solid #eef2f6;display:flex;gap:12px;align-items:center}
+  .brand{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent),#5aa5ff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+  .panel{padding:14px;overflow:auto}
+  .controls{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;gap:8px;align-items:center}
+  button.pill{border:0;padding:10px 12px;border-radius:10px;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+  button.ghost{background:#fff;border:1px solid #e6edf6;color:var(--muted);padding:8px;border-radius:10px;cursor:pointer}
+  .contact{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;border:1px solid #f1f5fb;background:#fff}
+  .map-container{height:100%;position:relative}
+  #map{height:100%;width:100%}
+  .danger-overlay{position:absolute;inset:0;background:linear-gradient(90deg, rgba(212,63,63,0.08), rgba(255,255,255,0));pointer-events:none;display:none;z-index:1600;border-radius:12px}
+  .danger-overlay.show{display:block}
+  .search-box{position:absolute;left:12px;top:12px;z-index:1500;display:flex;flex-direction:column;gap:6px}
+  .search-input{width:360px;padding:10px 12px;border-radius:10px;border:0;background:rgba(255,255,255,0.95);box-shadow:0 8px 20px rgba(6,12,20,0.06);font-size:14px}
+  .search-suggestions{max-height:220px;overflow:auto;background:#fff;border-radius:8px;border:1px solid #eef2f6;display:none;box-shadow:0 12px 30px rgba(6,12,20,0.06)}
+  .suggestion{padding:8px;border-radius:6px;cursor:pointer}
+  .live-overlay{position:absolute;left:12px;bottom:12px;z-index:1700;width:340px;background:rgba(255,255,255,0.98);border-radius:10px;padding:10px;box-shadow:0 14px 40px rgba(6,12,20,0.12);border:1px solid #eef2f6;display:none}
+  .live-overlay.show{display:block}
+  .live-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .live-coords{font-family:monospace;font-size:12px;color:var(--muted)}
+  .btn-small{padding:6px 8px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .demo-controls{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .toast{position:fixed;right:18px;top:18px;background:#fff;padding:10px;border-radius:10px;border:1px solid #eef6ff;box-shadow:0 12px 40px rgba(6,12,20,0.08);z-index:3000}
+  .status-bar{padding:10px 12px;border-top:1px solid #eef2f6;display:flex;gap:10px;align-items:center;justify-content:space-between}
+  @media (max-width:1000px){ .left{flex:0 0 360px} .search-input{width:280px} }
+       .backBtn {
+    position: fixed;
+    top: 16px;
+    right: 22px;
+    background: #ffffff;
+    color: #ff6b00;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 20000;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  .backBtn:hover {
+    background: #0b74ff;
+    color: white;
+  }
+  /* hide scrollbar but keep scrolling */
+.left .panel {
+  -ms-overflow-style: none;  /* IE + Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.left .panel::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+  width: 0;
+  height: 0;
+}
+
+</style>
+</head>
+<body>
+<!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+<div class="wrap">
+
+  <div class="left">
+    <header>
+      <div class="brand">SI</div>
+      <div>
+        <div style="font-weight:800">Shakti - WMS-150</div>
+        <div style="font-size:12px;color:var(--muted)">Travel Safety · Route share · Demo · Auto check-in</div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <div style="font-weight:800">Route Setup</div>
+            <div style="font-size:12px;color:var(--muted)">Use the route popup to enter Start & End places (recommended).</div>
+          </div>
+          <button id="openSetRoute" class="ghost">Set Route</button>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button id="enableShare" class="pill" style="flex:1">Enable Route Sharing</button>
+          <button id="startFollow" class="pill" style="flex:1;background:#7b2ff7">Start Live Follow</button>
+        </div>
+
+        <div style="margin-top:8px;">
+          <div style="font-weight:800">Contacts</div>
+          <div id="contactsList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px">Select contacts in the popup when you start sharing. Notifications simulated locally.</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div style="font-weight:800">Info</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <span id="etaBadge" style="background:#f3f7ff;border:1px solid #e6f0ff;padding:8px;border-radius:8px;color:var(--accent);font-weight:700">ETA —</span>
+            <span id="distBadge" style="background:#fff6f6;border:1px solid #ffe9e9;padding:8px;border-radius:8px;color:var(--danger);font-weight:700">Distance —</span>
+            <span id="placeBadge" style="background:#f7f7ff;border:1px solid #eff0ff;padding:8px;border-radius:8px;color:var(--accent-2);font-weight:700">Place —</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div style="font-weight:800">Demo Controls</div>
+          <div class="demo-controls" style="margin-top:8px">
+            <button id="startDemo" class="ghost">Start Demo</button>
+            <button id="pauseDemo" class="ghost">Pause</button>
+            <label style="font-size:13px;color:var(--muted);margin-left:6px">Speed</label>
+            <input id="demoSpeed" type="range" min="0.2" max="4" value="1" step="0.1" style="width:140px"/>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">Demo moves a blue live marker along the route with smooth animation.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="map-container">
+      <div class="search-box">
+        <input id="searchInput" class="search-input" placeholder="Search place, address, landmark..." autocomplete="off" />
+        <div id="searchSuggestions" class="search-suggestions"></div>
+      </div>
+
+      <div id="map"></div>
+      <div id="dangerOverlay" class="danger-overlay"></div>
+
+      <div id="liveOverlay" class="live-overlay">
+        <h4 id="liveTitle">Live Sharing — waiting</h4>
+        <div class="live-row"><div style="font-weight:700">Checking at:</div><div id="liveCoords" class="live-coords">—</div></div>
+        <div style="margin-top:6px;font-size:13px;color:var(--muted)">Accuracy: <span id="liveAcc">—</span> • Last check: <span id="liveLast">—</span></div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="markSafeBtn" class="btn-small">Mark Safe</button>
+          <button id="stopShareBtn" class="btn-small" style="background:#f3f3f3;color:#333">Stop Sharing</button>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:12px;top:90px;z-index:1500">
+        <div style="background:rgba(255,255,255,0.95);padding:8px;border-radius:8px;border:1px solid #eef2f6;min-width:200px">
+          <div style="font-weight:800">Live Monitor</div>
+          <div id="liveStatus" style="font-size:12px;color:var(--muted)">Idle</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="status-bar">
+      <div>Map · OpenStreetMap · OSRM routing</div>
+      <div><button id="closeBtn" class="ghost">Close</button></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Route modal: NEW popup to input Start / End explicitly -->
+<div id="routeModalBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2200">
+  <div style="width:520px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 18px 60px rgba(6,12,20,0.18)">
+    <h3 style="margin:0 0 8px 0">Set Route & Start Sharing</h3>
+    <div style="font-size:13px;color:var(--muted)">Enter Start and End places, or use your current location for Start. Confirm to compute route.</div>
+
+    <label style="font-weight:700;margin-top:10px">Start place</label>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <input id="modalStartInput" type="text" placeholder="Address or place name" style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f6"/>
+      <button id="useCurrentStart" class="ghost" title="Use browser location">Use current</button>
+    </div>
+
+    <label style="font-weight:700;margin-top:10px">End place</label>
+    <input id="modalEndInput" type="text" placeholder="Address or place name" style="width:100%;padding:8px;border-radius:8px;border:1px solid #eef2f6;margin-top:6px"/>
+
+    <label style="font-weight:700;margin-top:10px">Check-in interval (seconds)</label>
+    <input id="modalInterval" type="number" min="5" value="30" style="width:120px;padding:8px;border-radius:8px;border:1px solid #eef2f6;margin-top:6px"/>
+
+    <label style="font-weight:700;margin-top:10px">Select contacts to notify</label>
+    <div id="modalContacts" style="display:flex;flex-direction:column;gap:6px;margin-top:6px"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button id="routeCancel" class="ghost">Cancel</button>
+      <button id="routeConfirm" class="pill">Confirm & Compute Route</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer" style="position:fixed;right:18px;top:18px;z-index:3000"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+<script>
+/* Fixed demo: robust route modal behavior + better errors/feedback.
+*/
+
+// ---------- contacts ----------
+const contacts = [
+  { id:'c1', name:'Anita Rao', phone:'+91 90000 00001'},
+  { id:'c2', name:'R. Kumar', phone:'+91 90000 00002'},
+  { id:'c3', name:'S. Mehta', phone:'+91 90000 00003'}
+];
+
+// ---------- state ----------
+let startPt=null, endPt=null, routeControl=null, demoPoints = [], demoIndex=0, demoTimer=null, demoSpeed=1.0, demoRunning=false;
+let liveMarker=null, sharing=false, selectedContacts=[], placeLabel='', autoCheckinIntervalSecs=30, checkinGraceSecs=30, nextCheckinTimeout=null, awaitingCheckin=false;
+let lastPosition=null;
+
+// ---------- map ----------
+const map = L.map('map', { zoomControl:true }).setView([17.4446,78.3927],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+// live icon
+function makeLiveDivIcon(label='YOU'){
+  const html = `<div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(180deg,#0b74ff,#045fb8);color:white;font-weight:700;font-size:11px;border:2px solid rgba(255,255,255,0.9)"><div style="width:12px;height:12px;border-radius:50%;background:#fff;margin-bottom:2px"></div><div style="font-size:10px">${label}</div></div>`;
+  return L.divIcon({html, className:'', iconSize:[44,44], iconAnchor:[22,22]});
+}
+function setLiveMarker(latlng,label='YOU'){ if(!liveMarker) liveMarker = L.marker(latlng,{icon:makeLiveDivIcon(label)}).addTo(map); else liveMarker.setLatLng(latlng); }
+
+// ---------- search suggestions ----------
+const searchInput = document.getElementById('searchInput');
+const suggestions = document.getElementById('searchSuggestions');
+let searchTimer = null;
+searchInput.addEventListener('input', (e)=> {
+  const q = e.target.value.trim();
+  if(searchTimer) clearTimeout(searchTimer);
+  if(!q){ suggestions.style.display='none'; return; }
+  searchTimer = setTimeout(()=> fetchSearch(q), 250);
+});
+async function fetchSearch(q){
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=6`;
+    const res = await fetch(url);
+    const arr = await res.json();
+    renderSuggestions(arr||[]);
+  }catch(e){ renderSuggestions([]); }
+}
+function renderSuggestions(arr){
+  suggestions.innerHTML=''; if(!arr || arr.length===0){ suggestions.style.display='none'; return; }
+  arr.forEach(it=>{
+    const div=document.createElement('div'); div.className='suggestion';
+    div.style.padding='8px'; div.style.cursor='pointer';
+    div.innerHTML=`<div style="font-weight:700">${it.display_name.split(',').slice(0,2).join(',')}</div><div style="font-size:12px;color:#666">${it.display_name}</div>`;
+    div.onclick = ()=> { suggestions.style.display='none'; onSelectSearch(it); };
+    suggestions.appendChild(div);
+  });
+  suggestions.style.display='block';
+}
+function onSelectSearch(it){
+  const lat=parseFloat(it.lat), lon=parseFloat(it.lon);
+  L.popup().setLatLng([lat,lon]).setContent(`<b>${it.display_name}</b>`).openOn(map);
+  map.setView([lat,lon],16);
+}
+
+// ---------- modal wiring (fixed) ----------
+const routeModal = document.getElementById('routeModalBackdrop');
+document.getElementById('openSetRoute').onclick = ()=> {
+  // populate modal contacts fresh and clear dataset attributes
+  const modalContacts = document.getElementById('modalContacts');
+  modalContacts.innerHTML = '';
+  contacts.forEach(c=>{
+    const label = document.createElement('label');
+    label.style.display='flex'; label.style.alignItems='center'; label.style.gap='8px';
+    label.innerHTML = `<input type="checkbox" id="mc_${c.id}" value="${c.id}"/> <div style="flex:1"><div style="font-weight:700">${c.name}</div><div style="font-size:12px;color:#666">${c.phone}</div></div>`;
+    modalContacts.appendChild(label);
+  });
+  // clear any dataset coordinates left over
+  delete document.getElementById('modalStartInput').dataset.lat;
+  delete document.getElementById('modalStartInput').dataset.lon;
+  document.getElementById('modalStartInput').value = '';
+  document.getElementById('modalEndInput').value = '';
+  document.getElementById('routeModalBackdrop').style.display='flex';
+};
+document.getElementById('routeCancel').onclick = ()=> { routeModal.style.display='none'; };
+
+document.getElementById('useCurrentStart').onclick = async ()=> {
+  if(!navigator.geolocation){ alert('Geolocation not available.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    const inp = document.getElementById('modalStartInput');
+    inp.value = `Current location (${lat.toFixed(5)},${lon.toFixed(5)})`;
+    inp.dataset.lat = lat;
+    inp.dataset.lon = lon;
+  }, err => alert('Unable to fetch location: ' + (err && err.message || '')),{enableHighAccuracy:true});
+};
+
+// route confirm (fixed)
+document.getElementById('routeConfirm').onclick = async ()=> {
+  const sVal = document.getElementById('modalStartInput').value.trim();
+  const eVal = document.getElementById('modalEndInput').value.trim();
+  if(!sVal || !eVal){ alert('Provide both Start and End'); return; }
+
+  // evaluate selected contacts inside modal
+  selectedContacts = [];
+  document.querySelectorAll('#modalContacts input[type=checkbox]').forEach(ch => { if(ch.checked) selectedContacts.push(ch.value); });
+  if(selectedContacts.length === 0){ alert('Select at least one contact to notify'); return; }
+
+  const intervalVal = parseInt(document.getElementById('modalInterval').value||'30',10);
+  autoCheckinIntervalSecs = Math.max(5, intervalVal);
+  placeLabel = document.getElementById('modalEndInput').value.trim();
+
+  try{
+    // START geocode
+    if(document.getElementById('modalStartInput').dataset.lat){
+      startPt = L.latLng(parseFloat(document.getElementById('modalStartInput').dataset.lat), parseFloat(document.getElementById('modalStartInput').dataset.lon));
+      // cleanup dataset
+      delete document.getElementById('modalStartInput').dataset.lat;
+      delete document.getElementById('modalStartInput').dataset.lon;
+    } else {
+      const sgeo = await geocodeText(sVal);
+      if(!sgeo) { alert('Start location not found'); return; }
+      startPt = L.latLng(sgeo.lat, sgeo.lon);
+    }
+
+    // END geocode
+    const egeo = await geocodeText(eVal);
+    if(!egeo) { alert('End location not found'); return; }
+    endPt = L.latLng(egeo.lat, egeo.lon);
+
+    // close modal
+    routeModal.style.display='none';
+
+    // clean existing route control & markers (if any)
+    if(routeControl){ map.removeControl(routeControl); routeControl = null; }
+    // show small markers
+    L.marker(startPt).addTo(map).bindPopup('Start');
+    L.marker(endPt).addTo(map).bindPopup('End');
+
+    computeRoute(startPt, endPt);
+
+    // set sharing state & UI
+    sharing = true;
+    document.getElementById('liveOverlay').classList.add('show');
+    document.getElementById('liveStatus').textContent = 'Sharing';
+    scheduleNextCheckin();
+    showToast('Route ready & sharing enabled');
+  }catch(err){
+    console.error('routeConfirm error', err);
+    alert('Failed to set route: ' + (err && err.message || err));
+  }
+};
+
+// Nominatim geocode helper
+async function geocodeText(q){
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}&limit=1`;
+    const res = await fetch(url);
+    const arr = await res.json();
+    if(!arr || arr.length===0) return null;
+    return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon), name: arr[0].display_name };
+  }catch(e){ console.error('geocode fail', e); return null; }
+}
+
+// ---------- route computation ----------
+function computeRoute(a,b){
+  if(routeControl){ map.removeControl(routeControl); routeControl=null; }
+  routeControl = L.Routing.control({
+    waypoints:[a,b],
+    routeWhileDragging:false,
+    addWaypoints:false,
+    fitSelectedRoute:true,
+    lineOptions:{styles:[{color:'#0277ff',opacity:0.95,weight:6}]},
+    router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'})
+  }).addTo(map);
+
+  routeControl.on('routesfound', e=>{
+    try{
+      const routes = e.routes || [];
+      const r = routes[0];
+      if(!r){ showToast('No route found', true); return; }
+      // OSRM coordinates: usually [ [lat,lng], ... ] or [ [lng,lat], ... ]
+      let coords = r.coordinates || r.coordinates || (r.geometry && r.geometry.coordinates) || null;
+      if(!coords && r.routes && r.routes[0] && r.routes[0].coordinates) coords = r.routes[0].coordinates;
+      // normalize: OSRM may give [lng,lat], convert to [lat,lng]
+      let pts = [];
+      if(Array.isArray(coords) && coords.length>0){
+        if(coords[0].length >= 2 && Math.abs(coords[0][0]) <= 90){
+          // coords look like [lat, lng] already
+          pts = coords.map(c => Array.isArray(c) ? [c[0], c[1]] : null).filter(Boolean);
+        } else {
+          // coords likely [lng, lat]
+          pts = coords.map(c => Array.isArray(c) ? [c[1], c[0]] : null).filter(Boolean);
+        }
+      } else if(r.coordinates && Array.isArray(r.coordinates)){
+        pts = r.coordinates.map(c => [c.lat, c.lng]);
+      }
+
+      // if still empty, fallback to straight line between start & end
+      if(pts.length === 0){
+        const line = turf.lineString([[a.lng,a.lat],[b.lng,b.lat]]);
+        const len = turf.length(line, {units:'kilometers'});
+        const steps = Math.max(20, Math.round(len*40));
+        for(let i=0;i<=steps;i++){
+          const pt = turf.along(line, (len * i / steps), {units:'kilometers'});
+          pts.push([pt.geometry.coordinates[1], pt.geometry.coordinates[0]]);
+        }
+      }
+
+      // compute distance/time badges (prefer r.summary)
+      const dist = (r.summary && r.summary.totalDistance) || (r.summary && r.summary.total_distance) || (r.distance || 0);
+      const timeS = (r.summary && r.summary.totalTime) || (r.summary && r.summary.total_time) || (r.time || r.duration || 0);
+      updateBadges(dist, timeS);
+
+      // prepare demo points from pts array (lat,lng)
+      prepareDemoPointsFromCoords(pts);
+      showToast('Route computed — demo ready');
+    }catch(ex){
+      console.error('routesfound handler error', ex);
+      showToast('Route parse failed', true);
+    }
+  });
+
+  routeControl.on('routingerror', (err)=> {
+    console.error('routing error', err);
+    showToast('Routing error — OSRM may be unreachable', true);
+  });
+}
+
+// prepare demo points
+function prepareDemoPointsFromCoords(pts){
+  demoPoints = [];
+  if(!pts || pts.length === 0) return;
+  // smooth using turf line and sample points
+  const coords = pts.map(p => [p[1], p[0]]); // turf uses [lng,lat]
+  const line = turf.lineString(coords);
+  const lengthKm = turf.length(line, {units:'kilometers'});
+  const steps = Math.max(40, Math.round(lengthKm*40));
+  for(let i=0;i<=steps;i++){
+    const frac = (i/steps) * lengthKm;
+    const p = turf.along(line, frac, {units:'kilometers'});
+    demoPoints.push([p.geometry.coordinates[1], p.geometry.coordinates[0]]);
+  }
+  // place marker at start
+  demoIndex = 0;
+  if(demoPoints.length>0) { setLiveMarker(demoPoints[0],'YOU'); map.panTo(demoPoints[0]); }
+}
+
+// ---------- demo motion ----------
+function startDemoMotion(){
+  if(!demoPoints || demoPoints.length < 2){ showToast('No route ready: compute route first', true); return; }
+  if(!liveMarker) setLiveMarker(demoPoints[0],'YOU');
+  demoRunning = true;
+  document.getElementById('liveStatus').textContent = 'Demo running';
+  document.getElementById('dangerOverlay').classList.remove('show');
+  document.getElementById('liveOverlay').classList.add('show');
+  if(demoTimer) clearInterval(demoTimer);
+  const baseIntervalMs = 300;
+  demoTimer = setInterval(()=> {
+    const inc = Math.max(1, Math.round(1 * demoSpeed));
+    demoIndex += inc;
+    if(demoIndex >= demoPoints.length){
+      demoIndex = demoPoints.length - 1;
+      pauseDemoMotion();
+      showToast('Demo completed — destination reached');
+      return;
+    }
+    const cur = demoPoints[demoIndex];
+    setLiveMarker(cur,'YOU');
+    map.panTo(cur, {animate:true, duration:0.6});
+    const fakePos = { coords: { latitude: cur[0], longitude: cur[1], accuracy: Math.round(10 + Math.random()*40) } };
+    updateLiveOverlay(fakePos);
+    if(demoIndex % Math.max(1, Math.round(8/demoSpeed)) === 0) simulateNotifyContacts(`Location update: ${cur[0].toFixed(5)}, ${cur[1].toFixed(5)}`);
+    updateRemainingBadges(demoIndex);
+  }, baseIntervalMs / Math.max(0.2, demoSpeed));
+}
+function pauseDemoMotion(){ demoRunning=false; document.getElementById('liveStatus').textContent = 'Demo paused'; if(demoTimer){ clearInterval(demoTimer); demoTimer=null; } }
+function resetDemo(){ if(demoTimer){ clearInterval(demoTimer); demoTimer=null; } demoIndex=0; demoRunning=false; if(demoPoints && demoPoints.length>0) { setLiveMarker(demoPoints[0],'YOU'); map.panTo(demoPoints[0]); } document.getElementById('liveStatus').textContent='Idle'; }
+function updateRemainingBadges(idx){
+  if(!demoPoints || demoPoints.length===0) return;
+  let rem = 0;
+  for(let i=idx;i<demoPoints.length-1;i++) rem += map.distance(demoPoints[i], demoPoints[i+1]);
+  const remKm = (rem/1000).toFixed(2);
+  const timeMin = Math.round( (parseFloat(remKm) / 40) * 60 );
+  document.getElementById('distBadge').textContent = `Distance ${remKm} km`;
+  document.getElementById('etaBadge').textContent = `ETA ${timeMin} min`;
+  document.getElementById('placeBadge').textContent = placeLabel ? `Place: ${placeLabel}` : 'Place —';
+}
+
+// ---------- live overlay & notifications ----------
+function updateLiveOverlay(pos){
+  if(!pos) return;
+  lastPosition = pos;
+  document.getElementById('liveCoords').textContent = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+  document.getElementById('liveAcc').textContent = `${Math.round(pos.coords.accuracy)} m`;
+  document.getElementById('liveLast').textContent = new Date().toLocaleTimeString();
+  document.getElementById('liveTitle').textContent = sharing ? `Live Sharing • ${placeLabel || '—'}` : 'Live Sharing — demo';
+}
+function simulateNotifyContacts(msg){
+  selectedContacts.forEach(cid => {
+    const c = contacts.find(x=>x.id===cid);
+    if(c) showSimulatedNotification(c, msg);
+  });
+}
+function showSimulatedNotification(contact, message){
+  const n = document.createElement('div'); n.className='toast';
+  n.style.borderColor='#e6f0ff'; n.innerHTML=`<div style="font-weight:800">${contact.name}</div><div style="font-size:12px;color:#444">${message}</div>`;
+  document.getElementById('toastContainer').appendChild(n);
+  setTimeout(()=> n.remove(), 5500);
+}
+
+// ---------- check-in scheduling ----------
+function scheduleNextCheckin(){ clearNextCheckin(); if(!sharing) return; nextCheckinTimeout = setTimeout(()=> {
+  awaitingCheckin = true;
+  const ok = confirm(`Auto check-in: Are you safe at ${placeLabel || 'your location'}?\nPress OK to confirm safe, Cancel to mark missed.`);
+  if(ok){ awaitingCheckin=false; showToast('You marked SAFE — informing contacts'); sendSafeToContacts(); scheduleNextCheckin(); }
+  else {
+    setTimeout(()=> {
+      if(awaitingCheckin){
+        document.getElementById('dangerOverlay').classList.add('show');
+        showToast('Check-in MISSED — alerts sent', true);
+        sendMissedAlertToContacts();
+        awaitingCheckin=false;
+      }
+      scheduleNextCheckin();
+    }, checkinGraceSecs*1000);
+  }
+}, autoCheckinIntervalSecs*1000); }
+function clearNextCheckin(){ if(nextCheckinTimeout){ clearTimeout(nextCheckinTimeout); nextCheckinTimeout=null; } }
+function sendSafeToContacts(){ selectedContacts.forEach(cid=>{ const c=contacts.find(x=>x.id===cid); if(c) showSimulatedNotification(c, `User CONFIRMED SAFE at ${new Date().toLocaleTimeString()}`); }); document.getElementById('dangerOverlay').classList.remove('show'); }
+function sendMissedAlertToContacts(){ selectedContacts.forEach(cid=>{ const c=contacts.find(x=>x.id===cid); if(c) showSimulatedNotification(c, `ALERT: missed check-in at ${new Date().toLocaleTimeString()}`); }); }
+
+// ---------- UI wiring ----------
+function initContactsUI(){ const contactsList=document.getElementById('contactsList'); contactsList.innerHTML=''; contacts.forEach(c=>{ const div=document.createElement('div'); div.className='contact'; div.innerHTML=`<div style="width:36px;height:36px;border-radius:8px;background:#eef6ff;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800">${c.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</div><div style="flex:1"><div style="font-weight:700">${c.name}</div><div style="font-size:12px;color:#666">${c.phone}</div></div>`; contactsList.appendChild(div); }); }
+initContactsUI();
+
+document.getElementById('enableShare').onclick = ()=> { document.getElementById('openSetRoute').click(); };
+document.getElementById('startFollow').onclick = ()=> { document.getElementById('openSetRoute').click(); };
+document.getElementById('startDemo').onclick = ()=> { demoIndex=0; startDemoMotion(); };
+document.getElementById('pauseDemo').onclick = ()=> { if(demoRunning) pauseDemoMotion(); else startDemoMotion(); };
+document.getElementById('demoSpeed').addEventListener('input', (e)=> demoSpeed=parseFloat(e.target.value));
+document.getElementById('markSafeBtn').onclick = ()=> { awaitingCheckin=false; clearNextCheckin(); sendSafeToContacts(); scheduleNextCheckin(); showToast('Marked safe'); };
+document.getElementById('stopShareBtn').onclick = ()=> { sharing=false; clearNextCheckin(); document.getElementById('dangerOverlay').classList.remove('show'); document.getElementById('liveOverlay').classList.remove('show'); showToast('Sharing stopped'); };
+
+document.getElementById('closeBtn').onclick = ()=> showToast('Close pressed');
+
+// suggestions hide on click outside
+document.addEventListener('click', (e)=> { if(!document.getElementById('searchInput').contains(e.target)) suggestions.style.display='none'; });
+
+// small helpers
+function showToast(txt, important=false){
+  const t=document.createElement('div'); t.className='toast'; t.style.borderColor=important?'#ffd6d6':'#e6f0ff';
+  t.innerHTML=`<div style="font-weight:700">${txt}</div>`; document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=> t.remove(), 4500);
+}
+function updateBadges(distanceM=0, timeS=0){ document.getElementById('distBadge').textContent = distanceM ? `Distance ${(distanceM/1000).toFixed(2)} km` : 'Distance —'; document.getElementById('etaBadge').textContent = timeS ? `ETA ${(timeS/60).toFixed(0)} min` : 'ETA —'; document.getElementById('placeBadge').textContent = placeLabel ? `Place: ${placeLabel}` : 'Place —'; }
+
+// ---------- bootstrap ----------
+(function init(){ showToast('Ready — click "Set Route" to begin'); })();
+// ---------- helper: read the actual route drawn by L.Routing.control ----------
+// ---------- Robust helper: read the exact polyline drawn on the map ----------
+// Looks for a polyline on the map that matches our route style (color & weight).
+function getDrawnRouteCoordsFromMap() {
+  try {
+    // Try to find a polyline matching the routing line style we set earlier
+    let found = null;
+    map.eachLayer(layer => {
+      // L.Routing draws L.Polyline (and may draw multiple polylines). We check style & weight heuristics.
+      if (!found && layer instanceof L.Polyline && !(layer instanceof L.Circle) && layer.options) {
+        // typical options for route line we used: color '#0277ff' and weight 6 (see computeRoute lineOptions)
+        const c = (layer.options.color || '').toString().toLowerCase();
+        const w = layer.options.weight || 0;
+        if (c.includes('0277ff') || c.includes('#0277ff') || c.includes('rgb(2') || (w >= 5 && w <= 12)) {
+          // choose the first matching polyline that has > 2 points
+          const latlngs = layer.getLatLngs ? layer.getLatLngs() : null;
+          // Leaflet polyline latlngs can be nested arrays for multi-polylines; flatten to simple [lat,lng] pairs
+          if (latlngs && latlngs.length > 0) {
+            const flat = [];
+            const flatten = (arr) => {
+              if (!arr) return;
+              if (Array.isArray(arr[0]) || (arr[0] && arr[0].lat === undefined)) {
+                arr.forEach(a => flatten(a));
+              } else {
+                arr.forEach(pt => flat.push([pt.lat, pt.lng]));
+              }
+            };
+            flatten(latlngs);
+            if (flat.length >= 2) {
+              found = flat;
+            }
+          }
+        }
+      }
+    });
+    return found; // either array of [lat,lng] or null
+  } catch (err) {
+    console.error('getDrawnRouteCoordsFromMap error', err);
+    return null;
+  }
+}
+
+// ---------- prepare demo points using provided coords (keeps smoothing) ----------
+function prepareDemoPointsFromCoords(pts){
+  demoPoints = [];
+  if(!pts || pts.length === 0) return;
+  // pts is expected [ [lat,lng], ... ]
+  // convert to turf coords [lng,lat]
+  const coords = pts.map(p => [p[1], p[0]]);
+  const line = turf.lineString(coords);
+  const lengthKm = turf.length(line, {units:'kilometers'});
+  const steps = Math.max(40, Math.round(lengthKm * 40));
+  for(let i=0;i<=steps;i++){
+    const km = (lengthKm * i / steps);
+    const p = turf.along(line, km, {units:'kilometers'});
+    demoPoints.push([p.geometry.coordinates[1], p.geometry.coordinates[0]]);
+  }
+  // reset demo index & place marker at start
+  demoIndex = 0;
+  if(demoPoints.length>0) { setLiveMarker(demoPoints[0],'YOU'); map.panTo(demoPoints[0]); }
+}
+
+// ---------- start demo: use the actual drawn blue line on map, else fallback ----------
+function startDemoMotion(){
+  // First try to get the exact drawn polyline on the map (preferred)
+  const drawn = getDrawnRouteCoordsFromMap();
+  if(drawn && drawn.length >= 2){
+    // use the exact drawn points
+    prepareDemoPointsFromCoords(drawn);
+  } else {
+    // fall back to existing route-control reading (if you previously had coordinates)
+    const coordsFromControl = getRouteCoordinatesFromControl ? getRouteCoordinatesFromControl() : null;
+    if(coordsFromControl && coordsFromControl.length >= 2){
+      prepareDemoPointsFromCoords(coordsFromControl);
+    } else {
+      showToast('No route ready: compute route first', true);
+      return;
+    }
+  }
+
+  if(!liveMarker && demoPoints && demoPoints.length>0) setLiveMarker(demoPoints[0],'YOU');
+
+  demoRunning = true;
+  document.getElementById('liveStatus').textContent = 'Demo running';
+  document.getElementById('dangerOverlay').classList.remove('show');
+  document.getElementById('liveOverlay').classList.add('show');
+
+  if(demoTimer) clearInterval(demoTimer);
+  const baseIntervalMs = 300;
+  demoTimer = setInterval(()=> {
+    const inc = Math.max(1, Math.round(1 * demoSpeed));
+    demoIndex += inc;
+    if(demoIndex >= demoPoints.length){
+      demoIndex = demoPoints.length - 1;
+      pauseDemoMotion();
+      showToast('Demo completed — destination reached');
+      return;
+    }
+    const cur = demoPoints[demoIndex];
+    setLiveMarker(cur,'YOU');
+    map.panTo(cur, {animate:true, duration:0.6});
+    const fakePos = { coords: { latitude: cur[0], longitude: cur[1], accuracy: Math.round(10 + Math.random()*40) } };
+    updateLiveOverlay(fakePos);
+    if(demoIndex % Math.max(1, Math.round(8/demoSpeed)) === 0) simulateNotifyContacts(`Location update: ${cur[0].toFixed(5)}, ${cur[1].toFixed(5)}`);
+    updateRemainingBadges(demoIndex);
+  }, baseIntervalMs / Math.max(0.2, demoSpeed));
+}
+
+
+</script>
+</body>
+</html>

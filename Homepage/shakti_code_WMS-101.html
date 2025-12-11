@@ -1,0 +1,522 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SHAKTI-Workspace Safety</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <style>
+    :root{
+      --accent: #ffe608;
+      --accent-2: #000000;
+      --bg: #fbf9f7;
+      --card: #fff;
+      --muted: #6b7280;
+      --danger: #ff3b30;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#08121a}
+    header{display:flex;align-items:center;gap:18px;padding:18px 28px;background:linear-gradient(90deg,#fff 0%, #fff 60%);border-bottom:1px solid #f0ece9}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:20px;box-shadow:0 6px 20px rgba(6,12,20,0.08)}
+    .title{font-weight:900;font-size:20px}
+    .tagline{color:var(--muted);font-size:13px;margin-top:4px}
+
+    .app{display:flex;gap:18px;padding:18px;height:calc(100vh - 106px)}
+    .left{width:380px;background:var(--card);border-radius:12px;padding:18px;box-shadow:0 12px 40px rgba(6,12,20,0.06);display:flex;flex-direction:column}
+    .right{flex:1;display:flex;flex-direction:column;gap:12px}
+
+    .row{display:flex;gap:8px;align-items:center}
+    .badge{padding:10px 16px;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;font-weight:800;border:none;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .card{background:#fff;border-radius:10px;padding:12px;border:1px solid #f3f4f6;box-shadow:0 6px 18px rgba(10,14,20,0.03)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .stat{padding:12px;border-radius:10px;background:#fafafa;border:1px solid #f1f1f1}
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .val{font-weight:900;margin-top:6px;font-size:16px}
+    input.input{width:100%;padding:10px;border-radius:8px;border:1px solid #eee;margin-top:8px}
+
+    .mapCard{flex:1;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(6,12,20,0.06)}
+    #map{width:100%;height:100%}
+
+    .checkin{
+      position:fixed;right:28px;bottom:28px;z-index:9999;display:flex;align-items:center;gap:12px;
+      background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#fff;padding:14px;border-radius:999px;box-shadow:0 12px 40px rgba(6,12,20,0.14);cursor:pointer;min-width:72px;
+      transition:all .18s ease;
+    }
+    .checkin .dot{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center;font-weight:900}
+    .checkin.expanded{min-width:420px;border-radius:14px;padding:12px 18px}
+    .checkin .content{display:none}
+    .checkin.expanded .content{display:block}
+    .checkin .title{font-weight:900}
+    .checkin .timer{font-size:13px;opacity:0.95;margin-top:4px}
+    .safeBtn{background:white;color:var(--accent);border-radius:10px;padding:8px 12px;border:none;font-weight:900;cursor:pointer}
+    .pulse{animation:pulse 1600ms infinite}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,0,0.4)}70%{box-shadow:0 0 0 14px rgba(255,107,0,0)}100%{box-shadow:0 0 0 0 rgba(255,107,0,0)}}
+
+    .sosOverlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(255,59,48,0.98),rgba(153,20,22,0.98));display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;z-index:10001;padding:20px;text-align:center}
+    .sosOverlay h1{margin:0;font-size:30px}
+    .sosOverlay p{margin:6px 0;color:rgba(255,255,255,0.95)}
+
+    /* MAP danger layer (over the map itself) */
+    .mapDanger{
+      position:absolute;inset:0;background:rgba(255,0,0,0.28);z-index:5000;pointer-events:none;display:none;animation:dangerPulse 1200ms infinite;
+    }
+    @keyframes dangerPulse{
+      0%{opacity:0.18}
+      50%{opacity:0.36}
+      100%{opacity:0.18}
+    }
+
+    .small{font-size:12px;color:var(--muted)}
+    .trustedList{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+    .trustedItem{background:#fff;padding:10px;border-radius:8px;border:1px solid #f3f3f3}
+     .backBtn {
+    position: fixed;
+    top: 16px;
+    right: 22px;
+    background: #ffffff;
+    color: #ff6b00;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 20000;
+    transition: 0.2s ease;
+  }
+  .backBtn:hover {
+    background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    color: white;
+  }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">SI</div>
+    <div>
+      <div class="title">SHAKTI-Workspace Safety</div>
+      <div class="tagline">Protecting you at work — automatic check-ins, quick SOS and live location sharing with your network.</div>
+    </div>
+  </header>
+   <!-- <a href="safetypage.html" class="backBtn">⟵ Back</a> -->
+  <div class="app">
+    <!-- Left panel -->
+    <div class="left">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:900">Workspace Safety</div>
+          <div class="small muted">Always-on workplace protection</div>
+        </div>
+        <div id="workspaceBtn" class="badge">Enable Workspace</div>
+      </div>
+
+      <div class="grid">
+        <div class="stat">
+          <div class="label">Battery</div>
+          <div class="val" id="batteryVal">--%</div>
+          <div class="small muted" id="batteryMsg"></div>
+        </div>
+        <div class="stat">
+          <div class="label">Connection</div>
+          <div class="val" id="connVal">—</div>
+          <div class="small muted" id="connMsg"></div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Office</div>
+          <div class="val" id="officeCoords">Not set</div>
+          <div class="small muted">Long-press on map to set office position</div>
+        </div>
+        <div class="stat">
+          <div class="label">Check-in</div>
+          <div class="val" id="intervalVal">Not active</div>
+          <div class="small muted">You will be asked every interval to confirm "SAFE"</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="card">
+        <div style="font-weight:800">Trusted contacts</div>
+        <div class="trustedList" id="trustedList">
+          <div class="trustedItem">+91 9XXXXXXXX (Primary)</div>
+        </div>
+        <div class="small muted" style="margin-top:8px">Server handles relay to contacts & nearby users. /api/sos will receive location payload.</div>
+      </div>
+
+      <div style="margin-top:auto" class="small muted">Notes: Browser doesn't expose Wi-Fi SSIDs. Geolocation & Overpass (OSM) are used for nearest police stations. Replace `/api/sos` server route to send SMS/WhatsApp/notifications to your contacts.</div>
+    </div>
+
+    <!-- Right panel (map) -->
+    <div class="right">
+      <div class="mapCard">
+        <div id="map"></div>
+        <!-- map danger overlay (hidden until SOS) -->
+        <div id="mapDanger" class="mapDanger"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating check-in -->
+  <div id="checkinWidget" class="checkin pulse" title="Workspace check-in (click to expand)">
+    <div class="dot">!</div>
+    <div class="content">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div>
+          <div class="title">Check-in</div>
+          <div class="timer small" id="checkinTimer">waiting</div>
+        </div>
+        <div style="margin-left:auto"><button id="safeBtn" class="safeBtn">SAFE</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOS full-screen -->
+  <div id="sosOverlay" class="sosOverlay" style="display:none">
+    <h1>EMERGENCY — No response</h1>
+    <p id="sosText">Your last known location has been shared with trusted contacts and nearby Shakti users.</p>
+    <p class="small" id="sosCoords">Fetching location …</p>
+    <p class="small" id="sosNote">Nearby police & nearby users are shown on the map.</p>
+  </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ==========================
+   State & UI bindings
+   ========================== */
+let workspaceEnabled = false;
+let checkinMinutes = null;
+let checkinCountdown = 0;
+const responseTimeoutMs = 30_000; // 30 seconds window to press SAFE (REQUEST)
+let responseTimerId = null;
+let waitingForResponse = false;
+let countdownTimerId = null;
+
+const workspaceBtn = document.getElementById('workspaceBtn');
+const batteryVal = document.getElementById('batteryVal');
+const batteryMsg = document.getElementById('batteryMsg');
+const connVal = document.getElementById('connVal');
+const connMsg = document.getElementById('connMsg');
+const intervalVal = document.getElementById('intervalVal');
+const checkinWidget = document.getElementById('checkinWidget');
+const checkinTimer = document.getElementById('checkinTimer');
+const safeBtn = document.getElementById('safeBtn');
+const sosOverlay = document.getElementById('sosOverlay');
+const sosCoords = document.getElementById('sosCoords');
+const mapDanger = document.getElementById('mapDanger');
+
+/* ==========================
+   Map & markers
+   ========================== */
+let map = L.map('map', { zoomControl: true }).setView([17.444,78.391], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+let userMarker = null, officeMarker = null;
+let policeMarkers = [], nearbyUserMarkers = [];
+
+/* live user marker */
+function setUserMarker(lat,lng){
+  if(!userMarker){
+    userMarker = L.marker([lat,lng], {title:'You'}).addTo(map).bindPopup('You (live)');
+  } else {
+    userMarker.setLatLng([lat,lng]);
+  }
+}
+
+/* long-press set office */
+let pressTimer = null;
+map.on('mousedown touchstart', function(e){
+  pressTimer = setTimeout(()=> {
+    if (officeMarker) map.removeLayer(officeMarker);
+    officeMarker = L.marker([e.latlng.lat, e.latlng.lng], {draggable:true}).addTo(map).bindPopup('Office (drag to adjust)').openPopup();
+    document.getElementById('officeCoords').textContent = e.latlng.lat.toFixed(6)+', '+e.latlng.lng.toFixed(6);
+    officeMarker.on('dragend', function(ev){
+      const p = ev.target.getLatLng();
+      document.getElementById('officeCoords').textContent = p.lat.toFixed(6)+', '+p.lng.toFixed(6);
+    });
+  }, 700);
+});
+map.on('mouseup touchend', ()=> clearTimeout(pressTimer));
+
+/* ==========================
+   Battery & network
+   ========================== */
+async function initBattery(){
+  if('getBattery' in navigator){
+    try {
+      const b = await navigator.getBattery();
+      function update(){
+        const pct = Math.round(b.level*100);
+        batteryVal.textContent = pct + '%';
+        if(pct < 30){
+          batteryMsg.textContent = 'Low battery — charge recommended';
+          batteryMsg.style.color = 'var(--danger)';
+        } else batteryMsg.textContent = '';
+      }
+      b.addEventListener('levelchange', update);
+      b.addEventListener('chargingchange', update);
+      update();
+    } catch(e){ batteryVal.textContent='n/a'; }
+  } else batteryVal.textContent = 'Not supported';
+}
+
+function updateNetworkInfo(){
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  connVal.textContent = navigator.onLine ? 'Online' : 'Offline';
+  if(conn){
+    connMsg.textContent = (conn.effectiveType ? conn.effectiveType + ' • ' : '') + (conn.downlink ? conn.downlink + 'Mbps' : '');
+  } else connMsg.textContent = 'API not supported';
+}
+
+/* ==========================
+   Live location tracking
+   ========================== */
+function startTracking(){
+  if(!('geolocation' in navigator)) return;
+  navigator.geolocation.watchPosition((pos) => {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    setUserMarker(lat,lng);
+  }, (err)=> console.warn('geo err', err), {enableHighAccuracy:true, maximumAge:5000});
+}
+
+/* ==========================
+   Workspace toggle & prompt
+   ========================== */
+workspaceBtn.onclick = () => {
+  workspaceEnabled = !workspaceEnabled;
+  workspaceBtn.textContent = workspaceEnabled ? 'Disable Workspace' : 'Enable Workspace';
+  if(workspaceEnabled){
+    askInterval();
+    startTracking();
+    checkinWidget.classList.add('pulse');
+  } else {
+    stopCheckins();
+    checkinWidget.classList.remove('pulse');
+  }
+};
+
+function askInterval(){
+  const v = prompt('Enter check-in interval in minutes (e.g., 1, 2). Leave blank to disable:', '2');
+  if(!v){ stopCheckins(); return; }
+  const mins = Number(v);
+  if(Number.isFinite(mins) && mins > 0){
+    startCheckins(mins);
+  } else {
+    alert('Invalid number');
+  }
+}
+
+/* ==========================
+   Check-in scheduling (with countdown)
+   ========================== */
+function startCheckins(mins){
+  stopCheckins();
+  checkinMinutes = mins;
+  intervalVal.textContent = mins + ' min';
+  checkinCountdown = Math.round(mins * 60);
+  updateCheckinTimer();
+  countdownTimerId = setInterval(()=>{
+    if(checkinCountdown>0) checkinCountdown--;
+    updateCheckinTimer();
+    if(checkinCountdown<=0){
+      triggerCheckin();
+      checkinCountdown = Math.round(checkinMinutes*60);
+    }
+  }, 1000);
+}
+function stopCheckins(){
+  checkinMinutes = null;
+  intervalVal.textContent = 'Not active';
+  if(countdownTimerId){ clearInterval(countdownTimerId); countdownTimerId = null; }
+  if(responseTimerId){ clearTimeout(responseTimerId); responseTimerId = null; }
+  waitingForResponse = false;
+  checkinTimer.textContent = 'idle';
+}
+function updateCheckinTimer(){
+  if(checkinMinutes){
+    const m = Math.floor(checkinCountdown/60), s = checkinCountdown%60;
+    checkinTimer.textContent = `Next: ${m}m ${s}s`;
+  } else checkinTimer.textContent = 'idle';
+}
+
+/* expand/collapse widget */
+checkinWidget.addEventListener('click', ()=> {
+  checkinWidget.classList.toggle('expanded');
+});
+
+/* safe button */
+safeBtn.addEventListener('click', ()=> {
+  waitingForResponse = false;
+  if(responseTimerId){ clearTimeout(responseTimerId); responseTimerId = null; }
+  checkinWidget.classList.remove('expanded');
+  showToast('Marked SAFE — next check-in scheduled');
+});
+
+/* show small toast */
+function showToast(msg){
+  const el = document.createElement('div');
+  el.textContent = msg;
+  Object.assign(el.style,{position:'fixed',right:'28px',bottom:'110px',background:'#111',color:'#fff',padding:'10px 14px',borderRadius:'10px',zIndex:10002,opacity:0});
+  document.body.appendChild(el);
+  setTimeout(()=> el.style.opacity = 1, 10);
+  setTimeout(()=> { el.style.opacity = 0; setTimeout(()=> el.remove(),300); }, 2200);
+}
+
+/* ==========================
+   Trigger checkin -> response window -> SOS
+   ========================== */
+function triggerCheckin(){
+  if(!workspaceEnabled) return;
+  checkinWidget.classList.add('expanded');
+  waitingForResponse = true;
+  // 30s response window
+  responseTimerId = setTimeout(()=> {
+    if(waitingForResponse){
+      waitingForResponse = false;
+      startSOS();
+    }
+  }, responseTimeoutMs);
+}
+
+/* ==========================
+   SOS flow: capture loc, police, nearby users, send to server, map danger
+   ========================== */
+async function startSOS(){
+  // show big overlay and map danger layer
+  sosOverlay.style.display = 'flex';
+  mapDanger.style.display = 'block';
+  sosCoords.textContent = 'Acquiring location…';
+
+  if(!('geolocation' in navigator)){
+    sosCoords.textContent = 'Geolocation not available';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    sosCoords.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+    // ensure user marker and center
+    if(!userMarker) setUserMarker(lat,lng);
+    else userMarker.setLatLng([lat,lng]);
+    map.setView([lat,lng], 14);
+
+    // show nearby police
+    try {
+      const q = `[out:json][timeout:25];
+        (
+          node["amenity"="police"](around:5000,${lat},${lng});
+          way["amenity"="police"](around:5000,${lat},${lng});
+          relation["amenity"="police"](around:5000,${lat},${lng});
+        );
+        out center 15;`;
+      const res = await fetch('https://overpass-api.de/api/interpreter', {method:'POST', body:q});
+      const json = await res.json();
+      showPolice(json.elements || []);
+    } catch(e){ console.warn('overpass error', e); }
+
+    // generate dummy nearby users and show
+    const nearbyUsers = generateDummyUsers(lat,lng,8);
+    showNearbyUsers(nearbyUsers);
+
+    // send payload to server (implement /api/sos to notify contacts)
+    try {
+      await fetch('/api/sos', {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body: JSON.stringify({
+          time: new Date().toISOString(),
+          lat,lng,
+          battery: batteryVal.textContent,
+          conn: connVal.textContent,
+          note: 'workspace-checkin-missed'
+        })
+      });
+    } catch(e){ console.warn('sos send failed', e); }
+
+  }, (err) => {
+    sosCoords.textContent = 'Location error: ' + (err.message || err.code);
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+
+/* add police markers */
+function showPolice(elements){
+  policeMarkers.forEach(m => map.removeLayer(m));
+  policeMarkers = [];
+  elements.forEach(el=>{
+    const lat = el.lat || (el.center && el.center.lat);
+    const lon = el.lon || (el.center && el.center.lon);
+    if(!lat || !lon) return;
+    const m = L.marker([lat,lon], {icon: L.divIcon({className:'pol-icon', html:'<div style="background:#fff;padding:6px;border-radius:8px;border:2px solid #fff;color:#ff3b30;font-weight:800">PS</div>'})})
+      .addTo(map).bindPopup((el.tags && (el.tags.name || el.tags.operator)) || 'Police station');
+    policeMarkers.push(m);
+  });
+}
+
+/* generate nearby dummy users */
+function generateDummyUsers(lat, lng, count=6){
+  const users = [];
+  for(let i=0;i<count;i++){
+    const r = Math.random()*900 + 50; // meters
+    const angle = Math.random()*Math.PI*2;
+    const dx = (r*Math.cos(angle)) / 111000;
+    const dy = (r*Math.sin(angle)) / (111000*Math.cos(lat*Math.PI/180));
+    const u = {
+      id: 'user_' + Math.floor(Math.random()*90000),
+      name: 'ShaktiUser ' + (i+1),
+      lat: lat + dx,
+      lng: lng + dy,
+      dist_m: Math.round(r)
+    };
+    users.push(u);
+  }
+  return users;
+}
+
+/* show nearby users */
+function showNearbyUsers(users){
+  nearbyUserMarkers.forEach(m => map.removeLayer(m));
+  nearbyUserMarkers = [];
+  users.forEach(u=>{
+    const el = L.marker([u.lat,u.lng], {icon: L.divIcon({className:'', html:`<div style="background:#fff;border-radius:8px;padding:6px;border:2px solid #fff;color:#0a0a0a;font-weight:700">U</div>`, iconSize:[36,36]})})
+      .addTo(map).bindPopup(`${u.name} — ${u.dist_m} m away`);
+    nearbyUserMarkers.push(el);
+  });
+}
+
+/* hide SOS overlay & map danger when user clicks overlay (or you can add a dedicated dismiss) */
+sosOverlay.addEventListener('click', ()=> {
+  sosOverlay.style.display = 'none';
+  mapDanger.style.display = 'none';
+});
+
+/* ==========================
+   Startup
+   ========================== */
+initBattery();
+updateNetworkInfo();
+startTracking();
+setInterval(updateNetworkInfo, 4000);
+
+/* battery & network functions (duplicated for clarity) */
+async function initBattery(){
+  if('getBattery' in navigator){
+    try {
+      const bat = await navigator.getBattery();
+      function upd(){ batteryVal.textContent = Math.round(bat.level*100)+'%'; if(bat.level*100<30){ batteryMsg.textContent='Low battery — charge'; batteryMsg.style.color='var(--danger)'; } else batteryMsg.textContent=''; }
+      bat.addEventListener('levelchange',upd); bat.addEventListener('chargingchange',upd); upd();
+    } catch(e){ batteryVal.textContent='n/a'; }
+  } else batteryVal.textContent='Not supported';
+}
+function updateNetworkInfo(){
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  connVal.textContent = navigator.onLine ? 'Online' : 'Offline';
+  if(conn) connMsg.textContent = (conn.effectiveType?conn.effectiveType+' • ':'') + (conn.downlink?conn.downlink+'Mbps':'');
+  else connMsg.textContent = 'API not supported';
+}
+</script>
+</body>
+</html>
