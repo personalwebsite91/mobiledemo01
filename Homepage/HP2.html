@@ -1786,22 +1786,35 @@ function buildCloudEmbedUrl(item) {
   }
 
   function closePopup(){
-    if (popupPlayingVideo){
-      try { popupPlayingVideo.pause(); popupPlayingVideo.src = ''; } catch(e){}
-      popupPlayingVideo = null;
-    }
-    if (popupBg) { popupBg.style.display = 'none'; popupBg.style.backgroundImage = ''; }
-    closeComments();
-    popup.style.display = 'none';
-    popup.setAttribute('aria-hidden','true');
-    document.removeEventListener('keydown', popupKeyHandler);
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-    _actionsForceHidden = false;
-    _clearActionsTimer();
-    actionsVisible = true;
-    setTimeout(()=> window.__setupSingleVideoAutoplay?.(), 200);
+  // stop any native popup video (existing)
+  if (popupPlayingVideo){
+    try { popupPlayingVideo.pause(); popupPlayingVideo.src = ''; } catch(e){}
+    popupPlayingVideo = null;
   }
+
+  // --- STOP & REMOVE any iframe (Cloudinary / cross-origin player) ---
+  try {
+    const iframe = popupMediaHolder.querySelector('iframe');
+    if (iframe) {
+      // best: set to blank then remove
+      try { iframe.src = 'about:blank'; } catch(e){}
+      iframe.remove();
+    }
+  } catch(e){ /* ignore */ }
+
+  if (popupBg) { popupBg.style.display = 'none'; popupBg.style.backgroundImage = ''; }
+  closeComments();
+  popup.style.display = 'none';
+  popup.setAttribute('aria-hidden','true');
+  document.removeEventListener('keydown', popupKeyHandler);
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  _actionsForceHidden = false;
+  _clearActionsTimer();
+  actionsVisible = true;
+  setTimeout(()=> window.__setupSingleVideoAutoplay?.(), 200);
+}
+
 
   // -------------------------
   // Lazy loading with IntersectionObserver
