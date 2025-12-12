@@ -1164,6 +1164,52 @@ function buildCloudEmbedUrl(item) {
       observer.observe(document.getElementById('feed') || document.body, { childList: true, subtree: true });
     }
   }
+// Auto-advance popup every N seconds when open (pause on user activity)
+(function popupAutoAdvance(){
+  let autoTimer = null;
+  const AUTO_SEC = 6;
+
+  function start() {
+    stop();
+    autoTimer = setInterval(() => {
+      // do not auto if comments are open or user interacted
+      const popupEl = document.getElementById('postPopup');
+      if (!popupEl || popupEl.style.display !== 'block') return;
+      if (popupCommentsEl && popupCommentsEl.classList.contains('open')) return;
+      if (_actionsForceHidden) return; // user recently interacted
+      // if a native video is playing, let it finish; skip auto advance
+      if (popupPlayingVideo && !popupPlayingVideo.paused) return;
+      navigatePopup(1);
+    }, AUTO_SEC * 1000);
+  }
+
+  function stop(){ if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+  // Pause on user interactions inside popup
+  ['pointerdown','touchstart','mouseenter','mousemove'].forEach(ev => {
+    document.getElementById('popupMediaWrap')?.addEventListener(ev, stop, {passive:true});
+  });
+  // resume when popup opened or after short delay when user stops interacting
+  document.addEventListener('click', function(e){
+    if (document.getElementById('postPopup')?.style.display === 'block') {
+      setTimeout(start, 1800);
+    } else {
+      stop();
+    }
+  });
+
+  // hook popup open/close to start/stop
+  const origOpen = openPopupWithMedia;
+  openPopupWithMedia = function(mediaEl) {
+    origOpen(mediaEl);
+    setTimeout(start, 1000);
+  };
+  const origClose = closePopup;
+  closePopup = function() {
+    stop();
+    origClose();
+  };
+})();
 
   /* --------- Auto-play / single video logic (feed) --------- */
   (function singleVideoAutoplay(){
@@ -1367,7 +1413,7 @@ function buildCloudEmbedUrl(item) {
     iframe.src = info.src;
     iframe.width = '100%';
     iframe.height = '100%';
-    iframe.allow = 'autoplay; fullscreen; encrypted-media';
+    iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
     iframe.frameBorder = '0';
     iframe.setAttribute('allowfullscreen', '');
     iframe.style.width = '100%';

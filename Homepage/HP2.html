@@ -627,12 +627,27 @@
 // -------------------------
 function buildCloudEmbedUrl(item) {
   if (!item) return null;
-  if (item.embed_url) return item.embed_url;
+  // Use embed_url if provided, but ensure autoplay + muted params
+  if (item.embed_url) {
+    try {
+      const url = new URL(item.embed_url);
+      // Only set if not already present
+      if (!url.searchParams.has('autoplay')) url.searchParams.set('autoplay', 'true');
+      if (!url.searchParams.has('muted')) url.searchParams.set('muted', 'false');
+      return url.toString();
+    } catch (err) {
+      // fallback if URL fails to parse
+      const sep = item.embed_url.includes('?') ? '&' : '?';
+      return item.embed_url + sep + 'autoplay=true&muted=true';
+    }
+  }
   if (item.cloud_name && item.public_id) {
-    return `https://player.cloudinary.com/embed/?cloud_name=${encodeURIComponent(item.cloud_name)}&public_id=${encodeURIComponent(item.public_id)}&profile=cld-default`;
+    // also add autoplay+muted here
+    return `https://player.cloudinary.com/embed/?cloud_name=${encodeURIComponent(item.cloud_name)}&public_id=${encodeURIComponent(item.public_id)}&profile=cld-default&autoplay=true&muted=true`;
   }
   return null;
 }
+
 
   // -------------------------
   // Helpers
@@ -739,6 +754,7 @@ function buildCloudEmbedUrl(item) {
   // generateCommentsHTML, buildPostHTML, buildFeedRow, etc.
   // (kept unchanged — original code)
   // -------------------------
+
   function generateCommentsHTML(count){
     const names = ["Meera_88","Aarav_21","PriyaSharma","RohanK","Nitya","Kiran.verma","Somu_Reddy","BhavyaS"];
     const texts = ["This helped me understand so much, thank you!","Amazing shot — the lighting is perfect! ✨","Powerful message — nicely said.","So inspiring — keep sharing.","Looks delicious! 😋","Wow, didn't know this — learned something new."];
@@ -1076,6 +1092,52 @@ function buildCloudEmbedUrl(item) {
       }, 260);
     };
   })();
+// Auto-advance popup every N seconds when open (pause on user activity)
+(function popupAutoAdvance(){
+  let autoTimer = null;
+  const AUTO_SEC = 1;
+
+  function start() {
+    stop();
+    autoTimer = setInterval(() => {
+      // do not auto if comments are open or user interacted
+      const popupEl = document.getElementById('postPopup');
+      if (!popupEl || popupEl.style.display !== 'block') return;
+      if (popupCommentsEl && popupCommentsEl.classList.contains('open')) return;
+      if (_actionsForceHidden) return; // user recently interacted
+      // if a native video is playing, let it finish; skip auto advance
+      if (popupPlayingVideo && !popupPlayingVideo.paused) return;
+      navigatePopup(1);
+    }, AUTO_SEC * 1000);
+  }
+
+  function stop(){ if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
+
+  // Pause on user interactions inside popup
+  ['pointerdown','touchstart','mouseenter','mousemove'].forEach(ev => {
+    document.getElementById('popupMediaWrap')?.addEventListener(ev, stop, {passive:true});
+  });
+  // resume when popup opened or after short delay when user stops interacting
+  document.addEventListener('click', function(e){
+    if (document.getElementById('postPopup')?.style.display === 'block') {
+      setTimeout(start, 1800);
+    } else {
+      stop();
+    }
+  });
+
+  // hook popup open/close to start/stop
+  const origOpen = openPopupWithMedia;
+  openPopupWithMedia = function(mediaEl) {
+    origOpen(mediaEl);
+    setTimeout(start, 1000);
+  };
+  const origClose = closePopup;
+  closePopup = function() {
+    stop();
+    origClose();
+  };
+})();
 
   // show floating heart animation centered on the clicked element
   function showLikeAnimation(evt) {
