@@ -65,6 +65,96 @@
         }
       ]
       
+    },
+    {
+      "category": "Educational",
+      "videos": [
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "1_o0iovr",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=1_o0iovr&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/1_o0iovr.jpg"
+        }
+       
+      ]
+      
+    },
+    {
+      "category":"Entertainment",
+      "videos":[
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "1_nnbjda",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=1_nnbjda&profile=cld-defaultt",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/1_nnbjda.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "2_eojjsj",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=2_eojjsj&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/2_eojjsj.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "3_fbks5j",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=3_fbks5j&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/3_fbks5j.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "6_tbkio2",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=6_tbkio2&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/6_tbkio2.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "5_cfw0en",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=5_cfw0en&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/5_cfw0en.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "7_crcxja",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=7_crcxja&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/7_crcxja.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "8_pqifsc",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=8_pqifsc&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/8_pqifsc.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "13_cru4rp",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=13_cru4rp&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/13_cru4rp.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "11_vgykvk",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=11_vgykvk&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/11_vgykvk.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "10_pgmrvz",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=10_pgmrvz&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/10_pgmrvz.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "9_i5p78v",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=9_i5p78v&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/9_i5p78v.jpg"
+        },
+        {
+          "cloud_name": "dn4jcnne6",
+          "public_id": "12_jzugjh",
+          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=12_jzugjh&profile=cld-default",
+          "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550862/12_jzugjh.jpg"
+        }
+      ]
     }
   ]
 }
