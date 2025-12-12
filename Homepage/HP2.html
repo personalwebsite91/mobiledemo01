@@ -530,7 +530,13 @@
   <div class="app">
 
     <!-- fixed header -->
-    <div class="top-left-header" aria-hidden="false" id="appHeader">
+
+    <!-- story strip -->
+    
+
+    <!-- MAIN CONTENT REGION (we will swap this inner HTML for Safety or Home) -->
+    <div id="mainContentWrapper" style="width:100%;max-width:720px;">
+        <div class="top-left-header" aria-hidden="false" id="appHeader">
       <div style="display:flex;flex-direction:column;min-width:0;">
         <div class="brand">SHAKTI-IND</div>
         <div id="topLeftUserSmall" class="small-username" style="margin-top:2px;">Loading...</div>
@@ -540,12 +546,6 @@
         <input id="globalSearch" placeholder="Search users, content, ID..." aria-label="Search users or content">
       </div>
     </div>
-
-    <!-- story strip -->
-    
-
-    <!-- MAIN CONTENT REGION (we will swap this inner HTML for Safety or Home) -->
-    <div id="mainContentWrapper" style="width:100%;max-width:720px;">
       <div class="story-strip-wrapper">
       <div class="story-strip" id="storyStrip" role="list" aria-label="Categories">
         <!-- dynamically rebuilt -->
@@ -1874,6 +1874,16 @@ function buildCloudEmbedUrl(item) {
   function renderSafetyHTML(){
     return `
       <div class="main-feed-container" id="safetyMain" style="padding-bottom:120px;">
+         <div id="mainContentWrapper" style="width:100%;max-width:720px;">
+        <div class="top-left-header" aria-hidden="false" id="appHeader">
+      <div style="display:flex;flex-direction:column;min-width:0;">
+        <div class="brand">SHAKTI-IND</div>
+      </div>
+      <div class="top-search" role="search" aria-label="Search content, users, IDs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="opacity:0.7"><path d="M21 21l-4.35-4.35" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#999" stroke-width="2"/></svg>
+        <input id="globalSearch" placeholder="Search users, content, ID..." aria-label="Search users or content">
+      </div>
+    </div>
         <div class="feed-card" style="border-radius:12px;padding:14px; position:relative;">
           <div style="display:flex;align-items:center;gap:8px" class="small-live">
             <div class="safety-live-small">Live</div>
@@ -2335,6 +2345,25 @@ function buildCloudEmbedUrl(item) {
 
       return;
     }
+    // ---------------- CHATS PAGE ----------------
+if (page === 'plus') {
+  const wrapper = document.getElementById('mainContentWrapper');
+  wrapper.innerHTML = `
+    <div style="width:100%;height:100vh;display:flex;align-items:center;justify-content:center;">
+      <iframe 
+        src="https://shaktichatind.vercel.app/" 
+        style="width:100%;height:100%;border:none;border-radius:0;"
+        allow="camera; microphone; autoplay; encrypted-media"
+      ></iframe>
+    </div>
+  `;
+
+  // Pause feed autoplay if active
+  window.__pauseAutoplay?.();
+
+  return;
+}
+
 
     // default: restore home feed HTML and reinitialize feed
     wrapper.innerHTML = originalHomeHTML;
