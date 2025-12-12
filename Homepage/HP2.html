@@ -623,6 +623,18 @@
 
 <script>
   // -------------------------
+// Cloudinary helpers
+// -------------------------
+function buildCloudEmbedUrl(item) {
+  if (!item) return null;
+  if (item.embed_url) return item.embed_url;
+  if (item.cloud_name && item.public_id) {
+    return `https://player.cloudinary.com/embed/?cloud_name=${encodeURIComponent(item.cloud_name)}&public_id=${encodeURIComponent(item.public_id)}&profile=cld-default`;
+  }
+  return null;
+}
+
+  // -------------------------
   // Helpers
   // -------------------------
   document.getElementById('topLeftUserSmall').innerText =
@@ -742,11 +754,40 @@
     return out;
   }
 
-  function buildPostHTML(post){
-    const initials = post.initials || getInitials(post.title || post.category || 'U');
-    const avatarHtml = `<div class="post-user-pic" title="${post.username || post.title || ''}">${initials}</div>`;
+ function buildPostHTML(post){
+  const initials = post.initials || getInitials(post.title || post.category || 'U');
+  const avatarHtml = `<div class="post-user-pic" title="${post.username || post.title || ''}">${initials}</div>`;
 
-    if (post.type === 'video'){
+  if (post.type === 'cloud-video' || post.type === 'video') {
+    // cloud-video: embed is iframe in popup only; in feed we show poster + play overlay (click opens popup).
+    // native video: keep existing <video> element behavior.
+    if (post.type === 'cloud-video') {
+      // use poster if available, otherwise fallback to a gray box
+      const posterAttr = post.poster ? `style="background-image:url('${post.poster}');background-size:cover;background-position:center;height:220px;border-radius:10px;"` : `style="background:#000;height:220px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff"`;
+      // data-src holds the embed url so popup can detect it
+      return `
+        <div class="post-header">
+          ${avatarHtml}
+          <div style="flex:1">
+            <div class="post-username">${post.username || post.title}</div>
+            <div class="post-time">${post.time}</div>
+          </div>
+        </div>
+
+        <div class="post-video media-placeholder cloud-video-poster" data-src="${post.src}" ${posterAttr} aria-label="Cloudinary video: ${escapeHtml(post.title || '')}">
+          <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+            <div style="width:68px;height:68px;border-radius:50%;background:rgba(0,0,0,0.48);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.18)">▶</div>
+          </div>
+        </div>
+
+        <div class="post-actions">
+          <button class="action-btn like-btn">♡ Like</button>
+          <button class="action-btn share-btn">📤 Share</button>
+        </div>
+        <div class="post-hashtag">#${post.category}</div>
+      `;
+    } else {
+      // native video (unchanged)
       return `
         <div class="post-header">
           ${avatarHtml}
@@ -770,24 +811,27 @@
         </div>
         <div class="post-hashtag">#${post.category}</div>
       `;
-    } else {
-      return `
-        <div class="post-header">
-          ${avatarHtml}
-          <div style="flex:1">
-            <div class="post-username">${post.username || post.title}</div>
-            <div class="post-time">${post.time}</div>
-          </div>
-        </div>
-        <img class="post-img media-placeholder" data-src="${post.src}" alt="${post.title}">
-        <div class="post-actions">
-          <button class="action-btn like-btn">♡ Like</button>
-          <button class="action-btn share-btn">📤 Share</button>
-        </div>
-        <div class="post-hashtag">#${post.category}</div>
-      `;
     }
+  } else {
+    // image branch unchanged
+    return `
+      <div class="post-header">
+        ${avatarHtml}
+        <div style="flex:1">
+          <div class="post-username">${post.username || post.title}</div>
+          <div class="post-time">${post.time}</div>
+        </div>
+      </div>
+      <img class="post-img media-placeholder" data-src="${post.src}" alt="${post.title}">
+      <div class="post-actions">
+        <button class="action-btn like-btn">♡ Like</button>
+        <button class="action-btn share-btn">📤 Share</button>
+      </div>
+      <div class="post-hashtag">#${post.category}</div>
+    `;
   }
+}
+
 
   function buildFeedRow(post, index){
     const postHTML = `<div class="post-box">${buildPostHTML(post)}</div>`;
@@ -844,12 +888,53 @@
   // MAIN FEED GENERATOR
   // -------------------------
   async function generateFeed(folderCategory = null){
-    const feed = $('#feed');
-    if (!feed) return;
-    feed.innerHTML = '';
-    if (window.startLoadingBar) window.startLoadingBar();
-    const catsToLoad = folderCategory ? [folderCategory] : ALL_FOLDER_CATS;
-    let mediaItems = [];
+  const feed = $('#feed');
+  if (!feed) return;
+  feed.innerHTML = '';
+  if (window.startLoadingBar) window.startLoadingBar();
+
+  // Attempt to fetch videos.json (if present). It's optional.
+  let cloudDb = { categories: [] };
+  try {
+    const r = await fetch('videos.json', { cache: 'no-cache' });
+    if (r.ok) cloudDb = await r.json();
+  } catch(e){
+    // no videos.json or failed — fall back to local /pics scanning
+    cloudDb = { categories: [] };
+  }
+
+  const catsToLoad = folderCategory ? [folderCategory] : ALL_FOLDER_CATS;
+  let mediaItems = [];
+
+  // First: load Cloudinary items from videos.json for requested categories
+  try {
+    for (const folder of catsToLoad) {
+      const catEntry = (cloudDb.categories || []).find(c => String((c.category||'').toLowerCase()) === String((folder||'').toLowerCase()));
+      if (catEntry && Array.isArray(catEntry.videos)) {
+        catEntry.videos.forEach(v => {
+          const embed = buildCloudEmbedUrl(v);
+          if (!embed) return;
+          const poster = v.poster || (v.public_id ? `https://res.cloudinary.com/${v.cloud_name}/image/upload/v1/${v.public_id}.jpg` : '');
+          const user = pickUser();
+          mediaItems.push({
+            type: 'cloud-video',
+            src: embed,
+            poster,
+            username: user.username,
+            initials: user.initials,
+            title: (v.title || user.username || folder).toUpperCase(),
+            category: folder,
+            time: `${Math.floor(Math.random()*23)+1} hr ago`
+          });
+        });
+      }
+    }
+  } catch(e){
+    console.warn('cloud read error', e);
+  }
+
+  // Second: still try to load local /pics if no cloud items exist for category (preserves existing behavior)
+  if (mediaItems.length === 0) {
     for (const folder of catsToLoad){
       const list = await loadMediaForCategory(folder, 12);
       list.forEach(m => {
@@ -868,26 +953,28 @@
         });
       });
     }
-
-    if (mediaItems.length === 0) mediaItems = sampleFallbackPosts();
-    mediaItems.sort(() => Math.random() - 0.5);
-
-    mediaItems.forEach((post, i) => {
-      const card = document.createElement('div');
-      card.className = 'feed-card';
-      card.innerHTML = buildFeedRow(post, i);
-      feed.appendChild(card);
-    });
-
-    assignFeedIndices();
-    const present = Array.from(new Set(mediaItems.map(m=>m.category)));
-    rebuildStoryStrip(present);
-
-    attachFeedInteractions();
-    window.__observeMedia?.();
-    window.__setupSingleVideoAutoplay?.();
-    if (window.finishLoadingBar) window.finishLoadingBar();
   }
+
+  if (mediaItems.length === 0) mediaItems = sampleFallbackPosts();
+  mediaItems.sort(() => Math.random() - 0.5);
+
+  mediaItems.forEach((post, i) => {
+    const card = document.createElement('div');
+    card.className = 'feed-card';
+    card.innerHTML = buildFeedRow(post, i);
+    feed.appendChild(card);
+  });
+
+  assignFeedIndices();
+  const present = Array.from(new Set(mediaItems.map(m=>m.category)));
+  rebuildStoryStrip(present);
+
+  attachFeedInteractions();
+  window.__observeMedia?.();
+  window.__setupSingleVideoAutoplay?.();
+  if (window.finishLoadingBar) window.finishLoadingBar();
+}
+
 
   function assignFeedIndices(){
     const mediaEls = document.querySelectorAll('#feed video, #feed img');
@@ -1043,6 +1130,15 @@
       } catch(e){}
       attachOpenHandlers(el);
     });
+      // cloud poster click -> open popup
+  $all('.cloud-video-poster').forEach(el => {
+    // ensure dataset.feedIndex is set by assignFeedIndices; also attach click for opening popup
+    el.removeEventListener('click', onPostMediaClick);
+    el.addEventListener('click', onPostMediaClick, {passive:true});
+    // make it look clickable
+    el.style.cursor = 'pointer';
+  });
+
 
     $all('.like-btn').forEach(btn => {
       btn.removeEventListener('click', postLikeHandler);
@@ -1222,14 +1318,17 @@
     }
   }
 
-  function refreshFeedMediaSources(){
-    const mediaEls = Array.from(document.querySelectorAll('#feed video, #feed img'));
-    feedMediaSources = mediaEls.map((el, idx) => {
-      const s = el.dataset.src || el.querySelector('source')?.src || el.src || '';
-      const t = el.tagName.toLowerCase() === 'video' ? 'video' : 'image';
-      return { src: s, feedIndex: parseInt(el.dataset.feedIndex || -1), poster: el.getAttribute('poster') || '' , postBox: el.closest('.feed-card'), type: t };
-    });
-  }
+ function refreshFeedMediaSources(){
+  const mediaEls = Array.from(document.querySelectorAll('#feed .post-video, #feed .post-img, #feed .cloud-video-poster, #feed video, #feed img'));
+  feedMediaSources = mediaEls.map((el, idx) => {
+    // priority: data-src (native), dataset.src, src (img), or data-src for cloud poster points to embed
+    const s = el.dataset.src || el.getAttribute('data-src') || el.querySelector('source')?.src || el.src || '';
+    const isCloud = el.classList && el.classList.contains('cloud-video-poster');
+    const t = isCloud ? 'cloud-video' : (el.tagName.toLowerCase() === 'video' ? 'video' : 'image');
+    return { src: s, feedIndex: parseInt(el.dataset.feedIndex || idx), poster: el.getAttribute('poster') || el.style.backgroundImage?.replace(/url\(["']?(.*?)["']?\)/,'$1') || '', postBox: el.closest('.feed-card'), type: t };
+  });
+}
+
 
   function showPopupIndex(idx){
     if (idx < 0 || idx >= feedMediaSources.length) return;
@@ -1258,65 +1357,91 @@
         togglePopupActionsByUser();
       });
     } else {
-      const video = document.createElement('video');
-      video.controls = true;
-      video.playsInline = true;
-      video.preload = 'auto';
-      video.autoplay = true;
-      video.loop = false;
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.muted = true;
-      video.style.maxWidth = '100%';
-      video.style.maxHeight = '100%';
-      video.style.objectFit = 'cover';
-      const source = document.createElement('source');
-      source.src = info.src;
-      video.appendChild(source);
-      if (info.poster) video.setAttribute('poster', info.poster);
-      video.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        if (popupCommentsEl && popupCommentsEl.classList.contains("open")) {
-          closeComments();
-          return;
-        }
-        if (video.paused) {
-          video.play().catch(()=>{});
-          if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "⏸";
-        } else {
-          video.pause();
-          if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "▶";
-        }
-        togglePopupActionsByUser();
-      });
-      video.addEventListener('loadedmetadata', () => {
-        try {
-          const vidAR = video.videoWidth / (video.videoHeight || 1);
-          const winAR = window.innerWidth / (window.innerHeight || 1);
-          if (vidAR > winAR * 1.05) {
-            video.style.objectFit = 'contain';
-            const bgUrl = info.poster || info.src;
-            if (bgUrl && popupBg) {
-              popupBg.style.backgroundImage = `url("${bgUrl}")`;
-              popupBg.style.display = 'block';
-            }
-          } else {
-            video.style.objectFit = 'cover';
-            if (popupBg) popupBg.style.display = 'none';
+  // If this feed item is a Cloudinary embed (iframe), create iframe; otherwise create native video
+  const infoType = info.type || '';
+  if (infoType === 'cloud-video' || /\.cloudinary\.com\/embed\/?/i.test(info.src) || info.src.includes('player.cloudinary.com/embed')) {
+    // Cloudinary embed iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = info.src;
+    iframe.width = '100%';
+    iframe.height = '100%';
+    iframe.allow = 'autoplay; fullscreen; encrypted-media';
+    iframe.frameBorder = '0';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = '0';
+    iframe.style.background = '#000';
+    iframe.style.objectFit = 'cover';
+    // place iframe
+    popupMediaHolder.appendChild(iframe);
+    popupPlayingVideo = null; // cannot control iframe like a video element
+    // hide play/pause since iframe is not a controllable <video>
+    popupPlayPauseBtn.style.display = 'none';
+  } else {
+    // native video (existing logic, unchanged)
+    const video = document.createElement('video');
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = 'auto';
+    video.autoplay = true;
+    video.loop = false;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.muted = true;
+    video.style.maxWidth = '100%';
+    video.style.maxHeight = '100%';
+    video.style.objectFit = 'cover';
+    const source = document.createElement('source');
+    source.src = info.src;
+    video.appendChild(source);
+    if (info.poster) video.setAttribute('poster', info.poster);
+    // existing listeners and logic...
+    video.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (popupCommentsEl && popupCommentsEl.classList.contains("open")) {
+        closeComments();
+        return;
+      }
+      if (video.paused) {
+        video.play().catch(()=>{});
+        if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "⏸";
+      } else {
+        video.pause();
+        if (popupPlayPauseBtn) popupPlayPauseBtn.textContent = "▶";
+      }
+      togglePopupActionsByUser();
+    });
+    video.addEventListener('loadedmetadata', () => {
+      try {
+        const vidAR = video.videoWidth / (video.videoHeight || 1);
+        const winAR = window.innerWidth / (window.innerHeight || 1);
+        if (vidAR > winAR * 1.05) {
+          video.style.objectFit = 'contain';
+          const bgUrl = info.poster || info.src;
+          if (bgUrl && popupBg) {
+            popupBg.style.backgroundImage = `url("${bgUrl}")`;
+            popupBg.style.display = 'block';
           }
-        } catch(e){}
-      });
-      video.addEventListener('ended', () => {
-        setTimeout(()=> navigatePopup(1), 260);
-      });
-      popupMediaHolder.appendChild(video);
-      popupPlayingVideo = video;
-      video.play().then(()=> {
-        setTimeout(()=> { try{ video.muted = false; } catch(e){} }, 300);
-      }).catch(()=>{});
-      popupPlayPauseBtn.style.display = 'inline-block';
-      popupPlayPauseBtn.textContent = '⏸';
-    }
+        } else {
+          video.style.objectFit = 'cover';
+          if (popupBg) popupBg.style.display = 'none';
+        }
+      } catch(e){}
+    });
+    video.addEventListener('ended', () => {
+      setTimeout(()=> navigatePopup(1), 260);
+    });
+    popupMediaHolder.appendChild(video);
+    popupPlayingVideo = video;
+    video.play().then(()=> {
+      setTimeout(()=> { try{ video.muted = false; } catch(e){} }, 300);
+    }).catch(()=>{});
+    popupPlayPauseBtn.style.display = 'inline-block';
+    popupPlayPauseBtn.textContent = '⏸';
+  }
+}
+
 
     popupCommentsList.innerHTML = '';
     try {
