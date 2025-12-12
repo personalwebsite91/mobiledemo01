@@ -62,14 +62,9 @@
           "public_id": "5_bgjf6l",
           "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=5_bgjf6l&profile=cld-default",
           "poster": "https://res.cloudinary.com/dn4jcnne6/video/upload/v1765550885/5_bgjf6l.jpg"
-        },
-        {
-          "cloud_name": "dn4jcnne6",
-          "public_id": "4_tt8gno",
-          "embed_url": "https://player.cloudinary.com/embed/?cloud_name=dn4jcnne6&public_id=4_tt8gno&profile=cld-default",
-          "poster": "https://res.cloudinary.com/dn4jcnne6/image/upload/v1765550860/4_tt8gno.jpg"
         }
       ]
+      
     }
   ]
 }
