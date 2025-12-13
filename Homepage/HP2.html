@@ -1972,6 +1972,27 @@ function buildCloudEmbedUrl(item) {
               <div id="catDetailBody" class="cat-detail"></div>
             </div>
           </div>
+          <div class="safety-card" style="margin-top:12px;">
+            <div style="font-weight:800;font-size:18px;color:var(--headline-blue)">Your Problem , Your Vote</div>
+            <div style="color:var(--muted);margin-top:8px;font-size:13px">Wanna represent your street problem?</div>
+
+            <div class="cat-grid" style="margin-top:12px">
+              <div class="cat-box" id="catcompliant"><strong>Public Compliant</strong><p>Your right , You Question</p></div>
+              <div class="cat-box" id="catprob"><strong>Represemt National Problem</strong><p>National Wide Problem Representation</p></div>
+              <div class="cat-box" id="catstate"><strong>Represemt State Problem</strong><p>State Wide Problem Representation</p></div>
+              <div class="cat-box" id="catai"><strong>Compliant <br>with ai</strong><p>you represent your problem , we forward to necessary department!.</p></div>
+            </div>
+            
+
+            <!-- detail area that opens inside the same card -->
+            <div id="catDetail" style="display:none;margin-top:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div id="catDetailTitle" style="font-weight:800">Title</div>
+                <button id="catDetailClose" class="back-x">✕</button>
+              </div>
+              <div id="catDetailBody" class="cat-detail"></div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -2155,6 +2176,10 @@ function buildCloudEmbedUrl(item) {
 
   function wireSafetyCategories(){
     const men = document.getElementById('catMen');
+    const com = document.getElementById('catcompliant');
+    const prob = document.getElementById('catprob');
+    const state = document.getElementById('catstate');
+    const ai = document.getElementById('catai');
     const animals = document.getElementById('catAnimals');
     const human = document.getElementById('catHuman');
     const shakti = document.getElementById('catShakti');
@@ -2206,6 +2231,94 @@ function buildCloudEmbedUrl(item) {
     <div class="desc">Route monitoring, unsafe-area alerts and companion-tracking.</div>
     <button class="activateBtn"
       onclick="openShaktiPopupURL('shakti_code_WMS-150.html')">Activate</button>
+  </div>
+
+</div>`);
+    if (com) com.onclick = () => openDetail('Public Compliant', `<p style="color:#777">you question, we take care.<p style="color:red;font-weight:900">For the public</p></p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  
+  <div class="safety-code-box">
+    <div class="title">Anonymous Compliant</div>
+    <div class="desc">category : public transport , government officials , related queries</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('anonymouscomplaint.html')">Write , for your right </button>
+  </div>
+
+
+  <div class="safety-code-box">
+    <div class="title">Necessary Actions</div>
+    <div class="desc">Actions should be take in charge within 24rs , alert 24/7</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('https://edt-proposition-statute-satisfaction.trycloudflare.com/index.html')">Immediate Response</button>
+  </div>
+
+</div>`);
+    if (ai) ai.onclick = () => openDetail('Compliant with ai', `<p style="color:#777">you question, we take care.<p style="color:red;font-weight:900">For the public</p></p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  
+  <div class="safety-code-box">
+    <div class="title">Anonymous Compliant</div>
+    <div class="desc">category : public transport , government officials , related queries</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-101.html')">Write , for your right </button>
+  </div>
+
+
+  <div class="safety-code-box">
+    <div class="title">Necessary Actions</div>
+    <div class="desc">Actions should be take in charge within 24rs , alert 24/7</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('https://edt-proposition-statute-satisfaction.trycloudflare.com/index.html')">Immediate Response</button>
+  </div>
+
+</div>`);
+    if (prob) prob.onclick = () => openDetail('National Problem Representation', `<p style="color:#777">you question, we take care.<p style="color:red;font-weight:900">For the public</p></p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  
+  <div class="safety-code-box">
+    <div class="title">Anonymous Compliant</div>
+    <div class="desc">category : public transport , government officials , related queries</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-101.html')">Write , for your right </button>
+  </div>
+
+
+  <div class="safety-code-box">
+    <div class="title">Necessary Actions</div>
+    <div class="desc">Actions should be take in charge within 24rs , alert 24/7</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('https://edt-proposition-statute-satisfaction.trycloudflare.com/index.html')">Immediate Response</button>
+  </div>
+
+</div>`);
+    if (state) state.onclick = () => openDetail('State Problem Representation', `<p style="color:#777">you question, we take care.<p style="color:red;font-weight:900">For the public</p></p>
+      <div class="feed-card" style="padding:14px;border-radius:12px;">
+
+  <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Codes available</div>
+
+  
+  <div class="safety-code-box">
+    <div class="title">Anonymous Compliant</div>
+    <div class="desc">category : public transport , government officials , related queries</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('shakti_code_WMS-101.html')">Write , for your right </button>
+  </div>
+
+
+  <div class="safety-code-box">
+    <div class="title">Necessary Actions</div>
+    <div class="desc">Actions should be take in charge within 24rs , alert 24/7</div>
+    <button class="activateBtn"
+      onclick="openShaktiPopupURL('https://edt-proposition-statute-satisfaction.trycloudflare.com/index.html')">Immediate Response</button>
   </div>
 
 </div>`);

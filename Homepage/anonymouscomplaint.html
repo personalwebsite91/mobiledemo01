@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SHAKTI-IND — Anonymous Complaint</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --accent:#ff6b00;
+  --accent-soft:#fff3e8;
+  --green:#16a34a;
+  --muted:#6b7280;
+  --radius:16px;
+  --shadow:0 20px 50px rgba(6,12,20,0.08);
+  --soft-border:1px solid rgba(0,0,0,0.05);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:'Inter',system-ui;
+  background:linear-gradient(180deg,#ffffff 0%,var(--bg) 100%);
+  color:#0f172a;
+}
+
+.root{
+  max-width:900px;
+  margin:0 auto;
+  padding:24px 18px 60px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px;
+  border:var(--soft-border);
+}
+
+/* ---------- HEADER ---------- */
+.header{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:18px;
+}
+
+.logo{
+  width:56px;
+  height:56px;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),#ff8a3d);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:900;
+  font-size:20px;
+  box-shadow:0 10px 30px rgba(255,107,0,0.25);
+}
+
+.title{
+  font-weight:900;
+  font-size:22px;
+}
+
+.subtitle{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+/* ---------- FORM ---------- */
+.form-group{margin-bottom:18px}
+
+label{
+  font-weight:700;
+  font-size:14px;
+}
+
+textarea,input{
+  width:100%;
+  margin-top:8px;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid #e5e7eb;
+  font-family:inherit;
+  font-size:14px;
+  transition:0.2s ease;
+}
+
+textarea:focus,
+input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+textarea{min-height:140px;resize:vertical}
+
+.checkbox{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+  font-size:14px;
+}
+
+.checkbox input{transform:scale(1.1)}
+
+button{
+  padding:12px 22px;
+  border-radius:999px;
+  border:none;
+  font-weight:800;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+.primary{
+  background:linear-gradient(135deg,var(--accent),#ff8a3d);
+  color:white;
+  box-shadow:0 10px 30px rgba(255,107,0,0.25);
+}
+
+.primary:hover{
+  transform:translateY(-2px);
+}
+
+.secondary{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  color:var(--accent);
+}
+
+.secondary:hover{
+  background:var(--accent-soft);
+}
+
+/* ---------- LIST ---------- */
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.item{
+  border-radius:14px;
+  padding:16px;
+  background:#fff;
+  border:var(--soft-border);
+}
+
+.item-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.item-title{
+  font-weight:800;
+  font-size:15px;
+}
+
+.item-meta{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+/* vote badge */
+.vote{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#f0fdf4;
+  color:var(--green);
+  font-weight:800;
+  cursor:pointer;
+  font-size:13px;
+}
+
+.vote:hover{
+  background:#dcfce7;
+}
+
+/* ---------- REPLIES ---------- */
+.replies-box{
+  margin-top:10px;
+  padding:12px;
+  background:#fafafa;
+  border-radius:12px;
+  border:1px solid #eee;
+}
+
+.replies-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:700;
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.close-replies{
+  cursor:pointer;
+  color:var(--accent);
+}
+
+.reply-box{
+  margin-top:10px;
+  display:none;
+}
+
+.reply-box textarea{
+  min-height:90px;
+}
+
+/* subtle reply text */
+.reply-text{
+  font-size:13px;
+  margin-top:6px;
+  padding-left:10px;
+  border-left:2px solid #e5e7eb;
+  color:#334155;
+}
+
+
+</style>
+</head>
+
+<body>
+<div class="root">
+
+<!-- HEADER -->
+<div class="card">
+  <div class="header">
+    <div class="logo">SI</div>
+    <div>
+      <div class="title">Anonymous Public Complaint</div>
+      <div class="subtitle">Raise issues safely — for Bharat 🇮🇳</div>
+    </div>
+  </div>
+
+<!-- FORM -->
+<div class="form-group">
+  <label>Problem Statement (max 500 words)</label>
+  <textarea id="problem" maxlength="3000"
+  placeholder="Describe the issue clearly. No personal details required."></textarea>
+</div>
+
+<div class="form-group">
+  <label>Location of Problem</label>
+  <input id="location" list="indiaLocations" placeholder="Search city / village">
+  <datalist id="indiaLocations">
+    <option>Hyderabad</option>
+    <option>Delhi</option>
+    <option>Mumbai</option>
+    <option>Chennai</option>
+    <option>Bengaluru</option>
+    <option>Kolkata</option>
+    <option>Pune</option>
+    <option>Ahmedabad</option>
+    <option>Jaipur</option>
+    <option>Village – Telangana</option>
+    <option>Village – Andhra Pradesh</option>
+    <option>Village – Uttar Pradesh</option>
+    <option>Village – Bihar</option>
+    <option>Village – Tamil Nadu</option>
+    <!-- backend can dynamically fill ALL cities & villages -->
+  </datalist>
+</div>
+
+<div class="form-group">
+  <label>Proposed Solution (optional)</label>
+  <textarea id="solution"
+  placeholder="If you have a solution, mention it (optional)"></textarea>
+</div>
+
+<div class="checkbox">
+  <input type="checkbox" id="jaihind">
+  <label for="jaihind">Jai Hind 🇮🇳 — I stand for my motherland Bharat</label>
+</div>
+
+<br>
+<button class="primary" onclick="submitComplaint()">Submit Complaint</button>
+</div>
+
+<!-- LIST -->
+<div class="card">
+  <h3 style="margin-top:0">Public Complaints</h3>
+  <div class="list" id="complaintList">
+    <div style="color:var(--muted)">No complaints yet.</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let complaints = [];
+
+function submitComplaint(){
+  const problemEl  = document.getElementById("problem");
+  const locationEl = document.getElementById("location");
+  const solutionEl = document.getElementById("solution");
+  const jaihindEl  = document.getElementById("jaihind");
+
+  const p = problemEl.value.trim();
+  const l = locationEl.value.trim();
+  const s = solutionEl.value.trim();
+  const agree = jaihindEl.checked;
+
+  if(!p || !l){
+    alert("Problem and location are mandatory");
+    return;
+  }
+
+  if(!agree){
+    alert("Please confirm Jai Hind 🇮🇳");
+    return;
+  }
+
+  const item = {
+    problem: p,
+    location: l,
+    solution: s
+  };
+
+  // ✅ SEND TO FLASK
+  fetch("http://127.0.0.1:5000/complaint", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item)
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert("Complaint submitted successfully 🇮🇳");
+    loadComplaints();   // refresh list
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Server not reachable. Is Flask running?");
+  });
+
+  // reset form
+  problemEl.value = "";
+  locationEl.value = "";
+  solutionEl.value = "";
+  jaihindEl.checked = false;
+}
+
+
+function render(){
+  const list = document.getElementById("complaintList");
+  list.innerHTML = "";
+
+  if(complaints.length === 0){
+    list.innerHTML = `<div style="color:var(--muted)">No complaints yet.</div>`;
+    return;
+  }
+
+  complaints.forEach(c=>{
+    const d = document.createElement("div");
+    d.className = "item";
+
+    const replies = c.replies || [];
+    const previewReplies = replies.slice(0,5);
+
+    const previewHtml = previewReplies
+      .map(r => `<div style="font-size:13px;margin-top:4px">↳ ${r}</div>`)
+      .join("");
+
+    const fullRepliesHtml = replies
+      .map(r => `<div class="reply-text">↳ ${r}</div>`)
+
+      .join("");
+
+    const hasMore = replies.length > 5;
+
+    d.innerHTML = `
+      <div class="item-header">
+        <div class="item-title">${c.problem.slice(0,80)}...</div>
+        <div class="vote" onclick="vote(${c.id})">▲ ${c.votes}</div>
+      </div>
+
+      <div class="item-meta">${c.location}</div>
+
+      ${previewHtml}
+
+      ${hasMore ? `
+        <div style="margin-top:6px;cursor:pointer;color:var(--accent);font-weight:700"
+             onclick="openReplies(${c.id})">
+          View all ${replies.length} replies
+        </div>
+      ` : ""}
+
+      <div class="replies-box" id="full-${c.id}" style="display:none">
+        <div class="replies-header">
+          <span>All Replies</span>
+          <span class="close-replies" onclick="closeReplies(${c.id})">✖</span>
+        </div>
+        ${fullRepliesHtml}
+      </div>
+
+      <button class="secondary" onclick="toggleReply(${c.id})">Reply</button>
+
+      <div class="reply-box" id="r${c.id}">
+        <textarea placeholder="Your reply"></textarea>
+        <button class="primary" onclick="addReply(${c.id})">Post Reply</button>
+      </div>
+    `;
+
+    list.appendChild(d);
+  });
+}
+function openReplies(id){
+  document.getElementById(`full-${id}`).style.display = "block";
+}
+
+function closeReplies(id){
+  document.getElementById(`full-${id}`).style.display = "none";
+}
+
+
+
+function vote(id){
+  if(!currentUID){
+    alert("Please login to vote");
+    return;
+  }
+
+  fetch(`http://127.0.0.1:5000/vote/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: currentUID })
+  })
+  .then(res => res.json())
+  .then(resp => {
+    if(resp.status === "already_voted"){
+      alert("You have already voted for this issue");
+    }
+    loadComplaints();
+  });
+}
+
+
+
+function toggleReply(id){
+  const box = document.getElementById("r"+id);
+  box.style.display = box.style.display==="block"?"none":"block";
+}
+
+function addReply(id){
+  const box = document.querySelector(`#r${id} textarea`);
+  const text = box.value.trim();
+
+  if(!text){
+    alert("Reply cannot be empty");
+    return;
+  }
+
+  fetch(`http://127.0.0.1:5000/reply/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reply: text })
+  })
+  .then(() => {
+    box.value = "";
+    loadComplaints();   // reload replies from Excel
+  });
+}
+
+
+function loadComplaints(){
+  fetch("http://127.0.0.1:5000/complaints")
+    .then(res => res.json())
+    .then(data => {
+      complaints = data;
+      render();
+    });
+}
+
+
+
+window.onload = loadComplaints;
+
+
+</script>
+<script>
+let currentUID = localStorage.getItem("logged_user_mobile");
+
+if (!currentUID) {
+  console.log("User not logged in");
+} else {
+  console.log("Logged user UID:", currentUID);
+}
+
+</script>
+</body>
+</html>
