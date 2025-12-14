@@ -54,7 +54,6 @@
             /* Search bar beside logo */
 .top-search-bar {
     position: fixed;
-
     /* top: 10%; */
     right: 5%; /* Adjust spacing from logo */
     z-index: 20;
@@ -502,13 +501,22 @@
 }
 
 .settings-icon {
-    font-size: 1.4rem;
-    color: #444;
+    position: fixed;
+    top: 50px;
+    right: 12px;
+    font-size: 1.6rem;
+    /* color: #444; */
     cursor: pointer;
-    transition: color 0.2s;
+    z-index: 50;
+    /* background: white; */
+    padding: 8px 10px;
+    /* border-radius: 50%; */
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.15); */
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .settings-icon:hover {
+    transform: rotate(25deg);
     color: var(--saffron);
 }
 
@@ -777,6 +785,123 @@ body.modal-open {
     background-color: #f5f5f5; 
     border-radius: 8px;
 }
+
+/* 🔱 SHAKTI BADGE */
+.shakti-badge {
+    margin-left: 8px;
+    margin-top: 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #FFD700;
+    animation: shaktiGlow 2.5s infinite ease-in-out;
+    user-select: none;
+}
+
+@keyframes shaktiGlow {
+    0% { text-shadow: 0 0 5px #FFD700; }
+    50% { text-shadow: 0 0 15px #FFD700; }
+    100% { text-shadow: 0 0 5px #FFD700; }
+}
+
+/* 🔱 SHAKTI MODAL BACKGROUND */
+.shakti-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.shakti-modal.open {
+    display: flex;
+    opacity: 1;
+}
+
+/* 🔱 SHAKTI CARD */
+.shakti-modal-card {
+    background: white;
+    border-radius: 18px;
+    padding: 30px 25px;
+    width: 90%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: shaktiPop 0.35s ease;
+    position: relative;
+}
+
+@keyframes shaktiPop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.shakti-close {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #666;
+}
+
+/* CONTENT */
+.shakti-icon {
+    font-size: 4rem;
+    color: #FFD700;
+}
+
+.shakti-title {
+    margin: 10px 0 5px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.shakti-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.shakti-score {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #138808;
+    margin-bottom: 10px;
+}
+
+.shakti-score span {
+    font-size: 2.2rem;
+}
+
+.shakti-progress-bar {
+    height: 8px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.shakti-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF9933, #138808);
+    transition: width 0.5s ease;
+}
+
+.shakti-progress-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.shakti-message {
+    font-size: 0.95rem;
+    color: #444;
+}
+
 </style>
 </head>
 
@@ -785,13 +910,14 @@ body.modal-open {
     <div class="top-bar">
         <div class="logo">SHAKTI-IND</div>
         <div class="top-search-bar">
-      <input type="text" id="searchInput" placeholder="Search users by ID..." />
-      <div id="searchResults" class="search-results"></div>
-  </div>
-        <!-- <a href="profile_page.html" class="back-btn" title="back to homepage">←</a> -->
+        <input type="text" id="searchInput" placeholder="Search users by ID..." />
+        <div id="searchResults" class="search-results"></div>
+    </div>
     </div>
 
+    <div id="settingsIcon" class="settings-icon" onclick="openEditModal()">&#9881;</div>
 
+    
 
     <div class="profile-top">
 
@@ -799,8 +925,10 @@ body.modal-open {
 
     <div class="profile-username-wrapper">
         <div id="profileName" class="profile-username">Loading...</div>
-        <span id="settingsIcon" class="settings-icon" onclick="openEditModal()">&#9881;</span> 
+        <div class="shakti-badge" onclick="openShaktiModal()" title="Shakti Safety Status">
+        -> 🔱</div> 
     </div>
+
 
     <div id="followButtonContainer" class="follow-btn-wrapper" style="display: none;">
         <button id="followBtn" class="follow-btn" onclick="toggleFollow()">Loading...</button>
@@ -984,8 +1112,38 @@ body.modal-open {
     </div>
 
 </div>
-</div>
+<!-- 🔱 SHAKTI STATUS MODAL -->
+<div id="shaktiModal" class="shakti-modal" onclick="closeShaktiModal(event)">
+    <div class="shakti-modal-card" onclick="event.stopPropagation()">
 
+        <span class="shakti-close" onclick="closeShaktiModal()">×</span>
+
+        <div class="shakti-icon">🔱</div>
+
+        <h2 class="shakti-title">Shakti Guardian</h2>
+
+        <p class="shakti-subtitle">
+            Safety Verified Member
+        </p>
+
+        <div class="shakti-score">
+            <span>812</span> / 1000
+        </div>
+
+        <div class="shakti-progress-bar">
+            <div class="shakti-progress-fill" style="width: 88%;"></div>
+        </div>
+
+        <p class="shakti-progress-text">
+            🔥 88% to Shakti Sentinel
+        </p>
+
+        <p class="shakti-message">
+            Your actions help keep this community safe and trusted.
+        </p>
+
+    </div>
+</div>
 
 <script>
 // UNIVERSAL MODAL JAVASCRIPT
@@ -1211,6 +1369,20 @@ highlightViewer.addEventListener('click', closeProfileModal);
 viewerContent.addEventListener('click', (event) => {
     event.stopPropagation();
 });
+
+
+function openShaktiModal() {
+    const modal = document.getElementById("shaktiModal");
+    modal.style.display = "flex";
+    setTimeout(() => modal.classList.add("open"), 10);
+}
+
+function closeShaktiModal(event) {
+    const modal = document.getElementById("shaktiModal");
+    modal.classList.remove("open");
+    setTimeout(() => modal.style.display = "none", 300);
+}
+
 </script>
 
 <script type="module">
