@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SHAKTI-IND — AI Complaint Generator</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --accent:#ff6b00;
+  --accent-soft:#fff3e8;
+  --green:#16a34a;
+  --muted:#6b7280;
+  --radius:16px;
+  --shadow:0 20px 50px rgba(6,12,20,0.08);
+  --soft-border:1px solid rgba(0,0,0,0.05);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:'Inter',system-ui;
+  background:linear-gradient(180deg,#ffffff 0%,var(--bg) 100%);
+  color:#0f172a;
+}
+
+.root{
+  max-width:900px;
+  margin:0 auto;
+  padding:24px 18px 60px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px;
+  border:var(--soft-border);
+}
+
+.header{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.logo{
+  width:56px;height:56px;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),#ff8a3d);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:900;font-size:20px;
+}
+
+.title{font-weight:900;font-size:22px}
+.subtitle{font-size:13px;color:var(--muted);margin-top:4px}
+
+label{font-weight:700;font-size:14px}
+textarea,input{
+  width:100%;margin-top:8px;padding:14px;
+  border-radius:12px;border:1px solid #e5e7eb;
+  font-family:inherit;font-size:14px;
+}
+textarea{min-height:130px}
+
+button{
+  padding:12px 22px;
+  border-radius:999px;border:none;
+  font-weight:800;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#ff8a3d);
+  color:white;
+}
+
+.report{
+  background:#fafafa;
+  border:1px dashed #e5e7eb;
+  border-radius:14px;
+  padding:16px;
+  font-size:14px;
+}
+
+.report h4{margin:0 0 10px 0}
+.report div{margin-bottom:6px}
+
+.muted{color:var(--muted);font-size:13px}
+</style>
+</head>
+
+<body>
+<div class="root">
+
+<!-- HEADER -->
+<div class="card">
+  <div class="header">
+    <div class="logo">SI</div>
+    <div>
+      <div class="title">AI Complaint Generator</div>
+      <div class="subtitle">Write once — AI files it correctly 🇮🇳</div>
+    </div>
+  </div>
+
+<br>
+
+<!-- INPUT -->
+<label>Problem Statement</label>
+<textarea id="problem" placeholder="Describe what happened in your own words"></textarea>
+
+<br><br>
+
+<label>Proof (video / image URL from Shakti)</label>
+<input id="proof" placeholder="https://shakti-ind/...">
+
+<br><br>
+
+<button onclick="generateReport()">Generate AI Complaint</button>
+</div>
+
+<!-- AI REPORT -->
+<div class="card" id="outputCard" style="display:none">
+  <h3>AI Generated Complaint Report</h3>
+
+  <div class="report" id="reportBox"></div>
+
+  <div class="muted">
+    Complaint raised via <b>SHAKTI-IND</b>
+    My Mother Land Bharat
+  </div>
+</div>
+
+</div>
+
+<script>
+    const AP_DEPARTMENTS = [
+  {
+    department: "Transport Department",
+    ministry: "Ministry of Transport, Roads & Buildings",
+    keywords: [
+      "bus", "conductor", "driver", "rtc", "apsrtc",
+      "transport", "ticket", "rash driving",
+      "misbehaving", "govt bus"
+    ]
+  },
+  {
+    department: "Police Department",
+    ministry: "Home Department",
+    keywords: [
+      "police", "constable", "si", "inspector",
+      "station", "fir", "harassment", "bribe",
+      "threat", "law and order"
+    ]
+  },
+  {
+    department: "Health Department",
+    ministry: "Ministry of Health, Medical & Family Welfare",
+    keywords: [
+      "hospital", "doctor", "nurse", "medicine",
+      "ambulance", "health", "primary health",
+      "phc", "government hospital"
+    ]
+  },
+  {
+    department: "Education Department",
+    ministry: "Ministry of School Education",
+    keywords: [
+      "school", "college", "teacher", "lecturer",
+      "principal", "exam", "student",
+      "education", "midday meal"
+    ]
+  },
+  {
+    department: "Municipal Administration",
+    ministry: "Ministry of Municipal Administration & Urban Development",
+    keywords: [
+      "garbage", "drainage", "road damage",
+      "street light", "sewage", "water logging",
+      "municipality", "corporation"
+    ]
+  },
+  {
+    department: "Women & Child Welfare",
+    ministry: "Ministry of Women, Children & Social Welfare",
+    keywords: [
+      "women", "child", "girl", "sexual harassment",
+      "abuse", "misbehavior", "domestic violence",
+      "anganwadi"
+    ]
+  },
+  {
+    department: "Revenue Department",
+    ministry: "Ministry of Revenue",
+    keywords: [
+      "land", "property", "patta", "survey",
+      "revenue", "encroachment", "records"
+    ]
+  },
+  {
+    department: "Rural Development",
+    ministry: "Ministry of Panchayat Raj & Rural Development",
+    keywords: [
+      "village", "panchayat", "sarpanch",
+      "road work", "rural", "gram"
+    ]
+  },
+  {
+    department: "Electricity Department",
+    ministry: "Ministry of Energy",
+    keywords: [
+      "current", "electricity", "power cut",
+      "transformer", "line man", "apspdcl",
+      "apepdcl"
+    ]
+  },
+  {
+    department: "Water Resources",
+    ministry: "Ministry of Irrigation & Water Resources",
+    keywords: [
+      "water supply", "canal", "irrigation",
+      "dam", "drinking water"
+    ]
+  }
+];
+function detectDepartment(problemText) {
+  const text = problemText.toLowerCase();
+
+  for (const entry of AP_DEPARTMENTS) {
+    for (const word of entry.keywords) {
+      if (text.includes(word)) {
+        return {
+          department: entry.department,
+          ministry: entry.ministry
+        };
+      }
+    }
+  }
+
+  // fallback
+  return {
+    department: "General Administration Department",
+    ministry: "Chief Secretary Office, Andhra Pradesh"
+  };
+}
+
+
+function generateReport(){
+  const problem = document.getElementById("problem").value.trim();
+  const proof = document.getElementById("proof").value.trim();
+
+  if(!problem || !proof){
+    alert("Problem statement and proof are required");
+    return;
+  }
+
+  const timestamp = new Date().toLocaleString("en-IN");
+  const location = "Andhra Pradesh (auto-inferred)";
+  const classification = detectDepartment(problem);
+
+  // --- AI-style enhancements ---
+  const enhanced = problem.length > 120
+    ? problem.slice(0,120) + "..."
+    : problem;
+
+  const severity =
+    problem.length > 200 ? "High" :
+    problem.length > 100 ? "Medium" : "Moderate";
+
+  const violationType = problem.toLowerCase().includes("bribe")
+    ? "Abuse of Authority / Corruption"
+    : problem.toLowerCase().includes("harass")
+    ? "Harassment / Misconduct"
+    : problem.toLowerCase().includes("road") || problem.toLowerCase().includes("bus")
+    ? "Public Safety & Transport Negligence"
+    : "Public Service Grievance";
+
+  const impact =
+    severity === "High"
+      ? "Severe impact on public trust and safety"
+      : severity === "Medium"
+      ? "Noticeable inconvenience to citizens"
+      : "Localized but valid civic concern";
+
+  const narrative = `
+I respectfully submit this complaint to bring to notice an issue involving ${classification.department}.
+The incident described below reflects a matter of public concern and requires immediate administrative
+attention. The situation indicates ${violationType.toLowerCase()}, which has resulted in ${impact}.
+The attached proof substantiates the occurrence and supports the authenticity of this complaint.
+`;
+
+  const relief = `
+I kindly request the concerned authorities to conduct a fair inquiry,
+take appropriate corrective action as per rules,
+and ensure such incidents do not recur in the future.
+`;
+
+  const reportHTML = `
+    <h4>AI-Structured Official Complaint</h4>
+
+    <div><b>One-Line Issue Summary:</b> ${enhanced}</div>
+    <div><b>Severity Level (AI-Assessed):</b> ${severity}</div>
+    <div><b>Nature of Concern:</b> ${violationType}</div>
+
+    <hr>
+
+    <div><b>Formal Complaint Narrative:</b><br>${narrative}</div>
+
+    <div><b>Original Citizen Statement:</b><br>${problem}</div>
+
+    <div><b>Proof Submitted:</b>
+      <a href="${proof}" target="_blank">${proof}</a>
+    </div>
+
+    <hr>
+
+    <div><b>Timestamp:</b> ${timestamp}</div>
+    <div><b>Location:</b> ${location}</div>
+    <div><b>Public Impact Assessment:</b> ${impact}</div>
+
+    <hr>
+
+    <div><b>Identified Department:</b> ${classification.department}</div>
+    <div><b>Concerned Ministry:</b> ${classification.ministry}</div>
+    <div><b>Jurisdiction:</b> Government of Andhra Pradesh</div>
+
+    <hr>
+
+    <div><b>Relief Sought:</b><br>${relief}</div>
+
+    <hr>
+
+    <div><b>Complaint Filed Via:</b> SHAKTI-IND</div>
+    <div><b>Initiated By:</b> Citizen of Bharat</div>
+    <div><b>Platform Founder:</b> Somu Reddy</div>
+  `;
+
+  document.getElementById("reportBox").innerHTML = reportHTML;
+  document.getElementById("outputCard").style.display = "block";
+}
+
+
+</script>
+
+</body>
+</html>
