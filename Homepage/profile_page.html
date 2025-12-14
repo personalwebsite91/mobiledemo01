@@ -901,6 +901,25 @@ body.modal-open {
     font-size: 0.95rem;
     color: #444;
 }
+/* LOGOUT BUTTON */
+.logout-btn {
+    width: 100%;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid #c3362a;
+    color: #c3362a;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.logout-btn:hover {
+    background: #c3362a;
+    color: #fff;
+    transform: translateX(5px);
+}
 
 </style>
 </head>
@@ -992,7 +1011,7 @@ body.modal-open {
         </div>
 
         <button class="save-btn" onclick="saveProfileChanges()">Save Changes</button>
-
+        <button class="logout-btn" onclick="logoutUser()">Logout</button>
     </div>
 </div>
 
@@ -1744,6 +1763,17 @@ window.saveProfileChanges = async function() {
 
 // Initial load
 loadProfile();
+window.logoutUser = function () {
+    const confirmLogout = confirm("Are you sure you want to logout?");
+    if (!confirmLogout) return;
+
+    localStorage.removeItem("logged_user_mobile");
+    sessionStorage.removeItem("target_user_mobile");
+    sessionStorage.removeItem("shakti_previous_page");
+
+    window.location.href = "../login_page.html";
+};
+
 </script>
 </body>
 </html>
