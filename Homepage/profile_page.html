@@ -1767,12 +1767,15 @@ window.logoutUser = function () {
     const confirmLogout = confirm("Are you sure you want to logout?");
     if (!confirmLogout) return;
 
+    // Clear auth state
     localStorage.removeItem("logged_user_mobile");
     sessionStorage.removeItem("target_user_mobile");
     sessionStorage.removeItem("shakti_previous_page");
 
-    window.location.href = "../login_page.html";
+    // 🔴 VERY IMPORTANT for single-page container apps
+    window.top.location.href = "../login_page.html";
 };
+
 
 </script>
 </body>
