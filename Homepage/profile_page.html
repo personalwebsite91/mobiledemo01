@@ -786,10 +786,10 @@ body.modal-open {
     border-radius: 8px;
 }
 
+
 /* 🔱 SHAKTI BADGE */
 .shakti-badge {
     margin-left: 8px;
-    margin-top: 12px;
     font-size: 1.2rem;
     cursor: pointer;
     color: #FFD700;
@@ -850,7 +850,7 @@ body.modal-open {
 
 /* CONTENT */
 .shakti-icon {
-    font-size: 4rem;
+    font-size: 3rem;
     color: #FFD700;
 }
 
@@ -901,6 +901,83 @@ body.modal-open {
     font-size: 0.95rem;
     color: #444;
 }
+
+/* --- NEW SHARE BUTTON STYLES (for Shakti Modal) --- */
+
+.share-score-btn-container {
+    margin-top: 25px;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.share-btn-main {
+    width: 100%;
+    padding: 12px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 4px 10px rgba(19,136,8,0.3);
+}
+
+.share-btn-main:hover {
+    background: #107206;
+    transform: translateY(-1px);
+}
+
+.share-options-dropdown {
+    position: absolute;
+    bottom: 100%; /* Position above the main button */
+    left: 0;
+    right: 0;
+    margin-bottom: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: none; /* Initially hidden */
+    z-index: 3001;
+}
+
+.share-option-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #444;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.share-option-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.share-icon {
+    font-size: 1.2rem;
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Specific button colors (optional) */
+.share-option-btn.whatsapp .share-icon { color: #25D366; }
+.share-option-btn.linkedin .share-icon { color: #0A66C2; }
+.share-option-btn.native .share-icon { color: var(--saffron); }
+
+/* --- END NEW SHARE BUTTON STYLES --- */
+
 /* LOGOUT BUTTON */
 .logout-btn {
     width: 100%;
@@ -1146,7 +1223,7 @@ body.modal-open {
         </p>
 
         <div class="shakti-score">
-            <span>812</span> / 1000
+            <span id="shaktiScoreValue">812</span> / 1000
         </div>
 
         <div class="shakti-progress-bar">
@@ -1160,6 +1237,22 @@ body.modal-open {
         <p class="shakti-message">
             Your actions help keep this community safe and trusted.
         </p>
+
+        <div id="shareScoreButton" class="share-score-btn-container">
+    <button class="share-btn-main" onclick="openShareOptions()">Share My Score</button>
+    
+    <div id="shareOptions" class="share-options-dropdown">
+        <button class="share-option-btn whatsapp" onclick="window.shareToWhatsApp()">
+            <span class="share-icon">💬</span> WhatsApp
+        </button>
+        <button class="share-option-btn linkedin" onclick="window.shareToLinkedIn()">
+            <span class="share-icon">🔗</span> LinkedIn
+        </button>
+        <button class="share-option-btn native" onclick="window.shareToNative()">
+            <span class="share-icon">📱</span> Other Platforms
+        </button>
+    </div>
+</div>
 
     </div>
 </div>
@@ -1187,6 +1280,9 @@ const editDescriptionInput = document.getElementById("editDescription");
 const editProfilePicInputFile = document.getElementById("editProfilePicInput");
 const editProfilePicPreview = document.getElementById("editProfilePicPreview");
 
+const shareOptionsDropdown = document.getElementById("shareOptions");
+const shaktiScoreValue = document.getElementById("shaktiScoreValue");
+const modal = document.getElementById("shaktiModal");
 let autoCloseTimer;
 let newProfileImageBase64 = null;
 let currentDescription = '';
@@ -1345,7 +1441,86 @@ function closeProfileModal() {
         highlightViewer.style.display = 'none';
     }, 300);
 }
+const generateShareMessage = (score) => {
+  return `🛡️ SHAKTI GUARDIAN STATUS
 
+Shakti Safety Score: *${score} / 1000*
+
+On SHAKTI-IND, trust is earned, safety is enforced, and community comes first.
+
+Not trends.  
+Not noise.  
+*Values.*
+
+Check your Shakti Score  
+👉 https:mobiledemo01.vercel.app
+  
+
+#ShaktiInd #DigitalTrust #SafetyFirst #GuardianNetwork`;
+};
+
+window.openShareOptions = function() {
+    // Toggle the display of the share options
+    if (shareOptionsDropdown.style.display === "block") {
+        shareOptionsDropdown.style.display = "none";
+    } else {
+        shareOptionsDropdown.style.display = "block";
+    }
+}
+
+window.shareToWhatsApp = function() {
+    const score = shaktiScoreValue.innerText;
+    const message = generateShareMessage(score);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    shareOptionsDropdown.style.display = "none";
+}
+
+window.shareToLinkedIn = function() {
+    const score = shaktiScoreValue.innerText;
+    const message = generateShareMessage(score);
+    // LinkedIn share link for an update
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(message)}`;
+    window.open(linkedInUrl, '_blank');
+    shareOptionsDropdown.style.display = "none";
+}
+
+window.shareToNative = function() {
+    shareOptionsDropdown.style.display = "none";
+    if (navigator.share) {
+        const score = shaktiScoreValue.innerText;
+        const message = generateShareMessage(score);
+        
+        navigator.share({
+            title: 'My Shakti Guardian Score!',
+            text: message,
+            url: window.location.href,
+        }).catch((error) => console.log('Error sharing', error));
+    } else {
+        alert("Native Web Share is not supported in your browser. Please use WhatsApp or LinkedIn options.");
+    }
+}
+// --- END NEW SHARING LOGIC ---
+
+function openShaktiModal() {
+    // CRITICAL: Update the score value before opening
+    const score = document.querySelector('.shakti-score span').innerText; // Using existing logic
+    shaktiScoreValue.innerText = score;
+    
+    // NOTE: In a real app, you'd fetch the user's actual score and progress text here.
+    
+    modal.style.display = "flex";
+    setTimeout(() => modal.classList.add("open"), 10);
+    
+    // Ensure the dropdown is hidden when the modal opens
+    shareOptionsDropdown.style.display = "none"; 
+}
+
+function closeShaktiModal(event) {
+    const modal = document.getElementById("shaktiModal");
+    modal.classList.remove("open");
+    setTimeout(() => modal.style.display = "none", 300);
+}
 // Edit Modal Logic
 function openEditModal() {
     const currentPicUrl = profilePic.style.backgroundImage.replace(/url\(['"]?|['"]?\)/g, '').replace(/"/g, '');

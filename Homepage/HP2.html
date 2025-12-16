@@ -765,10 +765,10 @@ const REALISTIC_USERNAMES = [
     shaktisafety: 'Safety',
     health: 'Health',
     technology: 'Tech',
-    nature: 'Nature',
     Nature: 'Nature',
     culture: 'Culture',
-    localnews: 'Local'
+    localnews: 'Local',
+    sports : 'Sports'
   };
 
   const STORY_TO_FOLDER = {
@@ -776,9 +776,10 @@ const REALISTIC_USERNAMES = [
     shaktisafety: "shaktisafety",
     health: "health",
     technology: "technology",
-    nature: "Nature",
+    Nature: "Nature",
     culture: "culture",
-    localnews: "localnews"
+    localnews: "localnews",
+    sports : "sports"
   };
 
   const PATH_PREFIXES = ["pics","./pics","/pics","../pics"];
@@ -989,7 +990,7 @@ const REALISTIC_USERNAMES = [
     if (!wrapper) return;
     wrapper.innerHTML = '';
     const items = [{ key:'all', label: CAT_DISPLAY.all || 'All' }];
-    const preferred = ['shaktisafety','health','technology','Nature','culture','localnews'];
+    const preferred = ['shaktisafety','health','technology','Nature','culture','localnews','sports'];
     const added = new Set();
     for (const k of preferred) {
       if (presentCategories.includes(k)) {
@@ -1038,6 +1039,7 @@ const REALISTIC_USERNAMES = [
 
   const catsToLoad = folderCategory ? [folderCategory] : ALL_FOLDER_CATS;
   let mediaItems = [];
+
 
   // First: load Cloudinary items from videos.json for requested categories
   try {
@@ -1113,6 +1115,7 @@ const REALISTIC_USERNAMES = [
   // include cloud posters, images and videos
   const mediaEls = document.querySelectorAll('#feed .post-video, #feed .post-img, #feed .cloud-video-poster, #feed video, #feed img');
   mediaEls.forEach((v, idx) => { v.dataset.feedIndex = idx; });
+
 }
 
 
@@ -2003,7 +2006,6 @@ const REALISTIC_USERNAMES = [
         <div class="feed-card" style="padding:12px;border-radius:12px; position:relative;">
           <div style="font-weight:700;color:#111;padding:8px;border-radius:8px">
             <div style="font-weight:800;font-size:18px;text-align:center;color:var(--headline-blue)">Nearby Live Codes</div>
-            <div style="text-align:center;opacity:0.85;margin-top:6px;font-size:13px">Showing active codes in your region</div>
 
             <!-- Map (clean, no dark gradient) -->
             <div id="safetyMap" style="margin-top:12px;"></div>
@@ -2022,14 +2024,14 @@ const REALISTIC_USERNAMES = [
 
           <!-- card below map that covers till navbar -->
           <div class="safety-card" style="margin-top:12px;">
-            <div style="font-weight:800;font-size:18px;color:var(--headline-blue)">Quick categories</div>
+            <div style="font-weight:800;font-size:18px;color:var(--headline-blue)">Safety</div>
             <div style="color:var(--muted);margin-top:8px;font-size:13px">Tap a category to open details</div>
 
             <div class="cat-grid" style="margin-top:12px">
-              <div class="cat-box" id="catMen"><strong>Men / Women</strong><p>Personal safety & reporting</p></div>
-              <div class="cat-box" id="catAnimals"><strong>Animal / Nature</strong><p>Wildlife & environmental alerts</p></div>
-              <div class="cat-box" id="catHuman"><strong>Humanity / Emergency</strong><p>SOS & community help</p></div>
-              <div class="cat-box" id="catShakti"><strong>Quick access to Shakti Code</strong><p>Activate emergency code</p></div>
+              <div class="cat-box" id="catMen"><strong>👩‍🦰👨</strong><p>Personal safety & reporting</p></div>
+              <div class="cat-box" id="catAnimals"><strong>🐕🌲</strong><p>Wildlife & environmental alerts</p></div>
+              <div class="cat-box" id="catHuman"><strong>🚑💚</strong><p>SOS & community help</p></div>
+              <div class="cat-box" id="catShakti"><strong>🔱</strong><p>Activate emergency code</p></div>
             </div>
 
             <!-- detail area that opens inside the same card -->
@@ -2402,7 +2404,7 @@ const REALISTIC_USERNAMES = [
 
 </div>`);
 
-    if (shakti) shakti.onclick = () => { openShaktiPopupURL(''); };
+    if (shakti) shakti.onclick = () => { openShaktiPopupURL('shakti_code_WMS-0101.html'); };
 
     if (closeBtn) closeBtn.onclick = closeDetail;
   }
