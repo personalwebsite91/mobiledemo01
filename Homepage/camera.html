@@ -173,6 +173,11 @@ video.mirror{transform:scaleX(-1)}
     <label>Blur Intensity</label>
     <input type="range" min="0" max="8" value="3" id="blurIntensity">
   </div>
+<video id="previewVideo"
+       controls
+       style="position:absolute;inset:0;width:100%;height:100%;
+              object-fit:cover;z-index:40;display:none;background:#000">
+</video>
 
   <!-- FILTERS -->
   <div class="filters" id="filters"></div>
@@ -229,16 +234,18 @@ function startRecording(){
   };
 
   mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, { type: "video/webm" });
-    const url = URL.createObjectURL(blob);
+  const blob = new Blob(recordedChunks, { type: "video/webm" });
+  const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "story-video.webm";
-    a.click();
+  const preview = document.getElementById("previewVideo");
+  preview.src = url;
+  preview.style.display = "block";
+  preview.play();
 
-    URL.revokeObjectURL(url);
-  };
+  frozen = true;                 // stop camera draw
+  filtersDiv.style.display = "none";
+};
+
 
   mediaRecorder.start();
   isRecording = true;
