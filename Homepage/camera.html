@@ -76,6 +76,9 @@ video.mirror{transform:scaleX(-1)}
 .filter.active .star{
   transform: rotate(180deg) scale(1.15);
 }
+@keyframes blink{50%{opacity:.3}}
+#recordTimer{color:red;animation:blink 1s infinite}
+
 
 /* CONTROLS */
 .controls{
@@ -154,6 +157,13 @@ video.mirror{transform:scaleX(-1)}
 
 <div class="camera" id="camera">
   <div class="top">Shakticlick</div>
+  <div id="recordTimer"
+     style="position:absolute;top:45px;width:100%;
+            text-align:center;font-weight:600;
+            z-index:25;display:none;">
+  ● 00:00
+</div>
+
 
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
@@ -195,6 +205,9 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let isRecording = false;
 let pressTimer = null;
+let recordStartTime = 0;
+let recordTimerInterval = null;
+
 
 
 /* CAMERA */
@@ -229,12 +242,26 @@ function startRecording(){
 
   mediaRecorder.start();
   isRecording = true;
+  recordStartTime = Date.now();
+document.getElementById("recordTimer").style.display = "block";
+updateRecordTimer();
+recordTimerInterval = setInterval(updateRecordTimer, 1000);
+
 }
 function stopRecording(){
   if(mediaRecorder && isRecording){
     mediaRecorder.stop();
     isRecording = false;
+    clearInterval(recordTimerInterval);
+document.getElementById("recordTimer").style.display = "none";
+
   }
+}
+function updateRecordTimer(){
+  const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+  const min = String(Math.floor(elapsed / 60)).padStart(2,"0");
+  const sec = String(elapsed % 60).padStart(2,"0");
+  document.getElementById("recordTimer").textContent = `● ${min}:${sec}`;
 }
 
 const captureBtn = document.querySelector(".capture");
@@ -402,3 +429,5 @@ draw();
 
 </body>
 </html>
+
+
