@@ -189,6 +189,23 @@ video.mirror{transform:scaleX(-1)}
 
   <button class="capture"></button>
   <div class="flip-btn" id="flipBtn">↺</div>
+<div id="effectsBtn"
+     style="
+       position:absolute;
+       bottom:110px;
+       right:20px;
+       font-size:22px;
+       background:rgba(0,0,0,0.6);
+       border-radius:50%;
+       width:46px;
+       height:46px;
+       display:none;
+       align-items:center;
+       justify-content:center;
+       z-index:60;
+       cursor:pointer;">
+✨
+</div>
 
   <div class="action-btn" id="saveBtn">Save</div>
   <div class="action-btn" id="closeBtn">✕</div>
@@ -459,55 +476,55 @@ function applyFilter(name){
     case "normal":
       gradeImage({
         exposure: 1.02,
-        contrast: 1.06,
-        saturation: 1.05,
-        shadows: -0.03,
-        highlights: 0.02
+        contrast: 1.05,
+        saturation: 1.04,
+        shadows: -0.04,
+        highlights: 0.03
       });
       break;
 
     case "bright":
       gradeImage({
         exposure: 1.12,
-        contrast: 1.08,
-        saturation: 1.06,
-        shadows: -0.02,
-        highlights: 0.03
+        contrast: 1.06,
+        saturation: 1.05,
+        shadows: -0.06,
+        highlights: 0.05
       });
       break;
 
     case "daylight":
       gradeImage({
         exposure: 1.08,
-        contrast: 1.05,
+        contrast: 1.04,
         saturation: 1.12,
-        shadows: -0.02,
-        highlights: 0.04,
-        tint: "rgba(255,235,200,0.06)"
+        shadows: -0.05,
+        highlights: 0.06,
+        tint: "rgba(255,240,210,0.07)"
       });
       break;
 
     case "indoor":
       gradeImage({
-        exposure: 1.04,
-        contrast: 1.05,
-        saturation: 1.12,
-        shadows: -0.04,
-        highlights: 0.03,
-        tint: "rgba(255,210,180,0.1)"
+        exposure: 1.05,
+        contrast: 1.04,
+        saturation: 1.1,
+        shadows: -0.06,
+        highlights: 0.04,
+        tint: "rgba(255,215,180,0.12)"
       });
       break;
 
-    /* ===== PORTRAIT ===== */
+    /* ===== PORTRAIT (SKIN SAFE) ===== */
 
     case "portrait":
       gradeImage({
         exposure: 1.04,
-        contrast: 0.98,
+        contrast: 0.96,
         saturation: 1.06,
-        shadows: -0.06,
-        highlights: 0.04,
-        tint: "rgba(255,220,200,0.08)"
+        shadows: -0.08,
+        highlights: 0.05,
+        tint: "rgba(255,220,200,0.09)"
       });
       break;
 
@@ -515,23 +532,23 @@ function applyFilter(name){
 
     case "warm":
       gradeImage({
-        exposure: 1.04,
-        contrast: 1.05,
+        exposure: 1.03,
+        contrast: 1.04,
         saturation: 1.12,
-        shadows: -0.04,
-        highlights: 0.04,
-        tint: "rgba(255,200,160,0.12)"
+        shadows: -0.06,
+        highlights: 0.05,
+        tint: "rgba(255,195,150,0.14)"
       });
       break;
 
-    case "cool": // REAL cool (no hue rotate)
+    case "cool": // TRUE cool grading
       gradeImage({
-        exposure: 1.02,
+        exposure: 1.01,
         contrast: 1.08,
-        saturation: 1.05,
-        shadows: -0.03,
-        highlights: 0.03,
-        tint: "rgba(180,210,255,0.12)"
+        saturation: 1.04,
+        shadows: -0.06,
+        highlights: 0.04,
+        tint: "rgba(170,210,255,0.14)"
       });
       break;
 
@@ -540,42 +557,42 @@ function applyFilter(name){
     case "film":
       gradeImage({
         exposure: 1.03,
-        contrast: 0.9,
-        saturation: 0.95,
-        shadows: -0.12,
-        highlights: 0.08,
-        tint: "rgba(190,150,100,0.14)"
+        contrast: 0.88,
+        saturation: 0.94,
+        shadows: -0.18,
+        highlights: 0.1,
+        tint: "rgba(200,160,120,0.16)"
       });
       break;
 
     case "kodak":
       gradeImage({
         exposure: 1.05,
-        contrast: 1.15,
+        contrast: 1.14,
         saturation: 1.18,
-        shadows: -0.06,
-        highlights: 0.05,
-        tint: "rgba(210,160,90,0.12)"
+        shadows: -0.08,
+        highlights: 0.06,
+        tint: "rgba(215,160,90,0.14)"
       });
       break;
 
     case "fuji":
       gradeImage({
-        exposure: 1.03,
+        exposure: 1.02,
         contrast: 1.1,
-        saturation: 1.1,
-        shadows: -0.03,
-        highlights: 0.03,
-        tint: "rgba(200,220,255,0.06)"
+        saturation: 1.08,
+        shadows: -0.04,
+        highlights: 0.04,
+        tint: "rgba(200,225,255,0.08)"
       });
       break;
 
     case "matte":
       gradeImage({
         exposure: 1.06,
-        contrast: 0.88,
-        saturation: 0.95,
-        shadows: -0.14,
+        contrast: 0.86,
+        saturation: 0.94,
+        shadows: -0.22,
         highlights: 0.06
       });
       break;
@@ -585,21 +602,21 @@ function applyFilter(name){
     case "cinematic":
       gradeImage({
         exposure: 0.96,
-        contrast: 1.32,
-        saturation: 1.08,
-        shadows: 0.14,
+        contrast: 1.35,
+        saturation: 1.06,
+        shadows: 0.18,
         highlights: 0.06,
-        tint: "rgba(20,45,65,0.16)"
+        tint: "rgba(20,50,80,0.18)"
       });
       break;
 
     case "fashion":
       gradeImage({
-        exposure: 1.02,
-        contrast: 1.28,
+        exposure: 1.01,
+        contrast: 1.32,
         saturation: 1.05,
-        shadows: 0.06,
-        highlights: 0.04
+        shadows: 0.08,
+        highlights: 0.05
       });
       break;
 
@@ -607,7 +624,7 @@ function applyFilter(name){
       gradeImage({
         exposure: 1,
         contrast: 1.15,
-        saturation: 0.92,
+        saturation: 0.9,
         shadows: 0,
         highlights: 0
       });
@@ -615,21 +632,21 @@ function applyFilter(name){
 
     case "moody":
       gradeImage({
-        exposure: 0.92,
-        contrast: 1.35,
-        saturation: 1.1,
-        shadows: 0.16,
+        exposure: 0.9,
+        contrast: 1.38,
+        saturation: 1.08,
+        shadows: 0.2,
         highlights: 0.03,
-        tint: "rgba(30,40,60,0.12)"
+        tint: "rgba(25,40,60,0.15)"
       });
       break;
 
     case "noir":
       gradeImage({
-        exposure: 0.9,
-        contrast: 1.5,
+        exposure: 0.88,
+        contrast: 1.55,
         saturation: 0,
-        shadows: 0.18,
+        shadows: 0.22,
         highlights: 0.04
       });
       break;
@@ -640,69 +657,69 @@ function applyFilter(name){
       gradeImage({
         exposure: 1.18,
         contrast: 1.2,
-        saturation: 1.12,
-        shadows: -0.1,
-        highlights: 0.02,
-        tint: "rgba(30,60,120,0.14)"
+        saturation: 1.1,
+        shadows: -0.14,
+        highlights: 0.03,
+        tint: "rgba(40,70,140,0.18)"
       });
       break;
 
     case "city":
       gradeImage({
         exposure: 1.1,
-        contrast: 1.3,
-        saturation: 1.25,
-        shadows: 0.05,
-        highlights: 0.04
+        contrast: 1.32,
+        saturation: 1.28,
+        shadows: 0.06,
+        highlights: 0.05
       });
       break;
 
-      case "blur":
-  gradeImage({
-    blur: blurIntensity
-  });
-  break;
-  case "glow":
-  gradeImage({
-    exposure: 1.06,
-    contrast: 1.05,
-    saturation: 1.1,
-    highlights: 0.08,
-    blur: 1
-  });
-  break;
-case "fade":
-  gradeImage({
-    exposure: 1.05,
-    contrast: 0.88,
-    saturation: 0.9,
-    shadows: -0.18,
-    highlights: 0.05
-  });
-  break;
+    /* ===== SPECIAL ===== */
 
-  case "hdr":
-  gradeImage({
-    exposure: 1.1,
-    contrast: 1.18,
-    saturation: 1.12,
-    shadows: -0.12,
-    highlights: 0.06
-  });
-  break;
+    case "blur":
+      gradeImage({ blur: blurIntensity });
+      break;
 
-  case "soft":
-  gradeImage({
-    exposure: 1.03,
-    contrast: 0.96,
-    saturation: 1.04,
-    shadows: -0.05,
-    highlights: 0.04,
-    blur: 0.5
-  });
-  break;
+    case "glow":
+      gradeImage({
+        exposure: 1.06,
+        contrast: 1.04,
+        saturation: 1.1,
+        highlights: 0.1,
+        blur: 1.2
+      });
+      break;
 
-  
+    case "fade":
+      gradeImage({
+        exposure: 1.05,
+        contrast: 0.85,
+        saturation: 0.9,
+        shadows: -0.22,
+        highlights: 0.06
+      });
+      break;
+
+    case "hdr":
+      gradeImage({
+        exposure: 1.1,
+        contrast: 1.2,
+        saturation: 1.1,
+        shadows: -0.14,
+        highlights: 0.08
+      });
+      break;
+
+    case "soft":
+      gradeImage({
+        exposure: 1.03,
+        contrast: 0.94,
+        saturation: 1.04,
+        shadows: -0.06,
+        highlights: 0.05,
+        blur: 0.6
+      });
+      break;
 
     default:
       ctx.filter = "none";
@@ -740,6 +757,8 @@ document.querySelector(".capture").onclick=()=>{
   controls.classList.remove("show");
   saveBtn.style.display="block";
   closeBtn.style.display="block";
+  effectsBtn.style.display = "flex";
+
 };
 
 saveBtn.onclick = () => {
@@ -771,6 +790,7 @@ closeBtn.onclick = () => {
   filtersDiv.style.display = "flex";
   saveBtn.style.display = "none";
   closeBtn.style.display = "none";
+  
 };
 
 
