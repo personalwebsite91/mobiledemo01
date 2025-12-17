@@ -70,7 +70,11 @@ video.mirror{transform:scaleX(-1)}
     79% 100%,50% 75%,21% 100%,32% 57%,
     2% 35%,39% 35%
   );
+  transition: transform .35s ease;
   background:conic-gradient(#FF9933,#138808,#FF9933);
+}
+.filter.active .star{
+  transform: rotate(180deg) scale(1.15);
 }
 
 /* CONTROLS */
@@ -87,6 +91,16 @@ video.mirror{transform:scaleX(-1)}
 }
 .controls.show{display:block}
 .controls label{font-size:12px;opacity:.85}
+.controls{
+  transition: opacity .25s ease, transform .25s ease;
+  transform: translateY(10px);
+  opacity:0;
+}
+.controls.show{
+  opacity:1;
+  transform: translateY(0);
+}
+
 
 /* CAPTURE */
 .capture{
@@ -176,6 +190,7 @@ let blurIntensity=3;
 let frozen=false;
 let facingMode="user";
 let stream=null;
+let blurHideTimer=null;
 
 /* CAMERA */
 async function startCamera(){
@@ -214,11 +229,21 @@ filtersDiv.addEventListener("scroll",()=>{
       document.querySelectorAll(".filter").forEach(e=>e.classList.remove("active"));
       el.classList.add("active");
       filter=el.dataset.f;
-      controls.classList.toggle("show",filter==="blur");
+      if(filter==="blur"){
+  showBlurControls();
+}else{
+  controls.classList.remove("show");
+}
     }
   });
 });
-
+function showBlurControls(){
+  controls.classList.add("show");
+  clearTimeout(blurHideTimer);
+  blurHideTimer = setTimeout(()=>{
+    controls.classList.remove("show");
+  },3000);
+}
 /* FLIP CAMERA */
 flipBtn.onclick=()=>{
   facingMode = facingMode==="user" ? "environment" : "user";
@@ -267,6 +292,16 @@ function draw(){
 blurIntensityInput.oninput=e=>{
   blurIntensity=Number(e.target.value);
 };
+document.getElementById("camera").addEventListener("click",()=>{
+  if(filter==="blur"){
+    if(controls.classList.contains("show")){
+      controls.classList.remove("show");
+    }else{
+      showBlurControls();
+    }
+  }
+});
+
 
 /* CAPTURE */
 document.querySelector(".capture").onclick=()=>{
