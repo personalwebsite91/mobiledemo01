@@ -191,6 +191,11 @@ let frozen=false;
 let facingMode="user";
 let stream=null;
 let blurHideTimer=null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let pressTimer = null;
+
 
 /* CAMERA */
 async function startCamera(){
@@ -200,6 +205,72 @@ async function startCamera(){
   video.classList.toggle("mirror", facingMode==="user");
 }
 startCamera();
+function startRecording(){
+  if(!stream) return;
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
+  mediaRecorder.ondataavailable = e => {
+    if(e.data.size > 0) recordedChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "story-video.webm";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  mediaRecorder.start();
+  isRecording = true;
+}
+function stopRecording(){
+  if(mediaRecorder && isRecording){
+    mediaRecorder.stop();
+    isRecording = false;
+  }
+}
+
+const captureBtn = document.querySelector(".capture");
+
+captureBtn.addEventListener("mousedown",()=>{
+  pressTimer = setTimeout(()=>{
+    startRecording();
+  },400);   // long press = 400ms
+});
+
+captureBtn.addEventListener("mouseup",()=>{
+  clearTimeout(pressTimer);
+  if(isRecording){
+    stopRecording();
+  }
+});
+
+captureBtn.addEventListener("mouseleave",()=>{
+  clearTimeout(pressTimer);
+  if(isRecording){
+    stopRecording();
+  }
+});
+
+captureBtn.addEventListener("touchstart",()=>{
+  pressTimer = setTimeout(()=>{
+    startRecording();
+  },400);
+});
+
+captureBtn.addEventListener("touchend",()=>{
+  clearTimeout(pressTimer);
+  if(isRecording){
+    stopRecording();
+  }
+});
 
 video.onloadedmetadata=()=>{
   canvas.width=video.videoWidth;
