@@ -1250,10 +1250,9 @@ const REALISTIC_USERNAMES = [
     });
 
     function attachOpenHandlers(el){
-     $all('.post-img, .post-video, .cloud-video-poster').forEach(el => {
-  attachPreciseTap(el, () => openPopupWithMedia(el));
-});
-
+      el.removeEventListener('click', onPostMediaClick);
+      el.removeEventListener('pointerup', onPostMediaClick);
+      el.removeEventListener('touchend', onPostMediaClick);
 
       el.addEventListener('click', onPostMediaClick);
       el.addEventListener('pointerup', onPostMediaClick, {passive:true});
@@ -2615,46 +2614,9 @@ if (page === 'community') {
   function escapeHtml(text){
     return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
-function attachPreciseTap(el, onTap) {
-  let startX = 0, startY = 0, startTime = 0;
-  let moved = false;
-
-  el.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    startTime = Date.now();
-    moved = false;
-  }, { passive: true });
-
-  el.addEventListener('touchmove', (e) => {
-    const t = e.touches[0];
-    if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
-      moved = true; // user is scrolling
-    }
-  }, { passive: true });
-
-  el.addEventListener('touchend', (e) => {
-    const duration = Date.now() - startTime;
-
-    // ✅ tap conditions
-   if (!moved && duration < 250 && !isUserScrolling) {
-  onTap(e);
-}
-
-  });
-}
-let isUserScrolling = false;
-
-window.addEventListener('scroll', () => {
-  isUserScrolling = true;
-  clearTimeout(window.__scrollTimer);
-  window.__scrollTimer = setTimeout(() => {
-    isUserScrolling = false;
-  }, 120);
-}, { passive: true });
 
 </script>
 
 </body>
 </html>
+
