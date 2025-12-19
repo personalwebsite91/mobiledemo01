@@ -330,6 +330,8 @@ let zoomAngle = 0;
 let lastAngle = null;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
+let tapTimeout = null;
+let tapCount = 0;
 
 let filter="normal";
 let blurIntensity=3;
@@ -393,6 +395,7 @@ function updateUIForFrozenState(isFrozen){
   document.getElementById("flipBtn").style.display = isFrozen ? "none" : "flex";
   document.getElementById("settingsBtn").style.display = isFrozen ? "none" : "block";
   document.getElementById("filters").style.display = isFrozen ? "none" : "flex";
+
 
   saveBtn.style.display  = isFrozen ? "block" : "none";
   closeBtn.style.display = isFrozen ? "block" : "none";
@@ -469,30 +472,31 @@ function updateRecordTimer(){
 
 const captureBtn = document.querySelector(".capture");
 captureBtn.addEventListener("click", () => {
-  const now = Date.now();
-  const diff = now - lastTapTime;
+  tapCount++;
 
-  // DOUBLE TAP → ARM VIDEO MODE
-  if (diff < 300) {
-    videoArmed = true;
-    showVideoArmedUI();
-    lastTapTime = 0;
-    return;
+  if (tapCount === 1) {
+    tapTimeout = setTimeout(() => {
+      // SINGLE TAP
+      if (videoArmed) {
+        toggleRecording();
+      } else {
+        frozen = true;
+        updateUIForFrozenState(true);
+      }
+      tapCount = 0;
+    }, 300);
   }
 
-  lastTapTime = now;
+  if (tapCount === 2) {
+    clearTimeout(tapTimeout);
+    tapCount = 0;
 
-  // SINGLE TAP LOGIC
-  setTimeout(() => {
-    if (videoArmed) {
-      toggleRecording();
-    } else {
-      // PHOTO CAPTURE
-      frozen = true;
-      updateUIForFrozenState(true);
-    }
-  }, 320);
+    // DOUBLE TAP → ARM VIDEO MODE
+    videoArmed = true;
+    showVideoArmedUI();
+  }
 });
+
 function showVideoArmedUI(){
   document.getElementById("recordTimer").style.display = "block";
   document.getElementById("recordTimer").textContent = "● REC";
@@ -1066,10 +1070,10 @@ document.getElementById("camera").addEventListener("click",()=>{
 
 
 /* CAPTURE */
-document.querySelector(".capture").onclick = () => {
-  frozen = true;
-  updateUIForFrozenState(true);
-};
+// document.querySelector(".capture").onclick = () => {
+//   frozen = true;
+//   updateUIForFrozenState(true);
+// };
 
 
 saveBtn.onclick = () => {
