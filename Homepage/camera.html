@@ -666,14 +666,14 @@ video.onloadedmetadata=()=>{
   "premium_rainy",
   "premium_vintage_film"
 ].forEach(f=>{
-  const displayName = f.replace("premium_","").replace(/_/g," ");
+  
   const d=document.createElement("div");
   d.className="filter";
-  d.dataset.f=displayName;
+  d.dataset.f=f;
  d.innerHTML = `
   <div class="filter-inner">
     <div class="star"></div>
-    <div class="filter-label">${displayName}</div>
+    <div class="filter-label">${f}</div>
   </div>
 `;
 
