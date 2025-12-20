@@ -297,6 +297,61 @@
     if(label) m.bindPopup(`<strong>${label}</strong>`);
     markers[folder] = m;
   }
+/* ---------- LIVE GEO LOCATION (USER ONLY) ---------- */
+
+let liveLocationMarker = null;
+let firstFix = true;
+
+// reuse existing pulse CSS
+const liveLocationIcon = L.divIcon({
+  className: '',
+  html: `<div class="pulse-marker">
+           <div class="halo"></div>
+           <div class="dot"></div>
+         </div>`,
+  iconSize: [28, 28],
+  popupAnchor: [0, -18]
+});
+
+if ("geolocation" in navigator) {
+  navigator.geolocation.watchPosition(
+
+    // SUCCESS
+    (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      if (!liveLocationMarker) {
+        liveLocationMarker = L.marker([lat, lon], {
+          icon: liveLocationIcon,
+          zIndexOffset: 1000
+        }).addTo(map);
+
+        // center only on first fix (no annoying jumps)
+        if (firstFix) {
+          map.setView([lat, lon], 16);
+          firstFix = false;
+        }
+      } else {
+        liveLocationMarker.setLatLng([lat, lon]);
+      }
+    },
+
+    // ERROR (silent, no UI impact)
+    (err) => {
+      console.warn("Live location error:", err.message);
+    },
+
+    // OPTIONS (correct order!)
+    {
+      enableHighAccuracy: true,
+      maximumAge: 2000,
+      timeout: 10000
+    }
+  );
+} else {
+  console.warn("Geolocation not supported on this device");
+}
 
   // ---------- WebSocket ----------
   async function ensureSocket(){
