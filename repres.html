@@ -560,11 +560,6 @@
   cursor:pointer;
   box-shadow:0 4px 12px rgba(0,123,255,0.2);
 }
-.post-img,
-.post-video {
-  touch-action: pan-y;
-}
-
 
   </style>
 </head>
@@ -742,13 +737,6 @@ const REALISTIC_USERNAMES = [
   "Mohit_19", "RekhaS", "ShubhamJ", "PayalM", "JatinK"
 ];
 
-let __tapStartX = 0;
-let __tapStartY = 0;
-let __tapStartTime = 0;
-let __tapMoved = false;
-
-const TAP_MOVE_THRESHOLD = 12;   // px
-const TAP_TIME_LIMIT = 280;      // ms
 
   function pickUser(){
     const i = Math.floor(Math.random() * REALISTIC_USERNAMES.length);
@@ -1261,42 +1249,23 @@ const TAP_TIME_LIMIT = 280;      // ms
       btn.addEventListener('click', commentLikeHandler);
     });
 
-function attachOpenHandlers(el){
+    function attachOpenHandlers(el){
+      el.removeEventListener('click', onPostMediaClick);
+      el.removeEventListener('pointerup', onPostMediaClick);
+      el.removeEventListener('touchend', onPostMediaClick);
 
-  // IMPORTANT: block video from eating scroll
-  if (el.tagName === 'VIDEO') {
-    el.style.pointerEvents = 'none';
-  }
+      el.addEventListener('click', onPostMediaClick);
+      el.addEventListener('pointerup', onPostMediaClick, {passive:true});
+      el.addEventListener('touchend', onPostMediaClick, {passive:true});
 
-  el.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    __tapStartX = t.clientX;
-    __tapStartY = t.clientY;
-    __tapStartTime = Date.now();
-    __tapMoved = false;
-  }, { passive: true });
-
-  el.addEventListener('touchmove', (e) => {
-    const t = e.touches[0];
-    const dx = Math.abs(t.clientX - __tapStartX);
-    const dy = Math.abs(t.clientY - __tapStartY);
-
-    if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
-      __tapMoved = true;
+      if (el.tagName === 'VIDEO'){
+        el.addEventListener('click', (ev) => {
+          try {
+            if (el.paused) { el.play().catch(()=>{}); } else { el.pause(); }
+          } catch(e){}
+        });
+      }
     }
-  }, { passive: true });
-
-  el.addEventListener('touchend', (e) => {
-    const elapsed = Date.now() - __tapStartTime;
-
-    // ❌ SCROLL or LONG PRESS → DO NOTHING
-    if (__tapMoved || elapsed > TAP_TIME_LIMIT) return;
-
-    // ✅ REAL TAP
-    onPostMediaClick({ currentTarget: el });
-  });
-}
-
 
     $all('.post-img, .post-video').forEach(el => {
       try {
