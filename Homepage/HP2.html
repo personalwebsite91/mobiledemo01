@@ -746,6 +746,9 @@ let __tapStartX = 0;
 let __tapStartY = 0;
 let __tapStartTime = 0;
 let __tapMoved = false;
+// -------- LIVE LOCATION STATE --------
+let __userLocationMarker = null;
+let __geoWatchId = null;
 
 const TAP_MOVE_THRESHOLD = 12;   // px
 const TAP_TIME_LIMIT = 280;      // ms
@@ -2221,52 +2224,105 @@ function attachOpenHandlers(el){
 
   // Keep a global map ref so re-opening safety doesn't double-initialize
   window.__safetyMap = window.__safetyMap || null;
-  function initSafetyMap(){
-    try {
-      const el = document.getElementById('safetyMap');
-      if (!el) return;
-      if (window.__safetyMap) {
-        try { window.__safetyMap.remove(); } catch(e){}
-        window.__safetyMap = null;
-      }
+ function initSafetyMap(){
+  const el = document.getElementById('safetyMap');
+  if (!el) return;
 
-      const center = DEMO_CODES.length ? [DEMO_CODES[0].lat, DEMO_CODES[0].lng] : [12.9716,77.5946];
-      const map = L.map(el, { center, zoom: 13, zoomControl: true, attributionControl:false });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-      DEMO_CODES.forEach(c => {
-        const html = `<div style="background:#ff4d4d;color:#fff;padding:6px 8px;border-radius:20px;font-weight:800;box-shadow:0 6px 14px rgba(0,0,0,0.12)">${c.id}</div>`;
-        const icon = L.divIcon({ className: '', html, iconSize:[44,24], iconAnchor:[22,12] });
-        const m = L.marker([c.lat, c.lng], { icon }).addTo(map);
-        m.bindPopup(`<strong>${escapeHtml(c.label)}</strong><div style="margin-top:8px"><button onclick="(function(){ openShaktiPopupURL('shakti_code_WMS-${c.id}.html'); })()" style="padding:6px 8px;border-radius:8px;border:none;background:#138808;color:#fff;cursor:pointer">Open</button></div>`);
-      });
-
-      // simple locate control
-      const locate = L.control({position:'topright'});
-      locate.onAdd = function(){
-        const elBtn = L.DomUtil.create('button','locate-btn');
-        elBtn.innerHTML = '📍';
-        elBtn.style.background = '#fff';
-        elBtn.style.padding = '8px';
-        elBtn.style.border = 'none';
-        elBtn.style.borderRadius = '8px';
-        elBtn.style.cursor = 'pointer';
-        elBtn.title = 'Center';
-        elBtn.onclick = () => map.setView(center, 13);
-        return elBtn;
-      };
-      locate.addTo(map);
-
-      window.__safetyMap = map;
-
-      // ensure the floating notif is positioned relative to the map container
-      positionSafetyNotif();
-      window.addEventListener('resize', positionSafetyNotif);
-
-    } catch (err){
-      console.warn('initSafetyMap error', err);
-    }
+  // Clean previous map instance (important when switching tabs)
+  if (window.__safetyMap) {
+    try { window.__safetyMap.remove(); } catch(e){}
+    window.__safetyMap = null;
   }
+
+  // Create map (temporary center)
+  const map = L.map(el, {
+    zoom: 15,
+    zoomControl: true,
+    attributionControl: false
+  }).setView([20.5937, 78.9629], 5); // India fallback
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  window.__safetyMap = map;
+
+  // 📍 USER LIVE LOCATION
+  startUserLiveLocation(map);
+
+  // 🔴 EXISTING DEMO / LIVE CODES (keep this)
+  DEMO_CODES.forEach(c => {
+    const html = `
+      <div style="
+        background:#ff4d4d;
+        color:#fff;
+        padding:6px 10px;
+        border-radius:20px;
+        font-weight:800;
+        font-size:12px;
+        box-shadow:0 6px 14px rgba(0,0,0,0.12)
+      ">${c.id}</div>
+    `;
+
+    const icon = L.divIcon({
+      html,
+      className: '',
+      iconSize:[44,24],
+      iconAnchor:[22,12]
+    });
+
+    L.marker([c.lat, c.lng], { icon })
+      .addTo(map)
+      .bindPopup(`<strong>${escapeHtml(c.label)}</strong>`);
+  });
+
+  positionSafetyNotif();
+}
+function startUserLiveLocation(map){
+  if (!navigator.geolocation) {
+    console.warn('Geolocation not supported');
+    return;
+  }
+
+  // Stop old watcher if exists
+  if (__geoWatchId) {
+    navigator.geolocation.clearWatch(__geoWatchId);
+    __geoWatchId = null;
+  }
+
+  __geoWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      // First fix → create marker
+      if (!__userLocationMarker) {
+        __userLocationMarker = L.circleMarker([lat, lng], {
+          radius: 10,
+          color: '#007bff',
+          fillColor: '#007bff',
+          fillOpacity: 0.9,
+          weight: 3
+        }).addTo(map);
+
+        __userLocationMarker.bindPopup("📍 You are here").openPopup();
+        map.setView([lat, lng], 16);
+      } else {
+        // Update position
+        __userLocationMarker.setLatLng([lat, lng]);
+      }
+    },
+    (err) => {
+      console.warn('Location error:', err.message);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 2000,
+      timeout: 10000
+    }
+  );
+}
+
 
   // position the floating notification bubble inside the map card
   function positionSafetyNotif(){
@@ -2515,12 +2571,21 @@ function attachOpenHandlers(el){
     showNext();
     _liveTickerTimer = setInterval(showNext, 2000);
   }
+function stopUserLiveLocation(){
+  if (__geoWatchId) {
+    navigator.geolocation.clearWatch(__geoWatchId);
+    __geoWatchId = null;
+  }
+  __userLocationMarker = null;
+}
 
   // -------------------------
   // swap function: page = 'home' | 'safety' | 'plus' | ...
   // -------------------------
   async function swapMainContent(page){
+     stopUserLiveLocation(); // 👈 ADD THIS LINE FIRST
     const wrapper = document.getElementById('mainContentWrapper');
+    
     if (!wrapper) return;
     if (page === 'safety'){
       wrapper.innerHTML = renderSafetyHTML();
