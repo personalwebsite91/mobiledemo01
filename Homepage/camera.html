@@ -1192,35 +1192,22 @@ document.getElementById("camera").addEventListener("click",()=>{
 // };
 
 
-saveBtn.onclick = async () => {
+saveBtn.onclick = () => {
   if (recordedVideoURL) {
-    const blob = await fetch(recordedVideoURL).then(r => r.blob());
-
-    const formData = new FormData();
-    formData.append("video", blob, "story.webm");
-
-    const res = await fetch("/convert-video", {
-      method: "POST",
-      body: formData
-    });
-
-    const mp4Blob = await res.blob();
-    const url = URL.createObjectURL(mp4Blob);
-
+    // 🎥 VIDEO SAVE (WebM)
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "story.mp4";
+    a.href = recordedVideoURL;
+    a.download = "story-video.webm";
     a.click();
   } else {
-    // PHOTO SAVE → JPG
-    canvas.toBlob(blob => {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "story.jpg";
-      a.click();
-    }, "image/jpeg", 0.95);
+    // 📸 PHOTO SAVE (PNG)
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "story.png";
+    a.click();
   }
 };
+
 
 
 closeBtn.onclick = () => {
