@@ -568,14 +568,43 @@ captureBtn.addEventListener("click", () => {
   }
 
   if (tapCount === 2) {
-    clearTimeout(tapTimeout);
-    tapCount = 0;
+  clearTimeout(tapTimeout);
+  tapCount = 0;
 
-    // DOUBLE TAP → ARM VIDEO MODE
-    videoArmed = true;
-    showVideoArmedUI();
+  // 🔁 TOGGLE VIDEO MODE
+  if (!videoArmed) {
+    enableVideoMode();
+  } else {
+    disableVideoMode();
   }
+}
+
 });
+function enableVideoMode() {
+  videoArmed = true;
+  isRecording = false;
+
+  const timer = document.getElementById("recordTimer");
+  timer.style.display = "block";
+  timer.textContent = "● Video Mode";
+
+  // Optional visual cue
+  captureBtn.style.borderColor = "red";
+}
+
+function disableVideoMode() {
+  videoArmed = false;
+
+  if (isRecording) {
+    stopRecording();
+  }
+
+  const timer = document.getElementById("recordTimer");
+  timer.style.display = "none";
+
+  // Reset UI
+  captureBtn.style.borderColor = "#fff";
+}
 
 function showVideoArmedUI(){
   document.getElementById("recordTimer").style.display = "block";
@@ -1163,21 +1192,36 @@ document.getElementById("camera").addEventListener("click",()=>{
 // };
 
 
-saveBtn.onclick = () => {
+saveBtn.onclick = async () => {
   if (recordedVideoURL) {
-    // VIDEO SAVE
+    const blob = await fetch(recordedVideoURL).then(r => r.blob());
+
+    const formData = new FormData();
+    formData.append("video", blob, "story.webm");
+
+    const res = await fetch("/convert-video", {
+      method: "POST",
+      body: formData
+    });
+
+    const mp4Blob = await res.blob();
+    const url = URL.createObjectURL(mp4Blob);
+
     const a = document.createElement("a");
-    a.href = recordedVideoURL;
-    a.download = "story-video.webm";
+    a.href = url;
+    a.download = "story.mp4";
     a.click();
   } else {
-    // PHOTO SAVE (existing)
-    const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = "story.png";
-    a.click();
+    // PHOTO SAVE → JPG
+    canvas.toBlob(blob => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "story.jpg";
+      a.click();
+    }, "image/jpeg", 0.95);
   }
 };
+
 
 closeBtn.onclick = () => {
   frozen = false;
