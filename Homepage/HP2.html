@@ -580,7 +580,7 @@
     <div id="mainContentWrapper" style="width:100%;max-width:720px;">
         <div class="top-left-header" aria-hidden="false" id="appHeader">
       <div style="display:flex;flex-direction:column;min-width:0;">
-        <div class="brand">SHAKTI-IND</div>
+        <div class="brand">shaktiind</div>
         <div id="topLeftUserSmall" class="small-username" style="margin-top:2px;color: #000000;">Loading...</div>
       </div>
       <div class="top-search" role="search" aria-label="Search content, users, IDs">
@@ -2032,7 +2032,7 @@ function attachOpenHandlers(el){
          <div id="mainContentWrapper" style="width:100%;max-width:720px;">
         <div class="top-left-header" aria-hidden="false" id="appHeader">
       <div style="display:flex;flex-direction:column;min-width:0;">
-        <div class="brand">SHAKTI-IND</div>
+        <div class="brand">shaktiind</div>
       </div>
     </div>
         <div class="feed-card" style="border-radius:12px;padding:14px; position:relative;">
@@ -2671,13 +2671,20 @@ if (page === 'community') {
   }
 
   // simplified setActiveNav that swaps content
-  function setActiveNavAndSwap(elId){
-    $all('.nav-item').forEach(n => n.classList.remove('active'));
-    const el = document.getElementById(elId);
-    if (el) el.classList.add('active');
-    const page = el?.dataset?.page || 'home';
-    swapMainContent(page);
-  }
+function setActiveNavAndSwap(elId){
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById(elId);
+  if (el) el.classList.add('active');
+
+  const page = el?.dataset?.page || 'home';
+
+  // Swap content
+  swapMainContent(page);
+
+  // IMPORTANT: push state for every tab
+  history.pushState({ page }, "", "#" + page);
+}
+
 
   // bottom nav wiring (use swap)
   document.getElementById('navHome').addEventListener('click', ()=> setActiveNavAndSwap('navHome'));
@@ -2711,6 +2718,36 @@ if (page === 'community') {
     return String(text || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   }
 
+</script>
+<script>
+/* ----------------------------------------
+   HARD BACK-GESTURE CONTROL (STAY ON HOME)
+-----------------------------------------*/
+
+(function lockBackToHome() {
+  // Push initial state
+  history.pushState({ page: "home" }, "", "#home");
+
+  window.addEventListener("popstate", function (event) {
+    // Always force HOME
+    forceHome();
+  });
+
+  function forceHome() {
+    // Activate home tab visually
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('navHome')?.classList.add('active');
+
+    // Swap content to home
+    swapMainContent("home");
+
+    // Push state again so user can't exit
+    history.pushState({ page: "home" }, "", "#home");
+  }
+
+  // Expose if needed elsewhere
+  window.forceHome = forceHome;
+})();
 </script>
 
 </body>

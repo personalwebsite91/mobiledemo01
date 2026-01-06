@@ -164,17 +164,45 @@ input:focus {
   font-weight: 600;
   display: none;
 }
+/* SHAKTI-IND GLOBAL LOADER */
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  z-index: 9999;
+  overflow: hidden;
+  display: none;
+}
+
+.loader-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    #FF7A33,
+    #0F9D58
+  );
+  transition: width 0.9s ease;
+}
+
   </style>
 
 </head>
 <body>
+<!-- Global Loader -->
+<div id="loader">
+  <div class="loader-bar"></div>
+</div>
 
   <!-- Soft Indian Flag Pastel Background -->
   <div class="bg-gradient"></div>
 
   <!-- Tri-color Logo -->
   <div class="logo">
-    <span class="saffron">SHAKTI</span><span class="green">-IND</span>
+    <span class="saffron">shakti</span><span class="green">ind</span>
   </div>
 
   <div class="page-container">
@@ -241,11 +269,16 @@ input:focus {
   </div>
 
   <script>
-    function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+function showPage(id) {
+  showLoader(500);   // 👈 show loader briefly
 
+  setTimeout(() => {
+    document.querySelectorAll('.page').forEach(p =>
+      p.classList.remove('active')
+    );
+    document.getElementById(id).classList.add('active');
+  }, 300);
+}
 function validateMobile() {
   const mobile = document.getElementById('mobile').value.trim();
   const error = document.getElementById('mobileError');
@@ -253,15 +286,29 @@ function validateMobile() {
   if (/^\d{10}$/.test(mobile)) {
     error.textContent = '';
 
-    // ⭐ Store mobile number for next page
     localStorage.setItem("signup_mobile", mobile);
 
-    // Go to next page
-    showPage('fullSignup');
+    showLoader(600);   // 👈 loader here
+
+    setTimeout(() => {
+      showPage('fullSignup');
+    }, 500);
+
   } else {
     error.textContent = 'Please enter a valid 10-digit number';
   }
 }
+
+document.getElementById('createAccountBtn')?.addEventListener('click', () => {
+  showLoader(1200); // 👈 real loading
+
+  // your Firebase signup logic here
+});
+document.getElementById('loginbtn')?.addEventListener('click', () => {
+  showLoader(1200);
+
+  // Firebase login logic here
+});
 
 
 // Gmail live validation
@@ -304,6 +351,29 @@ function togglePass(icon) {
     window.get = get;
     window.child = child;
     window.getAuth = getAuth;
+</script>
+<script>
+function showLoader(duration = 900) {
+  const loader = document.getElementById('loader');
+  const bar = document.querySelector('.loader-bar');
+
+  if (!loader || !bar) return;
+
+  loader.style.display = 'block';
+  bar.style.width = '0%';
+
+  setTimeout(() => bar.style.width = '100%', 50);
+
+  setTimeout(() => {
+    loader.style.display = 'none';
+    bar.style.width = '0%';
+  }, duration);
+}
+</script>
+<script>
+window.addEventListener('load', () => {
+  showLoader(400);
+});
 </script>
 
 <script type="module" src="mail.js"></script>

@@ -202,14 +202,41 @@
         font-size: 1rem;
         padding: 16px 8px;
       }
-    }
+    }/* LOADING BAR */
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(0,0,0,0.05);
+  z-index: 9999;
+  overflow: hidden;
+  display: none;
+}
+
+.loader-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    var(--saffron),
+    var(--green)
+  );
+  transition: width 1.2s ease;
+}
+
   </style>
 </head>
 
 <body>
+ <!-- Loading Bar -->
+<div id="loader">
+  <div class="loader-bar"></div>
+</div>
 
   <div id="opening">
-    <h1 class="logo">SHAKTI-IND</h1>
+    <h1 class="logo">shaktiind</h1>
     <p class="slogan">one platform, one nation.</p>
     <button class="btn-start" onclick="startApp()">Get Started</button>
   </div>
@@ -236,25 +263,40 @@
     </button>
   </div>
 
-  <script>
-    function startApp() {
+<script>
+  function startApp() {
+    const loader = document.getElementById('loader');
+    const bar = document.querySelector('.loader-bar');
+
+    loader.style.display = 'block';
+
+    // Start loading animation
+    setTimeout(() => bar.style.width = '100%', 50);
+
+    // After loading finishes
+    setTimeout(() => {
+      loader.style.display = 'none';
       document.getElementById('opening').style.opacity = '0';
+
       setTimeout(() => {
         document.getElementById('opening').style.display = 'none';
         document.getElementById('main').classList.add('active');
         setTimeout(() =>
           document.getElementById('headerLogo').classList.add('visible'), 300
         );
-      }, 500);
-    }
+      }, 400);
 
-    function select(el) {
-      document.querySelectorAll('.lang-card').forEach(c =>
-        c.classList.remove('selected')
-      );
-      el.classList.add('selected');
-    }
-  </script>
+    }, 1200);
+  }
+
+  function select(el) {
+    document.querySelectorAll('.lang-card').forEach(c =>
+      c.classList.remove('selected')
+    );
+    el.classList.add('selected');
+  }
+</script>
+
 
 </body>
 </html>
