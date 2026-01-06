@@ -2724,29 +2724,87 @@ function setActiveNavAndSwap(elId){
    HARD BACK-GESTURE CONTROL (STAY ON HOME)
 -----------------------------------------*/
 
-(function lockBackToHome() {
-  // Push initial state
-  history.pushState({ page: "home" }, "", "#home");
+// (function lockBackToHome() {
+//   // Push initial state
+//   history.pushState({ page: "home" }, "", "#home");
 
-  window.addEventListener("popstate", function (event) {
-    // Always force HOME
-    forceHome();
-  });
+//   window.addEventListener("popstate", function (event) {
+//     // Always force HOME
+//     forceHome();
+//   });
 
-  function forceHome() {
-    // Activate home tab visually
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('navHome')?.classList.add('active');
+//   function forceHome() {
+//     // Activate home tab visually
+//     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+//     document.getElementById('navHome')?.classList.add('active');
 
-    // Swap content to home
-    swapMainContent("home");
+//     // Swap content to home
+//     swapMainContent("home");
 
-    // Push state again so user can't exit
-    history.pushState({ page: "home" }, "", "#home");
+//     // Push state again so user can't exit
+//     history.pushState({ page: "home" }, "", "#home");
+//   }
+
+//   // Expose if needed elsewhere
+//   window.forceHome = forceHome;
+// })();
+</script>
+<script>
+/* ------------------------------------------------
+   APP-STYLE BACK NAVIGATION (NO LANDING PAGE)
+------------------------------------------------ */
+
+(function appBackHandler() {
+
+  let currentPage = "home";
+
+  function setPage(page) {
+    currentPage = page;
+    history.pushState({ page }, "", "#" + page);
   }
 
-  // Expose if needed elsewhere
-  window.forceHome = forceHome;
+  // Override your nav handler slightly
+  window.setActiveNavAndSwap = function (elId) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    el.classList.add('active');
+    const page = el.dataset.page || "home";
+
+    swapMainContent(page);
+    setPage(page);
+  };
+
+  // Handle back gesture / back button
+  window.addEventListener("popstate", function (event) {
+
+    // 🔴 If popup is open → close popup
+    if (document.getElementById("postPopup")?.style.display === "block") {
+      closePopup();
+      setPage(currentPage);
+      return;
+    }
+
+    // 🟡 If NOT on home → go to home
+    if (currentPage !== "home") {
+      currentPage = "home";
+
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById("navHome")?.classList.add('active');
+
+      swapMainContent("home");
+      history.pushState({ page: "home" }, "", "#home");
+      return;
+    }
+
+    // 🟢 If already on home → DO NOTHING
+    history.pushState({ page: "home" }, "", "#home");
+  });
+
+  // Initial state lock
+  history.replaceState({ page: "home" }, "", "#home");
+
 })();
 </script>
 
