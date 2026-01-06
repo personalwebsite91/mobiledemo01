@@ -32,9 +32,10 @@
     }
 
     .logo {
-      font-size: clamp(3.2rem, 12vw, 5.5rem);
+      font-size: clamp(2.8rem, 9vw, 5.2rem);
+  letter-spacing: clamp(0.08rem, 0.4vw, 0.18rem);
       font-weight: 900;
-      letter-spacing: 0.18rem;
+      /* letter-spacing: 0.18rem; */
       background: linear-gradient(90deg, var(--saffron) 50%, var(--green) 50%);
       background-clip: text;
       -webkit-background-clip: text;
@@ -46,15 +47,16 @@
       padding: 0 12px;
       display: inline-block;
       position: relative;
-      left: 45%;
-      transform: translateX(-50%);
+      display: block;
+  margin-inline: auto;
+  text-align: center;
     }
 
     .slogan {
-      font-size: clamp(0.95rem, 4vw, 1.15rem);
+      font-size: clamp(0.8rem, 4vw, 1.15rem);
   margin-bottom: 2.8rem;
       font-weight: 400;
-      letter-spacing: 1.6px;
+      letter-spacing: 1px;
       color: #555;
       text-transform: lowercase;
       font-variant: small-caps;
@@ -64,7 +66,7 @@
 
     .btn-start {
       padding: 16px 64px;
-      font-size: 0.8rem;
+      font-size: 1rem;
       font-weight: 700;
       background: var(--green);
       color: white;
