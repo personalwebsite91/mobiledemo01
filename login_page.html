@@ -9,12 +9,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --saffron: #FF7A33;
+      --green:   #0F9D58;
+      --bg:      #ffffff;
+    }
     body {
   font-family: 'Poppins', sans-serif;
   height: 100vh;
   overflow: hidden;
   position: relative;
-  background: #fff8f0;
+  background: #ffffff;
 }
 
 /* Soft Indian Flag Pastel Gradient Background */
@@ -28,19 +33,36 @@
   );
   z-index: -1;
 }
-
+/* position: fixed;
+      top: 24px;
+      left: 24px;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, var(--saffron) 50%, var(--green) 50%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      opacity: 0;
+      transform: translateX(-80px) scale(0.7);
+      transition: all 0.9s ease-out 0.2s;
+      z-index: 10; */
 /* Logo with real tri-color gradient */
     .logo {
-  position: fixed;
-  top: 24px; left: 24px;
+  /* position: fixed; */
+  /* top: 24px; left: 24px; */
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: 2px;
-  background: linear-gradient(90deg, #FF9933 50%, #138808 50%);
+  background: linear-gradient(90deg, #FF7A33 50%, #0F9D58 50%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   z-index: 10;
+  /* opacity: 0; */
+  /* transform: translateX(-80px) scale(0.7); */
+  text-align: center;
+  display: block;
   transition: all 0.9s ease-out 0.2s;
 }
     @media (max-width: 480px) {
@@ -201,16 +223,18 @@ input:focus {
   <div class="bg-gradient"></div>
 
   <!-- Tri-color Logo -->
-  <div class="logo">
-    <span class="saffron">shakti</span><span class="green">ind</span>
-  </div>
+  <!-- <div class="logo">
+    shaktiind
+  </div> -->
 
   <div class="page-container">
 
     <!-- PAGE 1: Choice -->
     <div class="page active" id="choice">
       <div class="card">
-        <p2>Join the community today</p2>
+        
+        <p2>Join the community today.</p2>
+        
         <button class="btn-gradient" onclick="showPage('login')">Login</button>
         <button class="btn-gradient" onclick="showPage('mobileSignup')">Signup</button>
       </div>
@@ -251,7 +275,7 @@ input:focus {
     <!-- PAGE 4: Login -->
     <div class="page" id="login">
       <div class="card">
-        <h2>Login to Shakti-Ind</h2>
+       <h2 style="color:black;">Your Account</h2>
         
         <input type="text" id="loginid" placeholder="Mobile Number or Username"/>
         
