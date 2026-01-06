@@ -90,8 +90,8 @@
     .comment-body{ min-width:0; flex:1; }
     .comment-header-line{ display:flex; align-items:center; justify-content:space-between; gap:4px; }
     .comment-username{ font-weight:600; font-size:12px; color:#222; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
-    .comment-text{ font-size:12px; color:#444; display:block; margin-top:2px; white-space:normal; }
-    .comment-meta{ font-size:10px; color:var(--muted); margin-top:4px; }
+    .comment-text{ font-size:8px; color:#444; display:block; margin-top:2px; white-space:normal;font-weight:600; }
+    .comment-meta{ font-size:6px; color:var(--muted); margin-top:4px; }
     .heart-small{ background:transparent; border:none; font-size:13px; cursor:pointer; padding:0 4px; color:#d33; }
 
     /* bottom navbar */
@@ -570,12 +570,12 @@
 .shakti-fake-notif {
   position: fixed;
   left: 50%;
-  top: calc(80px + env(safe-area-inset-bottom));
+  top: calc(20px + env(safe-area-inset-bottom));
   transform: translateX(-50%) translateY(120%);
-  width: min(92vw, 420px);
-  background: #ffffff;
+  width: min(92vw, 300px);
+  background: rgb(198, 198, 195);
   border-radius: 14px;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.22); 
   display: flex;
   align-items: center;
   gap: 12px;
@@ -719,7 +719,8 @@
 <div id="shaktiFakeNotif" class="shakti-fake-notif hidden" role="alert">
   <div class="notif-icon">🔔</div>
   <div class="notif-text">
-    <div class="notif-title">Shakti Code : Nearby 50m  name : username07</div>
+    <div class="notif-title">Shakti Code : Nearby 50m</div>
+    <div class="notif-body">name : username07</div>
     <div class="notif-body">someone needs your help</div>
   </div>
 </div>
@@ -1042,7 +1043,7 @@ const TAP_TIME_LIMIT = 280;      // ms
 
   function buildFeedRow(post, index){
     const postHTML = `<div class="post-box">${buildPostHTML(post)}</div>`;
-    const commentsHTML = `<div class="comment-box">${generateCommentsHTML(5)}</div>`;
+    const commentsHTML = `<div class="comment-box">${generateCommentsHTML(4)}</div>`;
     return (index % 2 === 0) ? `<div class="feed-row">${postHTML}${commentsHTML}</div>` : `<div class="feed-row">${commentsHTML}${postHTML}</div>`;
   }
 
