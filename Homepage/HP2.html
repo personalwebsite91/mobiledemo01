@@ -2724,30 +2724,30 @@ function setActiveNavAndSwap(elId){
    HARD BACK-GESTURE CONTROL (STAY ON HOME)
 -----------------------------------------*/
 
-// (function lockBackToHome() {
-//   // Push initial state
-//   history.pushState({ page: "home" }, "", "#home");
+(function lockBackToHome() {
+  // Push initial state
+  history.pushState({ page: "home" }, "", "#home");
 
-//   window.addEventListener("popstate", function (event) {
-//     // Always force HOME
-//     forceHome();
-//   });
+  window.addEventListener("popstate", function (event) {
+    // Always force HOME
+    forceHome();
+  });
 
-//   function forceHome() {
-//     // Activate home tab visually
-//     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-//     document.getElementById('navHome')?.classList.add('active');
+  function forceHome() {
+    // Activate home tab visually
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('navHome')?.classList.add('active');
 
-//     // Swap content to home
-//     swapMainContent("home");
+    // Swap content to home
+    swapMainContent("home");
 
-//     // Push state again so user can't exit
-//     history.pushState({ page: "home" }, "", "#home");
-//   }
+    // Push state again so user can't exit
+    history.pushState({ page: "home" }, "", "#home");
+  }
 
-//   // Expose if needed elsewhere
-//   window.forceHome = forceHome;
-// })();
+  // Expose if needed elsewhere
+  window.forceHome = forceHome;
+})();
 </script>
 <script>
 /* ------------------------------------------------
