@@ -2881,7 +2881,7 @@ function setActiveNavAndSwap(elId){
     isVisible = true;
 
     // auto hide after 6s
-    setTimeout(hideNotif, 6000);
+    setTimeout(hideNotif,3000);
   }
 
   function hideNotif(){
@@ -2913,7 +2913,7 @@ function setActiveNavAndSwap(elId){
   // Start interval (every 20 seconds)
   function start(){
     if (timer) clearInterval(timer);
-    timer = setInterval(showNotif, 20000);
+    timer = setInterval(showNotif, 40000);
   }
 
   // Start after app loads
