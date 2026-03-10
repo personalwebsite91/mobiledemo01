@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - shaktiind</title>
+    <title>Profile - SHAKTI-IND</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;900&display=swap" rel="stylesheet">
 
@@ -52,22 +52,22 @@
         }
 
             /* Search bar beside logo */
-.top-search-bar {
+/* .top-search-bar {
     position: fixed;
-    /* top: 10%; */
-    right: 5%; /* Adjust spacing from logo */
-    z-index: 20;
-}
+    top: 10%;
+    left: 1%; /* Adjust spacing from logo */
+    /* z-index: 20;
+} */ 
 
 .top-search-bar input {
     padding: 8px 14px;
     width: 100px;
-    border: 1px solid #ddd;
+    /* border: 1px solid #ddd; */
     border-radius: 20px;
-    outline: none;
+    /* outline: none; */
     font-size: 0.9rem;
     background: #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgb(255, 255, 255);
     transition: 0.2s;
 }
 
@@ -137,11 +137,13 @@
            /* Make the profile picture clickable */
            cursor: pointer; 
            transition: transform 0.2s;
+           position:relative;
         }
 
         .profile-pic:hover {
             transform: scale(1.05);
         }
+    
 
         /* Username */
         .profile-username {
@@ -502,16 +504,16 @@
 
 .settings-icon {
     position: fixed;
-    top: 50px;
-    right: 12px;
+    top: 70px;
+    right: 15px;
     font-size: 1.6rem;
-    /* color: #444; */
+    color: #444;
     cursor: pointer;
     z-index: 50;
-    /* background: white; */
+    /* background: rgba(193, 193, 193, 0); */
     padding: 8px 10px;
-    /* border-radius: 50%; */
-    /* box-shadow: 0 4px 12px rgba(0,0,0,0.15); */
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: transform 0.2s ease, color 0.2s ease;
 }
 
@@ -786,7 +788,6 @@ body.modal-open {
     border-radius: 8px;
 }
 
-
 /* 🔱 SHAKTI BADGE */
 .shakti-badge {
     margin-left: 8px;
@@ -978,37 +979,18 @@ body.modal-open {
 
 /* --- END NEW SHARE BUTTON STYLES --- */
 
-/* LOGOUT BUTTON */
-.logout-btn {
-    width: 100%;
-    padding: 14px;
-    background: #fff;
-    border: 1px solid #c3362a;
-    color: #c3362a;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.25s;
-}
-
-.logout-btn:hover {
-    background: #c3362a;
-    color: #fff;
-    transform: translateX(5px);
-}
-
 </style>
 </head>
 
 <body>
 
     <div class="top-bar">
-        <div class="logo">shaktiind</div>
+        <div class="logo">SHAKTI-IND</div>
         <div class="top-search-bar">
         <input type="text" id="searchInput" placeholder="Search users by ID..." />
         <div id="searchResults" class="search-results"></div>
     </div>
+        <a href="HP2.html" class="back-btn" title="back to homepage">←</a>
     </div>
 
     <div id="settingsIcon" class="settings-icon" onclick="openEditModal()">&#9881;</div>
@@ -1022,7 +1004,7 @@ body.modal-open {
     <div class="profile-username-wrapper">
         <div id="profileName" class="profile-username">Loading...</div>
         <div class="shakti-badge" onclick="openShaktiModal()" title="Shakti Safety Status">
-        -> 🔱</div> 
+        🔱</div> 
     </div>
 
 
@@ -1088,7 +1070,7 @@ body.modal-open {
         </div>
 
         <button class="save-btn" onclick="saveProfileChanges()">Save Changes</button>
-        <button class="logout-btn" onclick="logoutUser()">Logout</button>
+
     </div>
 </div>
 
@@ -1283,9 +1265,91 @@ const editProfilePicPreview = document.getElementById("editProfilePicPreview");
 const shareOptionsDropdown = document.getElementById("shareOptions");
 const shaktiScoreValue = document.getElementById("shaktiScoreValue");
 const modal = document.getElementById("shaktiModal");
+
 let autoCloseTimer;
 let newProfileImageBase64 = null;
 let currentDescription = '';
+
+// --- NEW SHARING LOGIC ---
+const generateShareMessage = (score) => {
+    return `🔱 SHAKTI GUARDIAN STATUS 🔱
+
+I have earned a *Shakti Safety Score of ${score}/1000* on SHAKTI-IND.
+
+This score represents trust, responsibility, and community safety.
+
+✅ Verified Member
+🛡️ Safety First
+🌱 Building a Stronger Community
+
+Check your Shakti Score here 👇
+https://shaktiind.com
+
+#ShaktiInd #SafetyScore #DigitalTrust #CommunitySafety`;
+};
+
+window.openShareOptions = function() {
+    // Toggle the display of the share options
+    if (shareOptionsDropdown.style.display === "block") {
+        shareOptionsDropdown.style.display = "none";
+    } else {
+        shareOptionsDropdown.style.display = "block";
+    }
+}
+
+window.shareToWhatsApp = function() {
+    const score = shaktiScoreValue.innerText;
+    const message = generateShareMessage(score);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    shareOptionsDropdown.style.display = "none";
+}
+
+window.shareToLinkedIn = function() {
+    const score = shaktiScoreValue.innerText;
+    const message = generateShareMessage(score);
+    // LinkedIn share link for an update
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(message)}`;
+    window.open(linkedInUrl, '_blank');
+    shareOptionsDropdown.style.display = "none";
+}
+
+window.shareToNative = function() {
+    shareOptionsDropdown.style.display = "none";
+    if (navigator.share) {
+        const score = shaktiScoreValue.innerText;
+        const message = generateShareMessage(score);
+        
+        navigator.share({
+            title: 'My Shakti Guardian Score!',
+            text: message,
+            url: window.location.href,
+        }).catch((error) => console.log('Error sharing', error));
+    } else {
+        alert("Native Web Share is not supported in your browser. Please use WhatsApp or LinkedIn options.");
+    }
+}
+// --- END NEW SHARING LOGIC ---
+
+function openShaktiModal() {
+    // CRITICAL: Update the score value before opening
+    const score = document.querySelector('.shakti-score span').innerText; // Using existing logic
+    shaktiScoreValue.innerText = score;
+    
+    // NOTE: In a real app, you'd fetch the user's actual score and progress text here.
+    
+    modal.style.display = "flex";
+    setTimeout(() => modal.classList.add("open"), 10);
+    
+    // Ensure the dropdown is hidden when the modal opens
+    shareOptionsDropdown.style.display = "none"; 
+}
+
+function closeShaktiModal(event) {
+    const modal = document.getElementById("shaktiModal");
+    modal.classList.remove("open");
+    setTimeout(() => modal.style.display = "none", 300);
+}
 
 // ************************************************************
 // FINAL SOLUTION START: Session-based History Tracking
@@ -1441,86 +1505,7 @@ function closeProfileModal() {
         highlightViewer.style.display = 'none';
     }, 300);
 }
-const generateShareMessage = (score) => {
-  return `🛡️ SHAKTI GUARDIAN STATUS
 
-Shakti Safety Score: *${score} / 1000*
-
-On SHAKTI-IND, trust is earned, safety is enforced, and community comes first.
-
-Not trends.  
-Not noise.  
-*Values.*
-
-Check your Shakti Score  
-👉 https://shaktiind.in/
-  
-
-#ShaktiInd #DigitalTrust #SafetyFirst #GuardianNetwork`;
-};
-
-window.openShareOptions = function() {
-    // Toggle the display of the share options
-    if (shareOptionsDropdown.style.display === "block") {
-        shareOptionsDropdown.style.display = "none";
-    } else {
-        shareOptionsDropdown.style.display = "block";
-    }
-}
-
-window.shareToWhatsApp = function() {
-    const score = shaktiScoreValue.innerText;
-    const message = generateShareMessage(score);
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    shareOptionsDropdown.style.display = "none";
-}
-
-window.shareToLinkedIn = function() {
-    const score = shaktiScoreValue.innerText;
-    const message = generateShareMessage(score);
-    // LinkedIn share link for an update
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(message)}`;
-    window.open(linkedInUrl, '_blank');
-    shareOptionsDropdown.style.display = "none";
-}
-
-window.shareToNative = function() {
-    shareOptionsDropdown.style.display = "none";
-    if (navigator.share) {
-        const score = shaktiScoreValue.innerText;
-        const message = generateShareMessage(score);
-        
-        navigator.share({
-            title: 'My Shakti Guardian Score!',
-            text: message,
-            url: window.location.href,
-        }).catch((error) => console.log('Error sharing', error));
-    } else {
-        alert("Native Web Share is not supported in your browser. Please use WhatsApp or LinkedIn options.");
-    }
-}
-// --- END NEW SHARING LOGIC ---
-
-function openShaktiModal() {
-    // CRITICAL: Update the score value before opening
-    const score = document.querySelector('.shakti-score span').innerText; // Using existing logic
-    shaktiScoreValue.innerText = score;
-    
-    // NOTE: In a real app, you'd fetch the user's actual score and progress text here.
-    
-    modal.style.display = "flex";
-    setTimeout(() => modal.classList.add("open"), 10);
-    
-    // Ensure the dropdown is hidden when the modal opens
-    shareOptionsDropdown.style.display = "none"; 
-}
-
-function closeShaktiModal(event) {
-    const modal = document.getElementById("shaktiModal");
-    modal.classList.remove("open");
-    setTimeout(() => modal.style.display = "none", 300);
-}
 // Edit Modal Logic
 function openEditModal() {
     const currentPicUrl = profilePic.style.backgroundImage.replace(/url\(['"]?|['"]?\)/g, '').replace(/"/g, '');
@@ -1565,18 +1550,6 @@ viewerContent.addEventListener('click', (event) => {
 });
 
 
-function openShaktiModal() {
-    const modal = document.getElementById("shaktiModal");
-    modal.style.display = "flex";
-    setTimeout(() => modal.classList.add("open"), 10);
-}
-
-function closeShaktiModal(event) {
-    const modal = document.getElementById("shaktiModal");
-    modal.classList.remove("open");
-    setTimeout(() => modal.style.display = "none", 300);
-}
-
 </script>
 
 <script type="module">
@@ -1597,7 +1570,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // Global Variables for User Tracking
-const loggedUserMobile = localStorage.getItem("logged_user_mobile");
+const loggedUserMobile = localStorage.getItem("signup_mobile");
 let targetUserMobile = sessionStorage.getItem("target_user_mobile");
 let loggedUserId = null; // Key for the currently logged-in user
 let targetUserId = null; // Key for the user whose profile is being viewed
@@ -1938,20 +1911,6 @@ window.saveProfileChanges = async function() {
 
 // Initial load
 loadProfile();
-window.logoutUser = function () {
-    const confirmLogout = confirm("Are you sure you want to logout?");
-    if (!confirmLogout) return;
-
-    // Clear auth state
-    localStorage.removeItem("logged_user_mobile");
-    sessionStorage.removeItem("target_user_mobile");
-    sessionStorage.removeItem("shakti_previous_page");
-
-    // 🔴 VERY IMPORTANT for single-page container apps
-    window.top.location.href = "../login_page.html";
-};
-
-
 </script>
 </body>
 </html>
